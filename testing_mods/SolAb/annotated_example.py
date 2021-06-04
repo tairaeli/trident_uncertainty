@@ -1,4 +1,4 @@
-def test_SolAb(Data_Filename, proj_filepath, spec_filepath1, spec_filepath2, data_path = '~/git_env/research/oshea/trident_modifications/testing_mods/SolAb/enzo_cosmology_plus/RD0009/RD0009', line_list = ['H', 'C', 'N', 'O', 'Mg'], **reading_func_args):
+def test_SolAb(Data_Filename, proj_filepath, spec_filepath1, spec_filepath2, data_path = '~/git_env/research/oshea/trident_modifications/testing_mods/SolAb/enzo_cosmology_plus/RD0009/RD0009', line_list = ['H', 'C', 'O', 'Fe', 'Mg', 'Si'], **reading_func_args):
     import yt
     import trident
     fn = data_path
@@ -24,8 +24,22 @@ def test_SolAb(Data_Filename, proj_filepath, spec_filepath1, spec_filepath2, dat
     print('ESTABLISHING SPECTRUM GENERATOR')
     sg = trident.SpectrumGenerator('COS-G130M')
     print('MAKING SPECTRUM')
-    sg.make_spectrum(ray, lines = line_list)
+    if reading_func_args:
+    	sg.make_spectrum(ray, lines = line_list, abundance_table_args = reading_func_args)
+    else:
+    	sg.make_spectrum(ray, lines = line_list)
     print('SAVING SPECTRUM...')
     sg.save_spectrum(spec_filepath1)
     print('SPECTRUM COMPLETED')
     sg.plot_spectrum(spec_filepath2)
+    
+def setup(file = '~/git_env/research/oshea/trident_modifications/testing_mods/SolAb/cgm_abundances_2eb.txt', names = ['ray_cgm64.h5', 'proj_cgm64.png', 'spec_raw_cgm64.txt', 'spec_raw_cgm64.png']):
+    import pandas as pd
+
+    reading_func_args = {'filename': file, 'select_row': 0, 'ratios': False, 'kwargs': {'delim_whitespace': True}}
+	
+    df = pd.read_csv(file, delim_whitespace=True)
+	
+    cols = list(df.columns)
+	
+    test_SolAb(names[0], names[1], names[2], names[3], line_list = cols, **reading_func_args)
