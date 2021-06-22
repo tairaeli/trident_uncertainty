@@ -1,6 +1,6 @@
 , print("let's do some math, kids")
 
-def sal(ds_file='HiresIsolatedGalaxy/DD0044/DD0044', ray_dir='more_rays', n_rays=4, ray_num=0, center_list=[0.53, 0.53, 0.53], ion_list=['H I', 'C IV', 'O VI'], df_type = 'cat', vis=True, trid_rays = True, **kwargs):
+def sal(ds_file='HiresIsolatedGalaxy/DD0044/DD0044', ray_dir='more_rays', n_rays=4, ray_num=0, center_list=[0.53, 0.53, 0.53], ion_list=['H I', 'C IV', 'O VI'], df_type = 'multiple', vis=True, trid_rays = False, **kwargs):
 	import yt
 	import salsa
 	import numpy as np
@@ -34,9 +34,9 @@ def sal(ds_file='HiresIsolatedGalaxy/DD0044/DD0044', ray_dir='more_rays', n_rays
 		
 		ray_list=[]
 		for i in range(n_rays):
-			ray_list.append(f'{ray_dir}/ray{i}.h5')
+			ray_list.append(f'{ray_directory}/ray{i}.h5')
 		
-		abs_ext_civ = salsa.AbsorberExtractor(ds, ray_file, ion_name = 'C IV')
+		abs_ext_civ = salsa.AbsorberExtractor(ds, ray_file, ion_name = 'C IV', **reading_func_args)
 		df_civ = salsa.get_absorbers(abs_ext_civ, ray_list, method='spice', fields=other_fields, units_dict=units_dict)
 		return df_civ
 	
@@ -45,8 +45,8 @@ def sal(ds_file='HiresIsolatedGalaxy/DD0044/DD0044', ray_dir='more_rays', n_rays
 	if 'vis_args' in kwargs:
 		visual = kwargs['vis_args']
 		
-	if 'ray_args' in kwargs:
-		rad_rays = kwargs['ray_args']
+	if 'reading_func_args' in kwargs:
+		reading_func_args = kwargs['reading_func_args']
 	
 	ds = yt.load(ds_file)
 	
@@ -71,7 +71,7 @@ def sal(ds_file='HiresIsolatedGalaxy/DD0044/DD0044', ray_dir='more_rays', n_rays
 		#print(f'SPICY: \n {spicy}')
 		return spicy
 	if df_type == 'single': 
-		abs_ext=salsa.AbsorberExtractor(ds, ray_file, ion_name='H I')
+		abs_ext=salsa.AbsorberExtractor(ds, ray_file, ion_name='H I', **reading_func_args)
 		spicy = abs_ext.get_spice_absorbers(other_fields, units_dict=units_dict)
 		if vis == True:
 			visualize(ds_file, center_list, ray_num, **vis_args)

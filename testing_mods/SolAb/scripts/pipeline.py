@@ -1,7 +1,4 @@
 run scripts/salsa_example.py
-#kwargs = dict()
-#vis_name_list = [] #bunch of names
-#saved_filename_list = [] #bunch of associated filenames for saved data
 
 def generate_names(length):
 	vis_name_list = []
@@ -17,6 +14,8 @@ def run_pipe(vis_name_list, saved_filename_list, ray_dir='rays', **kwargs):
 		kwargs['vis_args'] = dict(name = f'{vis_name}.png')
 
 		catalog = sal(ray_dir=ray_dir, ray_num=ray_num, n_rays = 50, **kwargs)
+		
+		
 	
 		catalog.to_csv(f'{saved_filename}.txt', sep = ' ')
 		catalog.to_csv(f'{saved_filename}.csv', sep = ' ')
@@ -27,6 +26,8 @@ def run_pipe(vis_name_list, saved_filename_list, ray_dir='rays', **kwargs):
 	
 	print('go look at your data!')
 	
+kwargs = dict(reading_func_args=dict(filename='~/git_env/research/oshea/trident_modifications/testing_mods/SolAb/abundances/cgm_abundances_2eb.txt', ratios=False), ray_dir='more_rays')
+
 	
 """
 Things to chuck in kwargs:
