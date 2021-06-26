@@ -1,4 +1,4 @@
-, print("let's do some math, kids")
+print("let's do some math, kids")
 
 def sal(ds_file='HiresIsolatedGalaxy/DD0044/DD0044', ray_dir='more_rays', n_rays=4, ray_num=0, center_list=[0.53, 0.53, 0.53], ion_list=['H I', 'C IV', 'O VI'], df_type = 'multiple', vis=True, trid_rays = False, **kwargs):
 	import yt
@@ -6,7 +6,7 @@ def sal(ds_file='HiresIsolatedGalaxy/DD0044/DD0044', ray_dir='more_rays', n_rays
 	import numpy as np
 	import pandas as pd
 	import matplotlib as plt
-	
+	"""
 	def make_rays(ds_file, Data_filename, line_list, **rad_rays):
 		ds = yt.load(ds_file)
 		ray_start = ds.domain_left_edge
@@ -21,7 +21,7 @@ def sal(ds_file='HiresIsolatedGalaxy/DD0044/DD0044', ray_dir='more_rays', n_rays
     			ray = trident.make_simple_ray(ds, start_position=ray_start, end_position=ray_end, data_filename = Data_Filename, lines = line_list, ftype = 'gas')
 
 		return ray
-	
+	"""
 	
 	def visualize(ds_file, center_list, ray_num, name='example_multiplot.png', num_dense_min = 1e-11, num_dense_max=1e-5, **vis_args):
 		ray = yt.load(f'{ray_dir}/ray{ray_num}.h5')
@@ -36,7 +36,7 @@ def sal(ds_file='HiresIsolatedGalaxy/DD0044/DD0044', ray_dir='more_rays', n_rays
 		for i in range(n_rays):
 			ray_list.append(f'{ray_directory}/ray{i}.h5')
 		
-		abs_ext_civ = salsa.AbsorberExtractor(ds, ray_file, ion_name = 'C IV', **reading_func_args)
+		abs_ext_civ = salsa.AbsorberExtractor(ds, ray_file, ion_name = 'C II', **reading_func_args)
 		df_civ = salsa.get_absorbers(abs_ext_civ, ray_list, method='spice', fields=other_fields, units_dict=units_dict)
 		return df_civ
 	
