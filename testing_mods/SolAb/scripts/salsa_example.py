@@ -1,6 +1,6 @@
 print("let's do some math, kids")
 
-def sal(ds_file='HiresIsolatedGalaxy/DD0044/DD0044', ray_dir='more_rays', n_rays=4, ray_num=0, center_list=[0.53, 0.53, 0.53], ion_list=['H I', 'C IV', 'O VI'], df_type = 'multiple', vis=True, trid_rays = False, **kwargs):
+def sal(ds_file='HiresIsolatedGalaxy/DD0044/DD0044', ray_dir='more_rays', n_rays=4, ray_num=0, center_list=[0.53, 0.53, 0.53], ion_list=['H I', 'C IV', 'O VI'], df_type = 'cat', vis=True, trid_rays = False, **kwargs):
 	import yt
 	import salsa
 	import numpy as np

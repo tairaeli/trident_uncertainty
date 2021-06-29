@@ -1,10 +1,12 @@
 from salsa_example import *
 import numpy as np
 
+print("let's do some math, kids")
+
 list1 = ['O VIII', 'Mg X', 'O VII', 'O VI', 'Ne IV', 'Fe III', 'C II', 'N I']
-def change(List, change_index, change):
+def change(List, change_index, Change):
 	new_list = List
-	new_list[change_index] = change
+	new_list[change_index] = Change
 	return new_list
 	
 list2 = change(list1, 6, 'Fe II')
@@ -50,7 +52,7 @@ def run_pipe(vis_name_list, saved_filename_list, ray_dir, **kwargs):
 kwargs = dict(reading_func_args=dict(filename='~/git_env/research/oshea/trident_modifications/testing_mods/SolAb/abundances/cgm_abundances_2eb.txt', ratios=False), ray_dir='pipetest_rays')
 
 for i in range(len(ions)):
-	kwargs['ion_list'] = list(ions[i])
+	kwargs['ion_list'] = list(ions[i][0])
 	kwargs['pipe_add'] = f'_ionlist{i}'
 	kwargs['saved_add'] = f'_ionlist{i}'
 	vis, saved = generate_names(4, add='_ionlist{i}_')
