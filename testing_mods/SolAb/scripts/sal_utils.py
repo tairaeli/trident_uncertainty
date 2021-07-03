@@ -1,7 +1,7 @@
-from salsa_example import *
+from sal_the_snake import *
 import numpy as np
 
-#print("let's do some math, kids")
+print("let's do some math, kids")
 
 
 
@@ -12,7 +12,7 @@ def visualize(ds_file, center_list, ray_dir, ray_num, name='example_multiplot.pn
 		new_ray_num=ray_num
 		
 	ray = yt.load(f'{ray_dir}/ray{new_ray_num}.h5')
-	plotter = salsa.AbsorberPlotter(ds_file, ray, "H I", center_gal=center_list, use_spectacle=False, plot_spectacle=False, plot_spice=True, num_dense_max=num_dense_max, num_dense_min=num_dense_min)
+	plotter = salsa.AbsorberPlotter(ds_file, ray, "O VI", center_gal=center_list, use_spectacle=False, plot_spectacle=False, plot_spice=True, num_dense_max=num_dense_max, num_dense_min=num_dense_min)
 
 	fig, axes = plotter.create_multi_plot(outfname=name)
 
@@ -78,7 +78,7 @@ list4 = change(list1, 3, 'Si IV')
 
 ions = np.array([[list1], [list2], [list3], [list4]])
 
-kwargs = dict(reading_func_args=dict(filename='~/git_env/research/oshea/trident_modifications/testing_mods/SolAb/abundances/cgm_abundances_2eb.txt', ratios=False), ray_dir='pipetest_rays')
+kwargs = dict(reading_func_args=dict(filename='~/git_env/research/oshea/trident_modifications/testing_mods/SolAb/abundances/cgm_abundances_2eb.txt', ratios=False), ray_dir='pipetest3')
 
 for i in range(len(ions)):
 	kwargs['ion_list'] = list(ions[i][0])
