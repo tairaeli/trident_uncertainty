@@ -8,7 +8,7 @@ import matplotlib as plt
 	
 #print("let's do some math, kids", flush=True)
 
-def sal(ds_file='HiresIsolatedGalaxy/DD0044/DD0044', ray_dir='rays', n_rays=4, ray_num=0, center_list=[0.53, 0.53, 0.53], ion_list=['H I', 'C IV', 'O VI'], df_type = 'cat', **kwargs):
+def sal(ds_file='HiresIsolatedGalaxy/DD0044/DD0044', ray_dir='rays', n_rays=4, ray_num=0, center_list=[0.53, 0.53, 0.53], ion_list = ['H I', 'C IV', 'O VI'], df_type = 'cat', **kwargs):
 	"""
 	Does all the dirty work. 
 	Uses yt to load nifty halo dataset. Uses a list of cool ions and SALSA to generate trident LightRay objects and extract absorbers from them. Returns a pandas dataset that contains info on absorbers from singular ray file, many ray files, or a catalog of all ray files with all absorbers. Catalog is the default. 
@@ -54,6 +54,14 @@ def sal(ds_file='HiresIsolatedGalaxy/DD0044/DD0044', ray_dir='rays', n_rays=4, r
 		print('reading_func_args not given')
 		funky_args = {}
 	
+	#if ion_list == None:
+		#ion_list = ['H I', 'C IV', 'O VI']
+	if 'ion_list' in kwargs:
+		print(kwargs['ion_list'])
+	else:
+		print("ION LIST DIDN'T MAKE IT TO SAL THE SNAKE")
+		print(f"ION LIST: {ion_list}") 
+	
 	#preliminary shenanigans -- load halo data; define handy variables; plant the seed, as it were
 	ds = yt.load(ds_file)
 
@@ -64,6 +72,7 @@ def sal(ds_file='HiresIsolatedGalaxy/DD0044/DD0044', ray_dir='rays', n_rays=4, r
 	np.random.seed(69)
 
 	#get those rays babyyyy
+	print(f'ION LIST RIGHT BEFORE GENERATE_LRAYS: {ion_list}')
 	salsa.generate_lrays(ds, center_list, n_rays, max_impact, ion_list=ion_list, fields=other_fields, out_dir=ray_dir)
 
 	#get absorbers -- either many, singular, or catalog returned
