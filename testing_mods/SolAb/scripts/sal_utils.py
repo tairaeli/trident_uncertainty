@@ -3,7 +3,7 @@ import numpy as np
 
 print("let's do some math, kids")
 
-path = 'test_sal/ffftests/'
+path = 'test_sal/interval_tests/'
 
 def visualize(ds_file, center_list, ray_dir, ray_num, ion='O VI', name='example_multiplot', num_dense_min = 1e-11, num_dense_max=1e-5, **vis_args):
 	
@@ -34,7 +34,7 @@ def visualize(ds_file, center_list, ray_dir, ray_num, ion='O VI', name='example_
 	
 	newname = f'{name}_ray{ray_num}.png'
 		
-	ray = yt.load(f'{ray_dir}/ray{ray_num}.h5')
+	ray = yt.load(f'{ray_dir}/ray{new_ray_num}.h5')
 	plotter = salsa.AbsorberPlotter(ds_file, ray, ion, center_gal=center_list, use_spectacle=False, plot_spectacle=False, plot_spice=True, num_dense_max=num_dense_max, num_dense_min=num_dense_min)
 
 	fig, axes = plotter.create_multi_plot(outfname=newname)
@@ -53,7 +53,7 @@ def update_ionlist(list_name, change_index, ion):
 	:ion: Ion that will replace the old ion
 	"""
 	
-	new_list = list_name
+	new_list = list_name.copy()
 	new_list[change_index] = ion
 	
 	return new_list
@@ -138,4 +138,4 @@ vis, saved = generate_names(len(ions))
 
 for i in range(len(ions)):
 	kwargs['ion_list'] = list(ions[i][0])
-	run_sal(vis[i], saved[i], vis_tf=True, ray_num=i, path=path, n_rays=5, vis_add=f'visuals/ionlist{i}', saved_add=f'data/ionlist{i}', **kwargs)
+	run_sal(vis[i], saved[i], vis_tf=True, ray_num=i, path=path, n_rays=50, vis_add=f'visuals/ionlist{i}', saved_add=f'data/ionlist{i}', **kwargs)
