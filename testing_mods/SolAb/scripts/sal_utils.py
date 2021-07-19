@@ -3,7 +3,7 @@ import numpy as np
 
 print("let's do some math, kids")
 
-path = 'test_sal/interval_tests/'
+path = 'test_sal/hist_tests/'
 
 def visualize(ds_file, center_list, ray_dir, ray_num, ion='O VI', name='example_multiplot', num_dense_min = 1e-11, num_dense_max=1e-5, **vis_args):
 	

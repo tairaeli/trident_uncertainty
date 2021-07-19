@@ -29,7 +29,7 @@ def sal(ds_file='HiresIsolatedGalaxy/DD0044/DD0044', ray_dir='rays', n_rays=4, r
 
 	:kwargs: Contains necessary information for returning information oabsorbers frm many ray files (specify as a dictionary named "mult" in kwargs, great place to add an abundance table to be 		 passed to salsa.AbsorberExtractor(), etc.
 	"""
-
+	print(f"DATAFRAME TYPE: {df_type}")
 	
 	def mult_salsa(ds, ray_directory, ray_file, units_dict, field, n_rays, **mult):
 		
