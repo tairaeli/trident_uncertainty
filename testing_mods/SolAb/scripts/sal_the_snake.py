@@ -30,18 +30,8 @@ def sal(ds_file='HiresIsolatedGalaxy/DD0044/DD0044', ray_dir='rays', n_rays=4, r
 	:kwargs: Contains necessary information for returning information oabsorbers frm many ray files (specify as a dictionary named "mult" in kwargs, great place to add an abundance table to be 		 passed to salsa.AbsorberExtractor(), etc.
 	"""
 	print(f"DATAFRAME TYPE: {df_type}")
+	print(f'KWARGS: {kwargs}')
 	
-	def mult_salsa(ds, ray_directory, ray_file, units_dict, field, n_rays, **mult):
-		
-		ray_list=[]
-		for i in range(n_rays):
-			ray_list.append(f'{ray_directory}/ray{i}.h5')
-
-		abs_ext_civ = salsa.AbsorberExtractor(ds, ray_file, ion_name = 'C II', **reading_func_args)
-		df_civ = salsa.get_absorbers(abs_ext_civ, ray_list, method='spice', fields=other_fields, units_dict=units_dict)
-		return df_civ
-		
-	#look for handy args in kwargs
 	if 'mult' in kwargs:
 		mult = kwargs['mult']
 	else:
@@ -50,6 +40,7 @@ def sal(ds_file='HiresIsolatedGalaxy/DD0044/DD0044', ray_dir='rays', n_rays=4, r
 
 	if 'reading_func_args' in kwargs:
 		funky_args = kwargs['reading_func_args']
+		mult['reading_func_args'] = funky_args
 	else:
 		print('reading_func_args not given')
 		funky_args = {}
@@ -61,6 +52,31 @@ def sal(ds_file='HiresIsolatedGalaxy/DD0044/DD0044', ray_dir='rays', n_rays=4, r
 	else:
 		print("ION LIST DIDN'T MAKE IT TO SAL THE SNAKE")
 		print(f"ION LIST: {ion_list}") 
+	
+	def mult_salsa(ds, ray_directory, ray_file, units_dict, field, n_rays, ion_list, **mult):
+	
+		if 'reading_func_args' in mult:
+			funky_args = mult['reading_func_args']
+		
+		ray_list=[]
+		for i in range(n_rays):
+			if len(str(i)) == 1:
+				ray_list.append(f'{ray_directory}/ray0{i}.h5')
+			else:
+				ray_list.append(f'{ray_directory}/ray{i}.h5')
+		
+		print(f"RAY LIST: {ray_list}")
+		
+		return_df = pd.DataFrame()
+		
+		for i in ion_list:
+			abs_ext_civ = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, abundance_table_args = funky_args)
+			df_civ = salsa.get_absorbers(abs_ext_civ, ray_list, method='spice', fields=other_fields, units_dict=units_dict)
+			return_df = return_df.append(df_civ)
+		
+		return return_df
+		
+	#look for handy args in kwargs
 	
 	#preliminary shenanigans -- load halo data; define handy variables; plant the seed, as it were
 	ds = yt.load(ds_file)
@@ -77,8 +93,14 @@ def sal(ds_file='HiresIsolatedGalaxy/DD0044/DD0044', ray_dir='rays', n_rays=4, r
 
 	#get absorbers -- either many, singular, or catalog returned
 	if df_type == 'multiple':
-		ray_file=f'{ray_dir}/ray{ray_num}.h5'
-		spicy = mult_salsa(ds=ds, ray_directory=ray_dir, ray_file=ray_file, units_dict=units_dict, field=other_fields, **mult)
+	
+		if len(str(ray_num)) == 1:
+			new_ray_num = f'0{ray_num}'
+		else:
+			new_ray_num=ray_num
+			
+		ray_file=f'{ray_dir}/ray{new_ray_num}.h5'
+		spicy = mult_salsa(ds=ds, ray_directory=ray_dir, ray_file=ray_file, units_dict=units_dict, field=other_fields, n_rays=n_rays, ion_list=ion_list, **mult)
 
 		return spicy
 	if df_type == 'single': 
