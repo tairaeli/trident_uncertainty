@@ -61,6 +61,8 @@ def sal(ds_file='HiresIsolatedGalaxy/DD0044/DD0044', ray_dir='rays', n_rays=4, r
 		ray_list=[]
 		for i in range(n_rays):
 			if len(str(i)) == 1:
+				ray_list.append(f'{ray_directory}/ray00{i}.h5')
+			elif len(str(i)) == 2: 
 				ray_list.append(f'{ray_directory}/ray0{i}.h5')
 			else:
 				ray_list.append(f'{ray_directory}/ray{i}.h5')
@@ -95,6 +97,8 @@ def sal(ds_file='HiresIsolatedGalaxy/DD0044/DD0044', ray_dir='rays', n_rays=4, r
 	if df_type == 'multiple':
 	
 		if len(str(ray_num)) == 1:
+			new_ray_num = f'00{ray_num}'
+		elif len(str(ray_num)) == 2:
 			new_ray_num = f'0{ray_num}'
 		else:
 			new_ray_num=ray_num

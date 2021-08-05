@@ -3,7 +3,7 @@ import numpy as np
 
 print("let's do some math, kids")
 
-path = 'test_sal/abundance_test2eb/'
+path = 'test_sal/abundance_test3/'
 
 def visualize(ds_file, center_list, ray_dir, ray_num, ion='O VI', name='example_multiplot', num_dense_min = 1e-11, num_dense_max=1e-5, **vis_args):
 	
@@ -143,5 +143,5 @@ selr = 0
 for i in range(25):
 	#kwargs['ion_list'] = list(ions[i][0])
 	kwargs['reading_func_args']['select_row'] = selr
-	run_sal(vis[i], saved[i], vis_tf=False, ray_num=i, path=path, n_rays=50, saved_add=f'data/', **kwargs)
+	run_sal(vis[i], saved[i], vis_tf=False, ray_num=i, path=path, n_rays=200, saved_add=f'data/', **kwargs)
 	selr += 1
