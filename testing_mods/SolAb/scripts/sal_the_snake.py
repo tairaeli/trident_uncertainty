@@ -57,6 +57,8 @@ def sal(ds_file='/mnt/research/galaxies-REU/sims/FOGGIE/halo_002392/nref11c_nref
 	
 		if 'reading_func_args' in mult:
 			funky_args = mult['reading_func_args']
+        else:
+            funky_args = {}
 		
 		ray_list=[]
 		for i in range(n_rays):
