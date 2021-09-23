@@ -121,7 +121,7 @@ def run_sal(vis_name, saved_filename, vis_tf, ray_dir, ray_num, path, n_rays, vi
 		new_vis_name = vis_add+vis_name
 		vis_args = dict(name = f'{path}{new_vis_name}')
 		for r in range(n_rays):
-			visualize(ds_file='/mnt/research/galaxies-REU/sims/FOGGIE/halo_002392/nref11c_nref9f/RD0020', center_list=[0.53, 0.53, 0.53], ray_dir=ray_dir, ray_num=r, **vis_args)
+			visualize(ds_file='/mnt/research/galaxies-REU/sims/FOGGIE/halo_002392/nref11c_nref9f/RD0020/', center_list=[0.53, 0.53, 0.53], ray_dir=ray_dir, ray_num=r, **vis_args)
 
 	print('go look at your data!')
 

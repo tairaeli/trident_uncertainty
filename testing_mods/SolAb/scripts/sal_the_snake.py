@@ -8,7 +8,7 @@ import matplotlib as plt
 	
 #print("let's do some math, kids", flush=True)
 
-def sal(ds_file='/mnt/research/galaxies-REU/sims/FOGGIE/halo_002392/nref11c_nref9f/RD0020', ray_dir='rays', n_rays=4, ray_num=0, center_list=[0.53, 0.53, 0.53], ion_list = ['H I', 'C IV', 'O VI'], df_type = 'cat', **kwargs):
+def sal(ds_file='/mnt/research/galaxies-REU/sims/FOGGIE/halo_002392/nref11c_nref9f/RD0020/', ray_dir='rays', n_rays=4, ray_num=0, center_list=[0.53, 0.53, 0.53], ion_list = ['H I', 'C IV', 'O VI'], df_type = 'cat', **kwargs):
 	"""
 	Does all the dirty work. 
 	Uses yt to load nifty halo dataset. Uses a list of cool ions and SALSA to generate trident LightRay objects and extract absorbers from them. Returns a pandas dataset that contains info on absorbers from singular ray file, many ray files, or a catalog of all ray files with all absorbers. Catalog is the default. 
