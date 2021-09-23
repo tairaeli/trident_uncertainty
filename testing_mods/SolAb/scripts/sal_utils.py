@@ -3,7 +3,7 @@ import numpy as np
 
 print("let's do some math, kids")
 
-path = 'test_sal/abundance_test3/'
+path = '~/test_sal/test1'
 
 def visualize(ds_file, center_list, ray_dir, ray_num, ion='O VI', name='example_multiplot', num_dense_min = 1e-11, num_dense_max=1e-5, **vis_args):
 	
@@ -121,7 +121,7 @@ def run_sal(vis_name, saved_filename, vis_tf, ray_dir, ray_num, path, n_rays, vi
 		new_vis_name = vis_add+vis_name
 		vis_args = dict(name = f'{path}{new_vis_name}')
 		for r in range(n_rays):
-			visualize(ds_file='HiresIsolatedGalaxy/DD0044/DD0044', center_list=[0.53, 0.53, 0.53], ray_dir=ray_dir, ray_num=r, **vis_args)
+			visualize(ds_file='/mnt/research/galaxies-REU/sims/FOGGIE/halo_002392/nref11c_nref9f/RD0020', center_list=[0.53, 0.53, 0.53], ray_dir=ray_dir, ray_num=r, **vis_args)
 
 	print('go look at your data!')
 
@@ -134,7 +134,8 @@ list1 = ['Ne VIII', 'Mg X', 'O VI', 'S IV', 'Si III', 'C II', 'N I']
 
 #ions = np.array([[list1], [list2], [list3], [list4]])
 
-kwargs = dict(reading_func_args=dict(filename='~/git_env/research/oshea/trident_modifications/testing_mods/SolAb/abundances/cgm_abundances_2eb.txt', ratios=False), ray_dir=f'{path}rays', ion_list = list1)
+#kwargs = dict(reading_func_args=dict(filename='~/git_env/research/oshea/trident_modifications/testing_mods/SolAb/abundances/cgm_abundances_2eb.txt', ratios=False), ray_dir=f'{path}rays', ion_list = list1)
+kwargs = dict(ray_dir=f'{path}rays', ion_list = list1)
 
 vis, saved = generate_names(25)
 
@@ -142,6 +143,6 @@ selr = 0
 
 for i in range(25):
 	#kwargs['ion_list'] = list(ions[i][0])
-	kwargs['reading_func_args']['select_row'] = selr
+	#kwargs['reading_func_args']['select_row'] = selr
 	run_sal(vis[i], saved[i], vis_tf=False, ray_num=i, path=path, n_rays=200, saved_add=f'data/', **kwargs)
-	selr += 1
+	#selr += 1
