@@ -144,5 +144,5 @@ selr = 0
 for i in range(25):
 	#kwargs['ion_list'] = list(ions[i][0])
 	#kwargs['reading_func_args']['select_row'] = selr
-	run_sal(vis[i], saved[i], vis_tf=False, ray_num=i, path=path, n_rays=200, saved_add=f'data/', **kwargs)
+	run_sal(vis[i], saved[i], vis_tf=False, ray_num=i, path=path, n_rays=10, saved_add=f'data/', **kwargs)
 	#selr += 1
