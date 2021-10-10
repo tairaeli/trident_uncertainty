@@ -8,7 +8,7 @@ import matplotlib as plt
 	
 #print("let's do some math, kids", flush=True)
 
-def sal(ds_file='/mnt/research/galaxies-REU/sims/FOGGIE/halo_002392/nref11c_nref9f/RD0020/RD0020', ray_dir='rays', n_rays=4, ray_num=0, center_list=[0.53, 0.53, 0.53], ion_list = ['H I', 'C IV', 'O VI'], df_type = 'cat', **kwargs):
+def sal(ds_file='/mnt/research/galaxies-REU/sims/FOGGIE/halo_002392/nref11c_nref9f/RD0020/RD0020', ray_dir='rays', n_rays=4, center_list=[0.53, 0.53, 0.53], ion_list = ['H I', 'C IV', 'O VI'], df_type = 'cat', **kwargs):
 	"""
 	Does all the dirty work. 
 	Uses yt to load nifty halo dataset. Uses a list of cool ions and SALSA to generate trident LightRay objects and extract absorbers from them. Returns a pandas dataset that contains info on absorbers from singular ray file, many ray files, or a catalog of all ray files with all absorbers. Catalog is the default. 
@@ -57,15 +57,17 @@ def sal(ds_file='/mnt/research/galaxies-REU/sims/FOGGIE/halo_002392/nref11c_nref
 	
 		if 'reading_func_args' in mult:
 			funky_args = mult['reading_func_args']
-        else:
-            funky_args = {}
+		else:
+			funky_args = {}
 		
 		ray_list=[]
 		for i in range(n_rays):
-			if len(str(i)) == 1:
-				ray_list.append(f'{ray_directory}/ray00{i}.h5')
-			elif len(str(i)) == 2: 
-				ray_list.append(f'{ray_directory}/ray0{i}.h5')
+			if len(str(i)) != len(str(n_rays)):
+				n = len(str(n_rays)) - 1
+				
+				ray_list.append(f'{ray_directory}/ray{i: 0{n}d}.h5')
+			# elif len(str(i)) == 2: 
+			# 	ray_list.append(f'{ray_directory}/ray0{i}.h5')
 			else:
 				ray_list.append(f'{ray_directory}/ray{i}.h5')
 		
@@ -89,6 +91,9 @@ def sal(ds_file='/mnt/research/galaxies-REU/sims/FOGGIE/halo_002392/nref11c_nref
 	max_impact=15 #kpc
 	units_dict = dict(density='g/cm**3', metallicity='Zsun')
 
+	ray_num = f'{0:0{len(str(n_rays))}d}'
+	ray_file=f'{ray_dir}/ray{ray_num}.h5'
+
 	np.random.seed(69)
 
 	#get those rays babyyyy
@@ -98,19 +103,18 @@ def sal(ds_file='/mnt/research/galaxies-REU/sims/FOGGIE/halo_002392/nref11c_nref
 	#get absorbers -- either many, singular, or catalog returned
 	if df_type == 'multiple':
 	
-		if len(str(ray_num)) == 1:
-			new_ray_num = f'00{ray_num}'
-		elif len(str(ray_num)) == 2:
-			new_ray_num = f'0{ray_num}'
-		else:
-			new_ray_num=ray_num
+		# if len(str(ray_num)) != len(str(n_rays)):
+		# 	n = len(str(n_rays)) - 1
+		# 	new_ray_num = f'{ray_num: 0{n}d}'
+		# else:
+		# 	new_ray_num = ray_num
 			
-		ray_file=f'{ray_dir}/ray{new_ray_num}.h5'
+		# ray_file=f'{ray_dir}/ray{ray_num}.h5'
 		spicy = mult_salsa(ds=ds, ray_directory=ray_dir, ray_file=ray_file, units_dict=units_dict, field=other_fields, n_rays=n_rays, ion_list=ion_list, **mult)
 
 		return spicy
 	if df_type == 'single': 
-		ray_file=f'{ray_dir}/ray{ray_num}.h5'
+		# ray_file=f'{ray_dir}/ray{ray_num}.h5'
 		abs_ext=salsa.AbsorberExtractor(ds, ray_file, ion_name='H I', **reading_func_args)
 		spicy = abs_ext.get_spice_absorbers(other_fields, units_dict=units_dict)
 

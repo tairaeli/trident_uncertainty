@@ -1,11 +1,34 @@
 from sal_the_snake import *
 import numpy as np
+import pandas as pd
 
-print("let's do some math, kids")
+def strikie(text):
+    result = ''
+    for c in text:
+        result = result + c + '\u0336'
+    return result
 
-path = '/mnt/home/fuhrmane/test_sal/test1/'
 
-def visualize(ds_file, center_list, ray_dir, ray_num, ion='O VI', name='example_multiplot', num_dense_min = 1e-11, num_dense_max=1e-5, **vis_args):
+print(f"Let's do some {strikie('meth ')}math, kids")
+
+path = input("Enter path to directory where the data and rays will be stored: ")
+nrays = input("Enter the number of lightrays to be generated: ")
+nrays = int(nrays)
+print(f"TYPE NRAYS: {type(nrays)}")
+file_path = input("Enter the path to the abundance file ('None' if using solar abundances): ")
+if file_path == 'None':
+	nrows = nrays
+	litty = 'False'
+else:
+	df = pd.read_csv(file_path, delim_whitespace=True)
+	nrows = len(df)
+	litty = 'True'
+	
+print(f"NROWS: {nrows}")
+
+# path = '/mnt/home/fuhrmane/test_sal/test3/'
+
+def visualize(ds_file, center_list, ray_dir, n_rays, ray_num, ion='O VI', name='example_multiplot', num_dense_min = 1e-11, num_dense_max=1e-5, **vis_args):
 	
 	"""
 	Uses salsa.AbsorberPlotter() to generate multiplots of data produced by salsa.AbsorberExtractor()
@@ -27,13 +50,22 @@ def visualize(ds_file, center_list, ray_dir, ray_num, ion='O VI', name='example_
 	:vis_args: Mainly used by run_sal() to pass a multiplot name other than "example_multiplot.png". Not meant to be manually passed by user. 
 	"""
 	
-	if len(str(ray_num)) == 1:
-		new_ray_num = f'0{ray_num}'
-	else:
-		new_ray_num=ray_num
+	# if len(str(ray_num)) == 1:
+	# 	new_ray_num = f'0{ray_num}'
+	# else:
+	# 	new_ray_num=ray_num
 	
-	newname = f'{name}_ray{ray_num}.png'
+	# newname = f'{name}_ray{ray_num}.png'
+	
+	if len(str(ray_num)) != len(str(n_rays)):
+		n = len(str(n_rays)) - 1
+		new_ray_num = f'{ray_num: 0{n}d}'
 		
+	else: 
+		new_ray_num = ray_num
+
+	newname = f'{name}_ray{new_ray_num}.png'	
+	
 	ray = yt.load(f'{ray_dir}/ray{new_ray_num}.h5')
 	plotter = salsa.AbsorberPlotter(ds_file, ray, ion, center_gal=center_list, use_spectacle=False, plot_spectacle=False, plot_spice=True, num_dense_max=num_dense_max, num_dense_min=num_dense_min)
 
@@ -79,7 +111,7 @@ def generate_names(length, add='_'):
 		
 	return vis_name_list, saved_filename_list
 	
-def run_sal(vis_name, saved_filename, vis_tf, ray_dir, ray_num, path, n_rays, vis_add='_', saved_add = '_', **kwargs):
+def run_sal(vis_name, saved_filename, vis_tf, ray_dir, path, n_rays, vis_add='_', saved_add = '_', **kwargs):
 	
 	"""
 	Calls sal() and visualize() functions and saves data. 
@@ -111,7 +143,7 @@ def run_sal(vis_name, saved_filename, vis_tf, ray_dir, ray_num, path, n_rays, vi
 
 
 
-	catalog = sal(ray_dir=ray_dir, ray_num=ray_num, n_rays = n_rays, df_type='multiple', **kwargs)
+	catalog = sal(ray_dir=ray_dir, n_rays = n_rays, df_type='multiple', **kwargs)
 
 	new_saved_filename = saved_add+saved_filename
 	catalog.to_csv(f'{path}{new_saved_filename}.txt', sep = ' ')
@@ -128,21 +160,37 @@ def run_sal(vis_name, saved_filename, vis_tf, ray_dir, ray_num, path, n_rays, vi
 
 	
 list1 = ['Ne VIII', 'Mg X', 'O VI', 'S IV', 'Si III', 'C II', 'N I']	
+vis, saved = generate_names(nrows)
+
 #list2 = update_ionlist(list1, 5, 'Fe II')
 #list3 = update_ionlist(list2, 3, 'Si IV')
 #list4 = update_ionlist(list1, 3, 'Si IV')
 
 #ions = np.array([[list1], [list2], [list3], [list4]])
 
-#kwargs = dict(reading_func_args=dict(filename='~/git_env/research/oshea/trident_modifications/testing_mods/SolAb/abundances/cgm_abundances_2eb.txt', ratios=False), ray_dir=f'{path}rays', ion_list = list1)
-kwargs = dict(ray_dir=f'{path}rays', ion_list = list1)
+if litty == 'True':
+	kwargs = dict(reading_func_args = dict(filename = file_path, ratios=False), ray_dir=f'{path}rays', ion_list = list1)
+	selr = 0
+	for i in range(nrows):
+		#kwargs['ion_list'] = list(ions[i][0])
+		kwargs['reading_func_args']['select_row'] = selr
+		run_sal(vis[i], saved[i], vis_tf=False, path=path, n_rays=nrays, saved_add=f'data/', **kwargs)
+		selr += 1
 
-vis, saved = generate_names(25)
+else:
+	kwargs = dict(ray_dir=f'{path}rays', ion_list = list1)
+	for i in range(nrows):
+		#kwargs['ion_list'] = list(ions[i][0])
+		#kwargs['reading_func_args']['select_row'] = selr
+		run_sal(vis[i], saved[i], vis_tf=False, path=path, n_rays=nrays, saved_add=f'data/', **kwargs)
+		#selr += 1
 
-selr = 0
 
-for i in range(25):
-	#kwargs['ion_list'] = list(ions[i][0])
-	#kwargs['reading_func_args']['select_row'] = selr
-	run_sal(vis[i], saved[i], vis_tf=False, ray_num=i, path=path, n_rays=10, saved_add=f'data/', **kwargs)
-	#selr += 1
+
+# selr = 0
+# # nrays = 10
+# for i in range(nrows):
+# 	#kwargs['ion_list'] = list(ions[i][0])
+# 	#kwargs['reading_func_args']['select_row'] = selr
+# 	run_sal(vis[i], saved[i], vis_tf=False, ray_num=i, path=path, n_rays=nrays, saved_add=f'data/', **kwargs)
+# 	#selr += 1
