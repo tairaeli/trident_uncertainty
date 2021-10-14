@@ -1,6 +1,7 @@
 from sal_the_snake import *
 import numpy as np
 import pandas as pd
+import json
 
 def strikie(text):
     result = ''
@@ -11,20 +12,36 @@ def strikie(text):
 
 print(f"Let's do some {strikie('meth ')}math, kids")
 
-path = input("Enter path to directory where the data and rays will be stored: ")
-nrays = input("Enter the number of lightrays to be generated: ")
-nrays = int(nrays)
-print(f"TYPE NRAYS: {type(nrays)}")
-file_path = input("Enter the path to the abundance file ('None' if using solar abundances): ")
-if file_path == 'None':
-	nrows = nrays
-	litty = 'False'
+preliminary_dic_str = input("provide a dictionary (or type 'None' to enter manually) with the directory where the data and rays will be stored as 'path', the number of lightrays to be generated as 'nrays', the halo data to be uused as 'ds_file', and the abundances ('None' if using SolAb) to be used as 'file_path'.")
+if preliminary_dic_str == 'None':
+	path = input("Enter path to directory where the data and rays will be stored (must end in /): \n")
+	nrays = input("Enter the number of lightrays to be generated: \n")
+	nrays = int(nrays)
+	ds_file = input("Enter the path to the halo data: \n")
+	print(f"TYPE NRAYS: {type(nrays)}")
+	file_path = input("Enter the path to the abundance file ('None' if using solar abundances): \n")
+	if file_path == 'None':
+		nrows = nrays
+		litty = 'False'
+	else:
+		df = pd.read_csv(file_path, delim_whitespace=True)
+		nrows = len(df)
+		litty = 'True'
+		
+	print(f"NROWS: {nrows}")
 else:
-	df = pd.read_csv(file_path, delim_whitespace=True)
-	nrows = len(df)
-	litty = 'True'
-	
-print(f"NROWS: {nrows}")
+	preliminary_dic = json.loads(preliminary_dic_str)
+	path = preliminary_dic['path']
+	nrays = preliminary_dic['nrays']
+	ds_file = preliminary_dic['ds_file']
+	file_path = preliminary_dic['file_path']
+	if file_path == 'None':
+		nrows = nrays
+		litty = 'False'
+	else:
+		df = pd.read_csv(file_path, delim_whitespace=True)
+		nrows = len(df)
+		litty = 'True'
 
 # path = '/mnt/home/fuhrmane/test_sal/test3/'
 
@@ -143,7 +160,7 @@ def run_sal(vis_name, saved_filename, vis_tf, ray_dir, path, n_rays, vis_add='_'
 
 
 
-	catalog = sal(ray_dir=ray_dir, n_rays = n_rays, df_type='multiple', **kwargs)
+	catalog = sal(ds_file=ds_file, ray_dir=ray_dir, n_rays = n_rays, df_type='multiple', **kwargs)
 
 	new_saved_filename = saved_add+saved_filename
 	catalog.to_csv(f'{path}{new_saved_filename}.txt', sep = ' ')
@@ -153,7 +170,7 @@ def run_sal(vis_name, saved_filename, vis_tf, ray_dir, path, n_rays, vis_add='_'
 		new_vis_name = vis_add+vis_name
 		vis_args = dict(name = f'{path}{new_vis_name}')
 		for r in range(n_rays):
-			visualize(ds_file='/mnt/research/galaxies-REU/sims/FOGGIE/halo_002392/nref11c_nref9f/RD0020/RD0020', center_list=[0.53, 0.53, 0.53], ray_dir=ray_dir, ray_num=r, **vis_args)
+			visualize(ds_file=ds_file, center_list=[0.53, 0.53, 0.53], ray_dir=ray_dir, ray_num=r, **vis_args)
 
 	print('go look at your data!')
 
