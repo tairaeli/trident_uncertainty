@@ -15,6 +15,7 @@ print(f"Let's do some {strikie('meth ')}math, kids")
 preliminary_dic_str = input("provide a dictionary (or type 'None' to enter manually) with the directory where the data and rays will be stored as 'path', the number of lightrays to be generated as 'nrays', the halo data to be uused as 'ds_file', and the abundances ('None' if using SolAb) to be used as 'file_path'.")
 if preliminary_dic_str == 'None':
 	path = input("Enter path to directory where the data and rays will be stored (must end in /): \n")
+	print(f"PATH: {path}")
 	nrays = input("Enter the number of lightrays to be generated: \n")
 	nrays = int(nrays)
 	ds_file = input("Enter the path to the halo data: \n")
