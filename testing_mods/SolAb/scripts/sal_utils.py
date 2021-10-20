@@ -1,7 +1,8 @@
 from sal_the_snake import *
 import numpy as np
 import pandas as pd
-import json
+import argparse
+import sys
 
 def strikie(text):
     result = ''
@@ -12,37 +13,37 @@ def strikie(text):
 
 print(f"Let's do some {strikie('meth ')}math, kids")
 
-preliminary_dic_str = input("provide a dictionary (or type 'None' to enter manually) with the directory where the data and rays will be stored as 'path', the number of lightrays to be generated as 'nrays', the halo data to be uused as 'ds_file', and the abundances ('None' if using SolAb) to be used as 'file_path'.")
-if preliminary_dic_str == 'None':
-	path = input("Enter path to directory where the data and rays will be stored (must end in /): \n")
-	print(f"PATH: {path}")
-	nrays = input("Enter the number of lightrays to be generated: \n")
-	nrays = int(nrays)
-	ds_file = input("Enter the path to the halo data: \n")
-	print(f"TYPE NRAYS: {type(nrays)}")
-	file_path = input("Enter the path to the abundance file ('None' if using solar abundances): \n")
-	if file_path == 'None':
-		nrows = nrays
-		litty = 'False'
-	else:
-		df = pd.read_csv(file_path, delim_whitespace=True)
-		nrows = len(df)
-		litty = 'True'
-		
-	print(f"NROWS: {nrows}")
+parser = argparse.ArgumentParser(description = "Preliminary constants for SALSA pipeline.")
+parser.add_argument('-ds', nargs='?', action='store', required=True, dest='path', help='Path where rays and output data will be stored. Directory should contain three other directories called "data", "rays", and "visuals" for program to run smoothly.')
+parser.add_argument('--nrays', action='store', dest='nrays', default=4, type=int, help='The number of rays to be generated.')
+parser.add_argument('--abun', action='store', dest='file_path', default=argparse.SUPPRESS, help='Path to abundance file, if any. Defaults to solar abundances.')
+# ask claire about how to use nsc flag without interaction (want to specify just the halo)
+# parser.add_argument('-nsc', action='store_true', dest='nsc', help='nsc stands for "not super computer". Use this flag if you would like to manually type out the entire path to your halo data. Otherwise, the interpreter assumes you are using the HPCC FOGGIE simulation data.')
+parser.add_argument('--halo', action='store', dest='ds_file', default='/mnt/research/galaxies-REU/sims/FOGGIE/halo_002392/nref11c_nref9f/RD0020/RD0020', help='Path to halo data.')
+
+#args = parser.parse_args()
+args = parser.parse_args()
+dic_args = vars(args)
+
+# define some variables 
+path_list = ['/mnt/research/fuhrmane/test_sal/', args.path]
+path = ''.join(path_list)
+if 'file_path' in dic_args:
+	abundances = args.file_path
+	nrows = args.nrays
+	litty = 'False'
 else:
-	preliminary_dic = json.loads(preliminary_dic_str)
-	path = preliminary_dic['path']
-	nrays = preliminary_dic['nrays']
-	ds_file = preliminary_dic['ds_file']
-	file_path = preliminary_dic['file_path']
-	if file_path == 'None':
-		nrows = nrays
-		litty = 'False'
-	else:
-		df = pd.read_csv(file_path, delim_whitespace=True)
-		nrows = len(df)
-		litty = 'True'
+	abundances = 'No file given. Using solar abundances.'
+	df = pd.read_csv(args.file_path, delim_whitespace=True)
+	nrows = len(df)
+	litty = 'True'
+
+cont = input(f"RAY AND OUTPUT DATA WILL BE STORED HERE: {path}\nNUMBER OF RAYS TOO BE GENERATED: {args.nrays}\nUSING HALO DATA CONTAINED HERE: {args.ds_file}\nABUNDANCE DATA TO BE USED: {abundances}\n\ncontinue?[y/n] ")
+if cont == 'y':
+    print("yeet")
+
+else:
+    sys.exit("Pull your shit together, Becky.")
 
 # path = '/mnt/home/fuhrmane/test_sal/test3/'
 
@@ -187,12 +188,12 @@ vis, saved = generate_names(nrows)
 #ions = np.array([[list1], [list2], [list3], [list4]])
 
 if litty == 'True':
-	kwargs = dict(reading_func_args = dict(filename = file_path, ratios=False), ray_dir=f'{path}rays', ion_list = list1)
+	kwargs = dict(reading_func_args = dict(filename = args.file_path, ratios=False), ray_dir=f'{path}rays', ion_list = list1)
 	selr = 0
 	for i in range(nrows):
 		#kwargs['ion_list'] = list(ions[i][0])
 		kwargs['reading_func_args']['select_row'] = selr
-		run_sal(vis[i], saved[i], vis_tf=False, path=path, n_rays=nrays, saved_add=f'data/', **kwargs)
+		run_sal(vis[i], saved[i], vis_tf=False, path=path, n_rays=args.nrays, saved_add=f'data/', **kwargs)
 		selr += 1
 
 else:
@@ -200,7 +201,7 @@ else:
 	for i in range(nrows):
 		#kwargs['ion_list'] = list(ions[i][0])
 		#kwargs['reading_func_args']['select_row'] = selr
-		run_sal(vis[i], saved[i], vis_tf=False, path=path, n_rays=nrays, saved_add=f'data/', **kwargs)
+		run_sal(vis[i], saved[i], vis_tf=False, path=path, n_rays=args.nrays, saved_add=f'data/', **kwargs)
 		#selr += 1
 
 

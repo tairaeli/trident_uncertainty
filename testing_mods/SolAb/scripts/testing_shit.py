@@ -1,28 +1,29 @@
-import argparse
-import sys
-parser = argparse.ArgumentParser(description = "Preliminary constants for SALSA pipeline.")
-parser.add_argument('-ds', nargs='?', action='store', const='/mnt/research/fuhrmane/test_sal/', dest='path', help='Path where rays and output data will be stored. Directory should contain three other directories called "data", "rays", and "visuals" for program to run smoothly.')
-parser.add_argument('--nrays', action='store', dest='nrays', default=4, type=int, help='The number of rays to be generated.')
-#this is the one where it would be handy if you could interact further with the user append the middle of the string so just providinig a halo
-parser.add_argument('--halo', action='store', dest='ds_file', default='/mnt/research/galaxies-REU/sims/FOGGIE/halo_002392/nref11c_nref9f/RD0020/RD0020', help='Path to halo data.')
-#would also be handy if could choose between appending to existing directory path or just providing their own...same with data_storage
-parser.add_argument('--abun', action='store', dest='file_path', default=argparse.SUPPRESS, help='Path to abundance file, if any. Defaults to solar abundances.')
-#args = parser.parse_args()
-args = parser.parse_args()
-dic_args = vars(args)
+const = ['this/shit/andstuff/']
+const.append(input('give me a string\n'))
+bitch = ''.join(const)
+print(bitch)
 
-#confirm everything is correct with user before proceding
-if 'file_path' in dic_args:
-    abundances = args.file_path
+preliminary_dic_str = input("provide a dictionary (or type 'None' to enter manually) with the directory where the data and rays will be stored as 'path', the number of lightrays to be generated as 'nrays', the halo data to be uused as 'ds_file', and the abundances ('None' if using SolAb) to be used as 'file_path'.")
+if preliminary_dic_str == 'None':
+	path = input("Enter path to directory where the data and rays will be stored (must end in /): \n")
+	print(f"PATH: {path}")
+	nrays = input("Enter the number of lightrays to be generated: \n")
+	nrays = int(nrays)
+	ds_file = input("Enter the path to the halo data: \n")
+	print(f"TYPE NRAYS: {type(nrays)}")
+	file_path = input("Enter the path to the abundance file ('None' if using solar abundances): \n")
+	if file_path == 'None':
+		nrows = nrays
+		litty = 'False'
+	else:
+		df = pd.read_csv(file_path, delim_whitespace=True)
+		nrows = len(df)
+		litty = 'True'
+		
+	print(f"NROWS: {nrows}")
 else:
-    abundances = 'None. Using SolAb data.'
-
-cont = input(f"RAY AND OUTPUT DATA WILL BE STORED HERE: {args.path}\nNUMBER OF RAYS TOO BE GENERATED: {args.nrays}\nUSING HALO DATA CONTAINED HERE: {args.ds_file}\nABUNDANCE DATA TO BE USED: {abundances}\n\ncontinue?[y/n] ")
-if cont == 'y':
-    print("yeet")
-
-else:
-    sys.exit("Pull your shit together, Becky.")
-
-# test whether sys.exit() worked -- this shuoldn't print
-print('ya fucked up')
+	preliminary_dic = json.loads(preliminary_dic_str)
+	path = preliminary_dic['path']
+	nrays = preliminary_dic['nrays']
+	ds_file = preliminary_dic['ds_file']
+	file_path = preliminary_dic['file_path']
