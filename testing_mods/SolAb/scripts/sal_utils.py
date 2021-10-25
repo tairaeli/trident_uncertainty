@@ -130,7 +130,7 @@ def generate_names(length, add='_'):
 		
 	return vis_name_list, saved_filename_list
 	
-def run_sal(vis_name, saved_filename, vis_tf, ray_dir, path, n_rays, vis_add='_', saved_add = '_', **kwargs):
+def run_sal(vis_name, saved_filename, vis_tf, ray_dir, path, n_rays, ds_file, vis_add='_', saved_add = '_', **kwargs):
 	
 	"""
 	Calls sal() and visualize() functions and saves data. 
@@ -193,7 +193,7 @@ if litty == 'True':
 	for i in range(nrows):
 		#kwargs['ion_list'] = list(ions[i][0])
 		kwargs['reading_func_args']['select_row'] = selr
-		run_sal(vis[i], saved[i], vis_tf=False, path=path, n_rays=args.nrays, saved_add=f'data/', **kwargs)
+		run_sal(vis[i], saved[i], vis_tf=False, path=path, n_rays=args.nrays, ds_file=args.ds_file, saved_add=f'data/', **kwargs)
 		selr += 1
 
 else:
@@ -201,7 +201,7 @@ else:
 	for i in range(nrows):
 		#kwargs['ion_list'] = list(ions[i][0])
 		#kwargs['reading_func_args']['select_row'] = selr
-		run_sal(vis[i], saved[i], vis_tf=False, path=path, n_rays=args.nrays, saved_add=f'data/', **kwargs)
+		run_sal(vis[i], saved[i], vis_tf=False, path=path, n_rays=args.nrays, ds_file=args.ds_file, saved_add=f'data/', **kwargs)
 		#selr += 1
 
 
