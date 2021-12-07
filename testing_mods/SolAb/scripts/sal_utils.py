@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import argparse
 import sys
+import os
 
 def strikie(text):
     result = ''
@@ -14,7 +15,7 @@ def strikie(text):
 print(f"Let's do some {strikie('meth ')}math, kids")
 
 parser = argparse.ArgumentParser(description = "Preliminary constants for SALSA pipeline.")
-parser.add_argument('-ds', nargs='?', action='store', required=True, dest='path', help='Path where rays and output data will be stored. Directory should contain three other directories called "data", "rays", and "visuals" for program to run smoothly.')
+parser.add_argument('--ds', nargs='?', action='store', required=True, dest='path', help='Path where rays and output data will be stored. Directory should contain three other directories called "data", "rays", and "visuals" for program to run smoothly.')
 parser.add_argument('--nrays', action='store', dest='nrays', default=4, type=int, help='The number of rays to be generated.')
 parser.add_argument('--abun', action='store', dest='file_path', default=argparse.SUPPRESS, help='Path to abundance file, if any. Defaults to solar abundances.')
 # ask claire about how to use nsc flag without interaction (want to specify just the halo)
@@ -26,8 +27,9 @@ args = parser.parse_args()
 dic_args = vars(args)
 
 # define some variables 
-path_list = ['/mnt/research/fuhrmane/test_sal/', args.path]
-path = ''.join(path_list)
+# path_list = ['/mnt/home/fuhrmane/test_sal/', args.path]
+# path = ''.join(path_list)
+path = os.path.expandvars(os.path.expanduser(args.path))
 if 'file_path' in dic_args:
 	abundances = args.file_path
 	nrows = args.nrays
@@ -38,12 +40,12 @@ else:
 	nrows = len(df)
 	litty = 'True'
 
-cont = input(f"RAY AND OUTPUT DATA WILL BE STORED HERE: {path}\nNUMBER OF RAYS TOO BE GENERATED: {args.nrays}\nUSING HALO DATA CONTAINED HERE: {args.ds_file}\nABUNDANCE DATA TO BE USED: {abundances}\n\ncontinue?[y/n] ")
-if cont == 'y':
-    print("yeet")
+# cont = input(f"RAY AND OUTPUT DATA WILL BE STORED HERE: {path}\nNUMBER OF RAYS TOO BE GENERATED: {args.nrays}\nUSING HALO DATA CONTAINED HERE: {args.ds_file}\nABUNDANCE DATA TO BE USED: {abundances}\n\ncontinue?[y/n] ")
+# if cont == 'y':
+#     print("yeet")
 
-else:
-    sys.exit("Pull your shit together, Becky.")
+# else:
+#     sys.exit("Pull your shit together, Becky.")
 
 # path = '/mnt/home/fuhrmane/test_sal/test3/'
 
@@ -159,7 +161,6 @@ def run_sal(vis_name, saved_filename, vis_tf, ray_dir, path, n_rays, ds_file, vi
 	#	ion_list = None
 	#print(f"ION LIST: {kwargs['ion_list']}")
 	print(f'KWARGS: {kwargs}')
-
 
 
 	catalog = sal(ds_file=ds_file, ray_dir=ray_dir, n_rays = n_rays, df_type='multiple', **kwargs)
