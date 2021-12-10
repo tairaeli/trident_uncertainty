@@ -5,7 +5,7 @@ import salsa
 import numpy as np
 import pandas as pd
 import matplotlib as plt
-import pdb
+# import pdb
 	
 #print("let's do some math, kids", flush=True)
 
@@ -98,7 +98,7 @@ def sal(ds_file='/mnt/research/galaxies-REU/sims/FOGGIE/halo_002392/nref11c_nref
 	np.random.seed(69)
 
 	#get those rays babyyyy
-	print(f'ION LIST RIGHT BEFORE GENERATE_LRAYS: {ion_list}')
+	# print(f'ION LIST RIGHT BEFORE GENERATE_LRAYS: {ion_list}')
 	# breakpoint()
 	salsa.generate_lrays(ds, center_list, n_rays, max_impact, ion_list=ion_list, fields=other_fields, out_dir=ray_dir)
 

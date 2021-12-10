@@ -30,6 +30,11 @@ dic_args = vars(args)
 # path_list = ['/mnt/home/fuhrmane/test_sal/', args.path]
 # path = ''.join(path_list)
 path = os.path.expandvars(os.path.expanduser(args.path))
+if not os.path.exists(path):
+	os.makedirs(path)
+	os.mkdir(path+"/data")
+	os.mkdir(path+"/rays")
+	os.mkdir(path+"/visuals")
 if 'file_path' in dic_args:
 	abundances = args.file_path
 	nrows = args.nrays
