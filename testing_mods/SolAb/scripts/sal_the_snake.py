@@ -2,6 +2,7 @@
 
 import yt
 import salsa
+from salsa.utils import check_rays
 import numpy as np
 import pandas as pd
 import matplotlib as plt
@@ -9,7 +10,7 @@ import matplotlib as plt
 	
 #print("let's do some math, kids", flush=True)
 
-def sal(ds_file='/mnt/research/galaxies-REU/sims/FOGGIE/halo_002392/nref11c_nref9f/RD0020/RD0020', ray_dir='rays', n_rays=4, center_list=[0.53, 0.53, 0.53], ion_list = ['H I', 'C IV', 'O VI'], df_type = 'cat', **kwargs):
+def sal(ds_file='/mnt/research/galaxies-REU/sims/FOGGIE/halo_002392/nref11c_nref9f/RD0020/RD0020', ray_dir='rays', n_rays=4, center_list=[23876.757358761424, 23842.452527236022, 22995.717805638298], ion_list = ['H I', 'C IV', 'O VI'], df_type = 'cat', **kwargs):
 	"""
 	Does all the dirty work. 
 	Uses yt to load nifty halo dataset. Uses a list of cool ions and SALSA to generate trident LightRay objects and extract absorbers from them. Returns a pandas dataset that contains info on absorbers from singular ray file, many ray files, or a catalog of all ray files with all absorbers. Catalog is the default. 
@@ -87,6 +88,8 @@ def sal(ds_file='/mnt/research/galaxies-REU/sims/FOGGIE/halo_002392/nref11c_nref
 	
 	#preliminary shenanigans -- load halo data; define handy variables; plant the seed, as it were
 	ds = yt.load(ds_file)
+	
+	center = ds.arr(center_list, 'kpc')
 
 	other_fields=['density', 'temperature', 'metallicity']
 	max_impact=15 #kpc
@@ -100,7 +103,13 @@ def sal(ds_file='/mnt/research/galaxies-REU/sims/FOGGIE/halo_002392/nref11c_nref
 	#get those rays babyyyy
 	# print(f'ION LIST RIGHT BEFORE GENERATE_LRAYS: {ion_list}')
 	# breakpoint()
-	salsa.generate_lrays(ds, center_list, n_rays, max_impact, ion_list=ion_list, fields=other_fields, out_dir=ray_dir)
+
+	# Check that rays already exist, and that the have the additional fields contained
+	# in the third argument (empty for now; might become a user parameter)
+	check = check_rays(ray_dir, n_rays, [])
+	if not check:
+		print("WARNING: rays not found. Generating new ones.")
+		salsa.generate_lrays(ds, center.to('code_length'), n_rays, max_impact, ion_list=ion_list, fields=other_fields, out_dir=ray_dir)
 
 	#get absorbers -- either many, singular, or catalog returned
 	if df_type == 'multiple':
