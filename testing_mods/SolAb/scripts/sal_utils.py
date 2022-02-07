@@ -37,12 +37,12 @@ if not os.path.exists(path):
 	os.mkdir(path+"/visuals")
 if 'file_path' in dic_args:
 	abundances = args.file_path
-	nrows = args.nrays
+	df = pd.read_csv(args.file_path, delim_whitespace=True)
+	nrows = len(df)
 	litty = 'False'
 else:
 	abundances = 'No file given. Using solar abundances.'
-	df = pd.read_csv(args.file_path, delim_whitespace=True)
-	nrows = len(df)
+	nrows = 0
 	litty = 'True'
 
 # cont = input(f"RAY AND OUTPUT DATA WILL BE STORED HERE: {path}\nNUMBER OF RAYS TOO BE GENERATED: {args.nrays}\nUSING HALO DATA CONTAINED HERE: {args.ds_file}\nABUNDANCE DATA TO BE USED: {abundances}\n\ncontinue?[y/n] ")
@@ -54,7 +54,8 @@ else:
 
 # path = '/mnt/home/fuhrmane/test_sal/test3/'
 
-def visualize(ds_file, center_list, ray_dir, n_rays, ray_num, ion='O VI', name='example_multiplot', num_dense_min = 1e-11, num_dense_max=1e-5, **vis_args):
+def visualize(ds_file, center_list, ray_dir, n_rays, ray_num, ion='O VI', name='example_multiplot', 
+			  num_dense_min = 1e-11, num_dense_max=1e-5, **vis_args):
 	
 	"""
 	Uses salsa.AbsorberPlotter() to generate multiplots of data produced by salsa.AbsorberExtractor()
@@ -118,7 +119,7 @@ def update_ionlist(list_name, change_index, ion):
 
 
 
-def generate_names(length, add='_'):
+def generate_names(length, add=''):
 
 	"""
 	Returns a list of generic names for multiplots anda list of generic names for raw data. These lists are typically passed to run_sal()
@@ -132,8 +133,8 @@ def generate_names(length, add='_'):
 	saved_filename_list = []
 	
 	for i in range(length):
-		vis_name_list.append(f'multiplot_row{i}{add}')
-		saved_filename_list.append(f'data_row{i}{add}')
+		vis_name_list.append(f'multiplot_row_{i}{add}')
+		saved_filename_list.append(f'data_row_{i}{add}')
 		
 	return vis_name_list, saved_filename_list
 	
@@ -172,7 +173,7 @@ def run_sal(vis_name, saved_filename, vis_tf, ray_dir, path, n_rays, ds_file, vi
 
 	new_saved_filename = saved_add+saved_filename
 	catalog.to_csv(f'{path}{new_saved_filename}.txt', sep = ' ')
-	catalog.to_csv(f'{path}{new_saved_filename}.csv', sep = ' ')
+	catalog.to_csv(f'{path}{new_saved_filename}.csv', sep = ' ') # CK: only need one?
 
 	if vis_tf == True:
 		new_vis_name = vis_add+vis_name
