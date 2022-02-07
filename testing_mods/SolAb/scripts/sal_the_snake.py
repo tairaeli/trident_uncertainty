@@ -7,10 +7,15 @@ import numpy as np
 import pandas as pd
 import matplotlib as plt
 # import pdb
+from mpi4py import MPI
+
+comm = MPI.COMM_WORLD
 	
 #print("let's do some math, kids", flush=True)
 
-def sal(ds_file='/mnt/research/galaxies-REU/sims/FOGGIE/halo_002392/nref11c_nref9f/RD0020/RD0020', ray_dir='rays', n_rays=4, center_list=[23876.757358761424, 23842.452527236022, 22995.717805638298], ion_list = ['H I', 'C IV', 'O VI'], df_type = 'cat', **kwargs):
+def sal(ds_file='/mnt/research/galaxies-REU/sims/FOGGIE/halo_002392/nref11c_nref9f/RD0020/RD0020', ray_dir='rays', 
+		n_rays=4, center_list=[23876.757358761424, 23842.452527236022, 22995.717805638298], 
+		ion_list = ['H I', 'C IV', 'O VI'], df_type = 'cat', **kwargs):
 	"""
 	Does all the dirty work. 
 	Uses yt to load nifty halo dataset. Uses a list of cool ions and SALSA to generate trident LightRay objects and extract absorbers from them. Returns a pandas dataset that contains info on absorbers from singular ray file, many ray files, or a catalog of all ray files with all absorbers. Catalog is the default. 
@@ -62,6 +67,7 @@ def sal(ds_file='/mnt/research/galaxies-REU/sims/FOGGIE/halo_002392/nref11c_nref
 		else:
 			funky_args = {}
 		
+		# CK: Consider collect_files from salsa.utils
 		ray_list=[]
 		for i in range(n_rays):
 			if len(str(i)) != len(str(n_rays)):
@@ -75,11 +81,16 @@ def sal(ds_file='/mnt/research/galaxies-REU/sims/FOGGIE/halo_002392/nref11c_nref
 		
 		print(f"RAY LIST: {ray_list}")
 		
+		# CK: Taking a hint from SALSA on how to divvy up the ray list across procs
+		ray_arr = np.array(ray_list)
+		ray_files_split = np.array_split(ray_arr, comm.size)
+		my_rays = ray_files_split[ comm.rank ]
+
 		return_df = pd.DataFrame()
 		
 		for i in ion_list:
 			abs_ext_civ = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, abundance_table_args = funky_args)
-			df_civ = salsa.get_absorbers(abs_ext_civ, ray_list, method='spice', fields=other_fields, units_dict=units_dict)
+			df_civ = salsa.get_absorbers(abs_ext_civ, my_rays, method='spice', fields=other_fields, units_dict=units_dict)
 			return_df = return_df.append(df_civ)
 		
 		return return_df
@@ -104,7 +115,7 @@ def sal(ds_file='/mnt/research/galaxies-REU/sims/FOGGIE/halo_002392/nref11c_nref
 	# print(f'ION LIST RIGHT BEFORE GENERATE_LRAYS: {ion_list}')
 	# breakpoint()
 
-	# Check that rays already exist, and that the have the additional fields contained
+	# CK: Check that rays already exist, and that the have the additional fields contained
 	# in the third argument (empty for now; might become a user parameter)
 	check = check_rays(ray_dir, n_rays, [])
 	if not check:
