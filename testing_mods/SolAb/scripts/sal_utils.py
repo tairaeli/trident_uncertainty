@@ -54,68 +54,68 @@ else:
 
 # path = '/mnt/home/fuhrmane/test_sal/test3/'
 
-def visualize(ds_file, center_list, ray_dir, n_rays, ray_num, ion='O VI', name='example_multiplot', 
-			  num_dense_min = 1e-11, num_dense_max=1e-5, **vis_args):
+# def visualize(ds_file, center_list, ray_dir, n_rays, ray_num, ion='O VI', name='example_multiplot', 
+# 			  num_dense_min = 1e-11, num_dense_max=1e-5, **vis_args):
 	
-	"""
-	Uses salsa.AbsorberPlotter() to generate multiplots of data produced by salsa.AbsorberExtractor()
+# 	"""
+# 	Uses salsa.AbsorberPlotter() to generate multiplots of data produced by salsa.AbsorberExtractor()
 	
-	:ds_file: Halo dataset used in generating data
+# 	:ds_file: Halo dataset used in generating data
 	
-	:center_list: x, y, and z coordinates of center of galaxy on plot
+# 	:center_list: x, y, and z coordinates of center of galaxy on plot
 	
-	:ray_dir: Directory where ray.h5 files are stored (same one that's passed to sal())
+# 	:ray_dir: Directory where ray.h5 files are stored (same one that's passed to sal())
 	
-	:ray_num: Same as ray_num from run_sal(). Here, it is used to index ray.h5 file for information
+# 	:ray_num: Same as ray_num from run_sal(). Here, it is used to index ray.h5 file for information
 	
-	:name: String used to name multiplot file
+# 	:name: String used to name multiplot file
 	
-	:num_dense_min: To be passed to salsa.AbsorberPlotter(). Default 1e-11
+# 	:num_dense_min: To be passed to salsa.AbsorberPlotter(). Default 1e-11
 	
-	:num_dense_max: To be passed to salsa.AbsorberPlotter(). Default 1e-5
+# 	:num_dense_max: To be passed to salsa.AbsorberPlotter(). Default 1e-5
 	
-	:vis_args: Mainly used by run_sal() to pass a multiplot name other than "example_multiplot.png". Not meant to be manually passed by user. 
-	"""
+# 	:vis_args: Mainly used by run_sal() to pass a multiplot name other than "example_multiplot.png". Not meant to be manually passed by user. 
+# 	"""
 	
-	# if len(str(ray_num)) == 1:
-	# 	new_ray_num = f'0{ray_num}'
-	# else:
-	# 	new_ray_num=ray_num
+# 	# if len(str(ray_num)) == 1:
+# 	# 	new_ray_num = f'0{ray_num}'
+# 	# else:
+# 	# 	new_ray_num=ray_num
 	
-	# newname = f'{name}_ray{ray_num}.png'
+# 	# newname = f'{name}_ray{ray_num}.png'
 	
-	if len(str(ray_num)) != len(str(n_rays)):
-		n = len(str(n_rays)) - 1
-		new_ray_num = f'{ray_num: 0{n}d}'
+# 	if len(str(ray_num)) != len(str(n_rays)):
+# 		n = len(str(n_rays)) - 1
+# 		new_ray_num = f'{ray_num: 0{n}d}'
 		
-	else: 
-		new_ray_num = ray_num
+# 	else: 
+# 		new_ray_num = ray_num
 
-	newname = f'{name}_ray{new_ray_num}.png'	
+# 	newname = f'{name}_ray{new_ray_num}.png'	
 	
-	ray = yt.load(f'{ray_dir}/ray{new_ray_num}.h5')
-	plotter = salsa.AbsorberPlotter(ds_file, ray, ion, center_gal=center_list, use_spectacle=False, plot_spectacle=False, plot_spice=True, num_dense_max=num_dense_max, num_dense_min=num_dense_min)
+# 	ray = yt.load(f'{ray_dir}/ray{new_ray_num}.h5')
+# 	plotter = salsa.AbsorberPlotter(ds_file, ray, ion, center_gal=center_list, use_spectacle=False, plot_spectacle=False, plot_spice=True, num_dense_max=num_dense_max, num_dense_min=num_dense_min)
 
-	fig, axes = plotter.create_multi_plot(outfname=newname)
+# 	fig, axes = plotter.create_multi_plot(outfname=newname)
 
 
 
-def update_ionlist(list_name, change_index, ion):
+# def update_ionlist(list_name, change_index, ion):
 	
-	"""
-	Used to more efficiently generate lists of ions to be passed to run_sal() (later passed to sal())
+# 	"""
+# 	Used to more efficiently generate lists of ions to be passed to run_sal() (later passed to sal())
 	
-	:list_name: Original list to be updated
+# 	:list_name: Original list to be updated
 	
-	:change_index: Integer -- index of ion to be replaced
+# 	:change_index: Integer -- index of ion to be replaced
 	
-	:ion: Ion that will replace the old ion
-	"""
+# 	:ion: Ion that will replace the old ion
+# 	"""
 	
-	new_list = list_name.copy()
-	new_list[change_index] = ion
+# 	new_list = list_name.copy()
+# 	new_list[change_index] = ion
 	
-	return new_list
+# 	return new_list
 
 
 
@@ -129,16 +129,16 @@ def generate_names(length, add=''):
 	:add: Additional relevant information for keeping track of multiplots and data later on. Default add=''
 	"""
 	
-	vis_name_list = []
+	# vis_name_list = []
 	saved_filename_list = []
 	
 	for i in range(length):
-		vis_name_list.append(f'multiplot_row_{i}{add}')
+		# vis_name_list.append(f'multiplot_row_{i}{add}')
 		saved_filename_list.append(f'data_row_{i}{add}')
 		
-	return vis_name_list, saved_filename_list
+	return saved_filename_list
 	
-def run_sal(vis_name, saved_filename, vis_tf, ray_dir, path, n_rays, ds_file, vis_add='_', saved_add = '_', **kwargs):
+def run_sal(saved_filename, ray_dir, path, n_rays, ds_file, saved_add = '_', **kwargs):
 	
 	"""
 	Calls sal() and visualize() functions and saves data. 
@@ -175,18 +175,18 @@ def run_sal(vis_name, saved_filename, vis_tf, ray_dir, path, n_rays, ds_file, vi
 	catalog.to_csv(f'{path}{new_saved_filename}.txt', sep = ' ')
 	catalog.to_csv(f'{path}{new_saved_filename}.csv', sep = ' ') # CK: only need one?
 
-	if vis_tf == True:
-		new_vis_name = vis_add+vis_name
-		vis_args = dict(name = f'{path}{new_vis_name}')
-		for r in range(n_rays):
-			visualize(ds_file=ds_file, center_list=[0.53, 0.53, 0.53], ray_dir=ray_dir, ray_num=r, **vis_args)
+	# if vis_tf == True:
+	# 	new_vis_name = vis_add+vis_name
+	# 	vis_args = dict(name = f'{path}{new_vis_name}')
+	# 	for r in range(n_rays):
+	# 		visualize(ds_file=ds_file, center_list=[0.53, 0.53, 0.53], ray_dir=ray_dir, ray_num=r, **vis_args)
 
 	print('go look at your data!')
 
 
 	
 list1 = ['Ne VIII', 'Mg X', 'O VI', 'S IV', 'Si III', 'C II', 'N I']	
-vis, saved = generate_names(nrows)
+saved = generate_names(nrows)
 
 #list2 = update_ionlist(list1, 5, 'Fe II')
 #list3 = update_ionlist(list2, 3, 'Si IV')
@@ -206,17 +206,4 @@ if litty == 'True':
 else:
 	kwargs = dict(ray_dir=f'{path}rays', ion_list = list1)
 	for i in range(nrows):
-		#kwargs['ion_list'] = list(ions[i][0])
-		#kwargs['reading_func_args']['select_row'] = selr
 		run_sal(vis[i], saved[i], vis_tf=False, path=path, n_rays=args.nrays, ds_file=args.ds_file, saved_add=f'data/', **kwargs)
-		#selr += 1
-
-
-
-# selr = 0
-# # nrays = 10
-# for i in range(nrows):
-# 	#kwargs['ion_list'] = list(ions[i][0])
-# 	#kwargs['reading_func_args']['select_row'] = selr
-# 	run_sal(vis[i], saved[i], vis_tf=False, ray_num=i, path=path, n_rays=nrays, saved_add=f'data/', **kwargs)
-# 	#selr += 1

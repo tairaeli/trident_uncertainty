@@ -1,1 +1,1 @@
-python3.8 sal_utils.py --ds ~/test4/ --abun /mnt/home/fuhrmane/abundances/new_cgm_abundances.txt
+python sal_utils.py --ds ~/test4/ --abun /mnt/home/fuhrmane/abundances/new_cgm_abundances.txt

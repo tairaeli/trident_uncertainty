@@ -7,9 +7,9 @@ import numpy as np
 import pandas as pd
 import matplotlib as plt
 # import pdb
-from mpi4py import MPI
+# from mpi4py import MPI
 
-comm = MPI.COMM_WORLD
+# comm = MPI.COMM_WORLD
 	
 #print("let's do some math, kids", flush=True)
 
@@ -36,8 +36,6 @@ def sal(ds_file='/mnt/research/galaxies-REU/sims/FOGGIE/halo_002392/nref11c_nref
 
 	:kwargs: Contains necessary information for returning information oabsorbers frm many ray files (specify as a dictionary named "mult" in kwargs, great place to add an abundance table to be 		 passed to salsa.AbsorberExtractor(), etc.
 	"""
-	print(f"DATAFRAME TYPE: {df_type}")
-	print(f'KWARGS: {kwargs}')
 	
 	if 'mult' in kwargs:
 		mult = kwargs['mult']
@@ -52,13 +50,6 @@ def sal(ds_file='/mnt/research/galaxies-REU/sims/FOGGIE/halo_002392/nref11c_nref
 		print('reading_func_args not given')
 		funky_args = {}
 	
-	#if ion_list == None:
-		#ion_list = ['H I', 'C IV', 'O VI']
-	if 'ion_list' in kwargs:
-		print(kwargs['ion_list'])
-	else:
-		print("ION LIST DIDN'T MAKE IT TO SAL THE SNAKE")
-		print(f"ION LIST: {ion_list}") 
 	
 	def mult_salsa(ds, ray_directory, ray_file, units_dict, field, n_rays, ion_list, **mult):
 	
@@ -89,7 +80,7 @@ def sal(ds_file='/mnt/research/galaxies-REU/sims/FOGGIE/halo_002392/nref11c_nref
 		return_df = pd.DataFrame()
 		
 		for i in ion_list:
-			abs_ext_civ = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, abundance_table_args = funky_args)
+			abs_ext_civ = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, abundance_table_args = funky_args, recalculate=True)
 			df_civ = salsa.get_absorbers(abs_ext_civ, my_rays, method='spice', fields=other_fields, units_dict=units_dict)
 			return_df = return_df.append(df_civ)
 		
@@ -112,8 +103,6 @@ def sal(ds_file='/mnt/research/galaxies-REU/sims/FOGGIE/halo_002392/nref11c_nref
 	np.random.seed(69)
 
 	#get those rays babyyyy
-	# print(f'ION LIST RIGHT BEFORE GENERATE_LRAYS: {ion_list}')
-	# breakpoint()
 
 	# CK: Check that rays already exist, and that the have the additional fields contained
 	# in the third argument (empty for now; might become a user parameter)
@@ -137,7 +126,7 @@ def sal(ds_file='/mnt/research/galaxies-REU/sims/FOGGIE/halo_002392/nref11c_nref
 		return spicy
 	if df_type == 'single': 
 		# ray_file=f'{ray_dir}/ray{ray_num}.h5'
-		abs_ext=salsa.AbsorberExtractor(ds, ray_file, ion_name='H I', **reading_func_args)
+		abs_ext=salsa.AbsorberExtractor(ds, ray_file, ion_name='H I', recalculate=True, **reading_func_args)
 		spicy = abs_ext.get_spice_absorbers(other_fields, units_dict=units_dict)
 
 		return spicy
