@@ -1,4 +1,5 @@
 # from sal_the_snake import *
+import salsa
 from salsa.utils import check_rays
 import numpy as np
 import pandas as pd
@@ -7,9 +8,11 @@ import sys
 import os
 import matplotlib as plt
 import yt  
+from mpi4py import MPI
+
+comm = MPI.COMM_WORLD
 
 
-# FROM SAL_UTILS
 parser = argparse.ArgumentParser(description = "Preliminary constants for SALSA pipeline.")
 parser.add_argument('--ds', nargs='?', action='store', required=True, dest='path', help='Path where rays and output data will be stored. Directory should contain three other directories called "data", "rays", and "visuals" for program to run smoothly.')
 parser.add_argument('--nrays', action='store', dest='nrays', default=4, type=int, help='The number of rays to be generated.')
@@ -24,14 +27,13 @@ if not os.path.exists(path):
 	os.makedirs(path)
 	os.mkdir(path+"/data")
 	os.mkdir(path+"/rays")
-	# os.mkdir(path+"/visuals")
 if 'file_path' in dic_args:
-	abundances = args.file_path
-	df = pd.read_csv(args.file_path, delim_whitespace=True)
-	nrows = len(df)
+	# abun = args.file_path
+	abun = pd.read_csv(args.file_path, delim_whitespace=True)
+	nrows = len(abun)
 	litty = 'False'
 else:
-	abundances = 'No file given. Using solar abundances.'
+	# abun = 'No file given. Using solar abundances.'
 	nrows = 0
 	litty = 'True'
 
@@ -48,26 +50,23 @@ def generate_names(length, add=''):
 	saved_filename_list = []
 	
 	for i in range(length):
-		saved_filename_list.append(f'data_row_{i}{add}')
+		saved_filename_list.append(f'data_AbundanceRow{i}{add}')
 		
 	return saved_filename_list
 
 saved = generate_names(nrows)
 
-
-
-# FROM SAL_THE_SNAKE()
 #preliminary shenanigans -- load halo data; define handy variables; plant the seed, as it were
-ds = yt.load(ds_file)
-
-center = ds.arr(center_list, 'kpc')
-
+ds = yt.load(args.ds_file)
+center = ds.arr([23876.757358761424, 23842.452527236022, 22995.717805638298], 'kpc')
 other_fields=['density', 'temperature', 'metallicity']
 max_impact=15 #kpc
 units_dict = dict(density='g/cm**3', metallicity='Zsun')
+ion_list = ['H I']
 
-ray_num = f'{0:0{len(str(n_rays))}d}'
-ray_file=f'{ray_dir}/ray{ray_num}.h5'
+# Need this? YES FOR ABSORBER EXTRACTOR
+ray_num = f'{0:0{len(str(args.n_rays))}d}'
+ray_file=f'{path}/ray{ray_num}.h5'
 
 np.random.seed(69)
 
@@ -75,42 +74,38 @@ np.random.seed(69)
 
 # CK: Check that rays already exist, and that the have the additional fields contained
 # in the third argument (empty for now; might become a user parameter)
-check = check_rays(ray_dir, n_rays, [])
+check = check_rays(path, args.n_rays, [])
 if not check:
     print("WARNING: rays not found. Generating new ones.")
-    salsa.generate_lrays(ds, center.to('code_length'), n_rays, max_impact, ion_list=ion_list, fields=other_fields, out_dir=ray_dir)}}
-
-# spicy = mult_salsa(ds=ds, ray_directory=ray_dir, ray_file=ray_file, units_dict=units_dict, field=other_fields, n_rays=n_rays, ion_list=ion_list, **mult)
-
-
-
-# if 'reading_func_args' in mult:
-#     funky_args = mult['reading_func_args']
-# else:
-#     funky_args = {}
+    salsa.generate_lrays(ds, center.to('code_length'), args.n_rays, max_impact, ion_list=ion_list, fields=other_fields, out_dir=path)
 
 # CK: Consider collect_files from salsa.utils
 ray_list=[]
-for i in range(n_rays):
-    if len(str(i)) != len(str(n_rays)):
-        n = len(str(n_rays)) - 1
+for i in range(args.n_rays):
+    if len(str(i)) != len(str(args.n_rays)):
+        n = len(str(args.n_rays)) - 1
         
-        ray_list.append(f'{ray_directory}/ray{i: 0{n}d}.h5')
-    # elif len(str(i)) == 2: 
-    # 	ray_list.append(f'{ray_directory}/ray0{i}.h5')
+        ray_list.append(f'{path}/ray{i: 0{n}d}.h5')
     else:
-        ray_list.append(f'{ray_directory}/ray{i}.h5')
-
-print(f"RAY LIST: {ray_list}")
+        ray_list.append(f'{path}/ray{i}.h5')
 
 # CK: Taking a hint from SALSA on how to divvy up the ray list across procs
 ray_arr = np.array(ray_list)
 ray_files_split = np.array_split(ray_arr, comm.size)
 my_rays = ray_files_split[ comm.rank ]
 
-return_df = pd.DataFrame()
 
-for i in ion_list:
-    abs_ext_civ = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, abundance_table_args = funky_args, recalculate=True)
-    df_civ = salsa.get_absorbers(abs_ext_civ, my_rays, method='spice', fields=other_fields, units_dict=units_dict)
-    return_df = return_df.append(df_civ)
+if 'litty' == False:
+	for row_num in range(nrows):
+		abundances = abun.iloc[row_num].to_dict()
+		# return_df = pd.DataFrame()
+		abs_ext_civ = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, abundance_table_args = abundances, recalculate=True)
+		df_civ = salsa.get_absorbers(abs_ext_civ, my_rays, method='spice', fields=other_fields, units_dict=units_dict)
+		df_civ.to_csv(f'{args.path}/data/{saved[row_num]}.txt', sep = ' ')
+		# return_df = return_df.append(df_civ)
+
+else:
+	# are abundance table args a dictionary or can it be None?
+	abs_ext_civ = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, abundance_table_args = abundances, recalculate=True)
+	df_civ = salsa.get_absorbers(abs_ext_civ, my_rays, method='spice', fields=other_fields, units_dict=units_dict)
+	df_civ.to_csv(f'{args.path}/data/data_SolAb.txt', sep = ' ')

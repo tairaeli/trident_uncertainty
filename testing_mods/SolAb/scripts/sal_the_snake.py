@@ -7,9 +7,9 @@ import numpy as np
 import pandas as pd
 import matplotlib as plt
 # import pdb
-# from mpi4py import MPI
+from mpi4py import MPI
 
-# comm = MPI.COMM_WORLD
+comm = MPI.COMM_WORLD
 	
 #print("let's do some math, kids", flush=True)
 
