@@ -6,12 +6,13 @@ import pandas as pd
 import argparse
 import sys
 import os
-import matplotlib as plt
+import matplotlib.pyplot as plt
 import yt  
 from mpi4py import MPI
 
 comm = MPI.COMM_WORLD
 
+print(f"Let's do some math, kids")
 
 parser = argparse.ArgumentParser(description = "Preliminary constants for SALSA pipeline.")
 parser.add_argument('--ds', nargs='?', action='store', required=True, dest='path', help='Path where rays and output data will be stored. Directory should contain three other directories called "data", "rays", and "visuals" for program to run smoothly.')
@@ -31,11 +32,11 @@ if 'file_path' in dic_args:
 	# abun = args.file_path
 	abun = pd.read_csv(args.file_path, delim_whitespace=True)
 	nrows = len(abun)
-	litty = 'False'
+	use_SolAb = 'True'
 else:
 	# abun = 'No file given. Using solar abundances.'
 	nrows = 0
-	litty = 'True'
+	use_SolAb = 'False'
 
 def generate_names(length, add=''):
 
@@ -62,28 +63,27 @@ center = ds.arr([23876.757358761424, 23842.452527236022, 22995.717805638298], 'k
 other_fields=['density', 'temperature', 'metallicity']
 max_impact=15 #kpc
 units_dict = dict(density='g/cm**3', metallicity='Zsun')
-ion_list = ['H I']
+ion_list = ['C II', 'C IV', 'O VI']
 
-# Need this? YES FOR ABSORBER EXTRACTOR
-ray_num = f'{0:0{len(str(args.n_rays))}d}'
+ray_num = f'{0:0{len(str(args.nrays))}d}'
 ray_file=f'{path}/ray{ray_num}.h5'
 
-np.random.seed(69)
+np.random.seed(11)
 
 #get those rays babyyyy
 
 # CK: Check that rays already exist, and that the have the additional fields contained
 # in the third argument (empty for now; might become a user parameter)
-check = check_rays(path, args.n_rays, [])
+check = check_rays(path, args.nrays, [])
 if not check:
     print("WARNING: rays not found. Generating new ones.")
-    salsa.generate_lrays(ds, center.to('code_length'), args.n_rays, max_impact, ion_list=ion_list, fields=other_fields, out_dir=path)
+    salsa.generate_lrays(ds, center.to('code_length'), args.nrays, max_impact, ion_list=ion_list, fields=other_fields, out_dir=path)
 
 # CK: Consider collect_files from salsa.utils
 ray_list=[]
-for i in range(args.n_rays):
-    if len(str(i)) != len(str(args.n_rays)):
-        n = len(str(args.n_rays)) - 1
+for i in range(args.nrays):
+    if len(str(i)) != len(str(args.nrays)):
+        n = len(str(args.nrays)) - 1
         
         ray_list.append(f'{path}/ray{i: 0{n}d}.h5')
     else:
@@ -95,17 +95,17 @@ ray_files_split = np.array_split(ray_arr, comm.size)
 my_rays = ray_files_split[ comm.rank ]
 
 
-if 'litty' == False:
+if 'use_SolAb' == True:
 	for row_num in range(nrows):
 		abundances = abun.iloc[row_num].to_dict()
 		# return_df = pd.DataFrame()
-		abs_ext_civ = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, abundance_table_args = abundances, recalculate=True)
+		abs_ext_civ = salsa.AbsorberExtractor(ds, ray_file, ion_name = "O VI", abundance_table = abundances, calc_missing=True)
 		df_civ = salsa.get_absorbers(abs_ext_civ, my_rays, method='spice', fields=other_fields, units_dict=units_dict)
 		df_civ.to_csv(f'{args.path}/data/{saved[row_num]}.txt', sep = ' ')
 		# return_df = return_df.append(df_civ)
 
 else:
 	# are abundance table args a dictionary or can it be None?
-	abs_ext_civ = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, abundance_table_args = abundances, recalculate=True)
+	abs_ext_civ = salsa.AbsorberExtractor(ds, ray_file, ion_name = "O VI", abundance_table = None, calc_missing=True)
 	df_civ = salsa.get_absorbers(abs_ext_civ, my_rays, method='spice', fields=other_fields, units_dict=units_dict)
 	df_civ.to_csv(f'{args.path}/data/data_SolAb.txt', sep = ' ')

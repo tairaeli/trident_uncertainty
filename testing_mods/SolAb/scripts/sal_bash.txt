@@ -1,1 +1,1 @@
-python sal_utils.py --ds ~/test4/ --abun /mnt/home/fuhrmane/abundances/new_cgm_abundances.txt
+python sal_the_snek.py --ds ~/test6/ --nrays 4 --abun /mnt/home/fuhrmane/abundances/new_cgm_abundances.txt
