@@ -13,7 +13,7 @@ A Pipeline designed to generate SALSA absorber catalogs from Trident for the pur
 * --abun: Path to abundance file, if any. Defaults to solar abundances.
 * --halo: Path to halo data.
 
-# Notes for the user;
+# Notes for the user
 * Make sure the abundance file passed does not have any unnecessary characters (i.e. characters otherr than the element's name and the value associated with it) as this will confuse Trident and result in a runtime error.
 * SALSA requires a "center_list" that is the center of the galaxy around which the halo resides. As of right now, this list is a default value in the program and, intuitively, this center_list will need to be changed if a different halo is used. 
 * If passing abundance patterns to the program, the user will see the print statement, "Buckle up bc we're about to get wRIGGITY WRIGGITY WRECKED SON". This is intentional; it's how the user will know that Trident is using the abundances that were passed. 
