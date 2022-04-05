@@ -1,0 +1,10 @@
+for ION in C_II C_IV O_VI
+do
+    for ROWNUM in {0..26..1}
+    do 
+        python sort_catalogs.py --ds ~/pipeline_tests/test7/data_AbundanceRow${ROWNUM}_${ION}.txt
+    done
+    python plot_clumps.py
+done
+
+echo "All done :)"
