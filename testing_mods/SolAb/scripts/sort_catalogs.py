@@ -31,13 +31,24 @@ else:
        	element_name += filename[i]
 
 if not os.path.exists(directory_path+f"/analysis/master_{element_name}.txt"):
+    # how to open without creating?
     master = open(directory_path+f"/analysis/master_{element_name}.txt", "w")
 
 master_dic = {}
-for i in range(data['lightray_index'].max()):
-    master_dic[f'ray{i}'] = []
-for i in range(len(data['lightray_index'])):
-    master_dic[f'ray{data['lightray_index'][i]}'].append(data['interval_start'][i])
+master_dic[f'row_number'] = []
+master_dic[f'rays'] = []
+master_dic[f'interval_start'] = []
+master_dic[f'interval_end'] = []
+for i in range(len(data)):
+    master_dic[f'row_number'].append(row_num)
+    master_dic[f'rays'].append(data['lightray_index'][i])
+    master_dic[f'interval_start'].append(data['interval_start'][i])
+    master_dic[f'interval_end'].append(data['interval_end'][i])
+# for i in range(data['lightray_index'].max()):
+#     master_dic[f'ray{i}'] = []
+
+# for i in range(len(data['lightray_index'])):
+#     master_dic[f'ray{data['lightray_index'][i]}'].append(data['interval_start'][i])
 
 master_df = pd.DataFrame.from_dict(master_dic)
 
