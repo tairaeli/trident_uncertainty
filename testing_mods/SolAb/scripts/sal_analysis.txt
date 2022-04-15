@@ -1,6 +1,11 @@
+echo "beginning loop"
 for ION in C_II C_IV O_VI
 do
-    python sort_catalogs.py --ds ~/pipeline_tests/test7/data_AbundanceRow${ROWNUM}_${ION}.txt
+    ls ~/pipeline_tests/test7/data/*${ION}.txt > temp_filelist.txt
+    echo "temp file created...calling python..."
+    python plot_clumps.py --ds ~/pipeline_tests/test7/data/ --fn temp_filelist.txt
+    echo "clearing temp file..."
+    cat /dev/null > temp_filelist.txt
 done
 
 echo "All done :)"
