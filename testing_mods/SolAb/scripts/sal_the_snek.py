@@ -24,9 +24,9 @@ args = parser.parse_args()
 dic_args = vars(args)
 
 path = os.path.expandvars(os.path.expanduser(args.path))
-if not os.path.exists(path):
+if not os.path.exists(path+"/data"):
 	print(f"PULL YOUT SHIT TOGETHER. MAKING THE DIRECTORIES YOU SHOULD HAVE ALREADY MADE")
-	os.makedirs(path)
+	# os.makedirs(path)
 	os.mkdir(path+"/data")
 	os.mkdir(path+"/rays")
 # if 'file_path' in dic_args:

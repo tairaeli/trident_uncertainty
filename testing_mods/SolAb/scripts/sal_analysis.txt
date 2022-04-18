@@ -1,10 +1,7 @@
-echo "beginning loop"
 for ION in C_II C_IV O_VI
 do
-    ls ~/pipeline_tests/test7/data/*${ION}.txt > temp_filelist.txt
-    echo "temp file created...calling python..."
-    python plot_clumps.py --ds ~/pipeline_tests/test7/data/ --fn temp_filelist.txt
-    echo "clearing temp file..."
+    ls ~/pipeline_tests/test8/data/*${ION}.txt > temp_filelist.txt
+    python plot_clumps.py --ds ~/pipeline_tests/test8/data/ --fn temp_filelist.txt
     cat /dev/null > temp_filelist.txt
 done
 
