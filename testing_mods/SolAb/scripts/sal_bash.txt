@@ -1,1 +1,1 @@
-python sal_the_snek.py --ds ~/pipeline_tests/test8 --nrays 4 --abun /mnt/home/fuhrmane/abundances/new_cgm_abundances.txt
+python sal_the_snek.py --ds ~/pipeline_tests/hist_test --nrays 4 --abun /mnt/home/fuhrmane/abundances/new_cgm_abundances.txt
