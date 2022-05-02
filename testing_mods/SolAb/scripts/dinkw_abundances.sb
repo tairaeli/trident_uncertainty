@@ -14,7 +14,7 @@
 cd /mnt/home/fuhrmane/git_env/trident_modifications/testing_mods/SolAb/scripts/
 module unload Python
 which python
-srun -n 128 python sal_the_snek.py --ds $SCRATCH/condensed_pipeline_tests/  --nrays 4
+srun -n 128 python sal_the_snek.py --ds $SCRATCH/condensed_pipeline_tests/  --nrays 4 --abun /mnt/home/fuhrmane/abundances/new_cgm_abundances.txt
 
 #scontrol show job $SLURM_JOB_ID
 #js -j $SLURM_JOB_ID

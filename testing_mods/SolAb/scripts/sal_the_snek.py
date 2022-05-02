@@ -29,17 +29,6 @@ if not os.path.exists(path+"/data"):
 	# os.makedirs(path)
 	os.mkdir(path+"/data")
 	os.mkdir(path+"/rays")
-# if 'file_path' in dic_args:
-# 	print(f"ABUNDANCES GIVEN. FILE PATH IS: {args.file_path}")
-# 	# abun = args.file_path
-# 	abun = pd.read_csv(args.file_path, delim_whitespace=True)
-# 	nrows = len(abun)
-# 	use_SolAb = False
-# else:
-# 	print("NO ABUNDANCES GIVEN. USING SOLAB")
-# 	# abun = 'No file given. Using solar abundances.'
-# 	nrows = 0
-# 	use_SolAb = True
 
 def generate_names(length, add=''):
 
@@ -58,15 +47,12 @@ def generate_names(length, add=''):
 		
 	return saved_filename_list
 
-# saved = generate_names(nrows)
-
 #preliminary shenanigans -- load halo data; define handy variables; plant the seed, as it were
 ds = yt.load(args.ds_file)
 center = ds.arr([23876.757358761424, 23842.452527236022, 22995.717805638298], 'kpc')
 other_fields=['density', 'temperature', 'metallicity']
 max_impact=15 #kpc
 units_dict = dict(density='g/cm**3', metallicity='Zsun')
-# ion_list = ['C II', 'C IV', 'O VI']
 
 ray_num = f'{0:0{len(str(args.nrays))}d}'
 ray_file=f'{path}/ray{ray_num}.h5'
@@ -82,7 +68,6 @@ if not check:
     print("WARNING: rays not found. Generating new ones.")
     salsa.generate_lrays(ds, center.to('code_length'), args.nrays, max_impact, ion_list=['H I'], fields=other_fields, out_dir=path)
 
-# CK: Consider collect_files from salsa.utils
 ray_list=[]
 for i in range(args.nrays):
     if len(str(i)) != len(str(args.nrays)):
@@ -101,38 +86,20 @@ ion_list = ['C II', 'C IV', 'O VI']
 
 # if 'use_SolAb' == False:
 if 'file_path' in dic_args:
-	print(f"ABUNDANCES GIVEN. FILE PATH IS: {args.file_path}")
-	# abun = args.file_path
 	abun = pd.read_csv(args.file_path, delim_whitespace=True)
 	nrows = len(abun)
 	saved = generate_names(nrows)
-	print("ABOUT TO FUCK IT UP WITH SALSA -- USING ABUNDANCES")
 	for row_num in range(nrows):
-		print(f"USING ROW NUMBER {row_num}")
-		# loop over rin list
 		for i in ion_list:
 			abundances = abun.iloc[row_num].to_dict()
-			print(f"ABUNDANCES IN ROW {row_num}: {abundances}")
-			# return_df = pd.DataFrame()
-			print(f"CALLING ABSORBER EXRACTOR. ION IS {i}")
 			abs_ext = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, abundance_table = abundances, calc_missing=True)
-			print(f"GETTING ABSORBERS...")
 			df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=units_dict)
-			print(f'SAVING...\nPATH: {args.path}/data/{saved[row_num]}_{i.replace(" ", "_")}.txt')
 			df.to_csv(f'{args.path}/data/{saved[row_num]}_{i.replace(" ", "_")}.txt', sep = ' ')
 			print("Go look at your data!")
-			# return_df = return_df.append(df_civ)
 
 else:
-	print("NO ABUNDANCES GIVEN. USING SOLAB")
-	# abun = 'No file given. Using solar abundances.'
 	nrows = 0
 	saved = generate_names(nrows)
-	print("ABOUT TO FUCK IT UP WITH SALSA -- USING SOLAB")
-	# are abundance table args a dictionary or can it be None?
-	# loop over ion list
-	# for row_num in range(nrows):
-	# print(f"USING ROW NUMBER {row_num}")
 	for i in ion_list:
 		abs_ext = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, abundance_table = None, calc_missing=True)
 		df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=units_dict)

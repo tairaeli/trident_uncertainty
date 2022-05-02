@@ -44,11 +44,6 @@ for i in range(len(data)):
     master_dic[f'rays'].append(data['lightray_index'][i])
     master_dic[f'interval_start'].append(data['interval_start'][i])
     master_dic[f'interval_end'].append(data['interval_end'][i])
-# for i in range(data['lightray_index'].max()):
-#     master_dic[f'ray{i}'] = []
-
-# for i in range(len(data['lightray_index'])):
-#     master_dic[f'ray{data['lightray_index'][i]}'].append(data['interval_start'][i])
 
 master_df = pd.DataFrame.from_dict(master_dic)
 
