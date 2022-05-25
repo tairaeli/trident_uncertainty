@@ -14,22 +14,42 @@ df2_work=df2[df2["lightray_index"]==1]
 
 df1_clumps = df1_work[["interval_start","interval_end"]] ##filter to only indexes
 df2_clumps = df2_work[["interval_start","interval_end"]]
-df1_st = np.asarray(df1_clumps["interval_start"])
+df1_st = np.asarray(df1_clumps["interval_start"]) ##make each interval start and end into lists for easy indexing
 df2_st = np.asarray(df2_clumps["interval_start"])
 df1_en = np.asarray(df1_clumps["interval_end"])
-df1_en = np.asarray(df1_clumps["interval_end"])
+df2_en = np.asarray(df2_clumps["interval_end"])
 
-match = {}
+match = {} ##create dictionaries to store indexes of clumps that correspond to one another
 slight_off = {}
-no_pair = {}
+merge = {}
+split = {}
 
-err = 10
-n=0
+err = 10 ##set allowable amount of error
+n = 0
 for j in range(len(df2_clumps)):
+  split_inst = []
+  merge_inst =[]
   if df1_en[n] == df2_en[j] and df1_st[n] == df2_st[j]:
     match[str(n)] = j
     n += 1
   elif ((df2_en[j] - err) <= df1_en[n] <= (df2_en[j] + err)) or ((df2_st[j] - err) <= df1_st[n] <= (df2_st[j] + err)):
-    slight_off[str(n)]=j
+    slight_off[str(n)] = j
     n += 1
-  elif 
+  ##elif ((df1_st[n] == df2_st[j]) and (df1_en[n] != df2_en[j]) or (df1_en[n] == df2_en[j] and df1_st[n] != df2_st[j]) or
+  elif df2_st[j] >= df1_st[n] and df2_en[j] <= df1_en[n]:
+    split_inst.append(j)
+    if df1_en[n] == df2_en[j]:
+       split[str(n)]= split_inst
+       split_inst =[]
+       n+=1
+    else:
+       continue
+  elif df1_st[n] >= df2_st[i] and df1_en[n] <= df2_en[i]:
+    merge_inst.append(j)
+    if df1_en[n] == df2_en[j]:
+       merge[str(n)]= merge_inst
+       merge_inst =[]
+       n+=1
+    else:
+       continue
+  elif :  
