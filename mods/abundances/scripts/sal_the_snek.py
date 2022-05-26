@@ -39,11 +39,14 @@ def generate_names(length, add=''):
 	
 	:add: Additional relevant information for keeping track of multiplots and data later on. Default add=''
 	"""
-	
+	ndigits = len(str(length))
 	saved_filename_list = []
 	
 	for i in range(length):
-		saved_filename_list.append(f'data_AbundanceRow{i}{add}')
+		n_len = len(str(i))
+		n_zeros = ndigits - n_len
+		k = "0" * n_zeros + str(i)
+		saved_filename_list.append(f'data_AbundanceRow{k}{add}')
 		
 	return saved_filename_list
 
