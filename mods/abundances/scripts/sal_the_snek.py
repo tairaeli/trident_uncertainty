@@ -42,7 +42,7 @@ def generate_names(length, add=''):
 	ndigits = len(str(length))
 	saved_filename_list = []
 	
-	for i in range(length):
+	for i in range(length): ##made this so that it would sort correctly for making plots
 		n_len = len(str(i))
 		n_zeros = ndigits - n_len
 		k = "0" * n_zeros + str(i)
