@@ -6,18 +6,34 @@ import argparse
 import sys
 import os
 
-df1=pd.read_csv("/mnt/scratch/f0104093/condensed_pipeline_data/data_AbundanceRow9_C_IV.txt", sep = " ") ##read in data files
+df1=pd.read_csv("/mnt/scratch/f0104093/condensed_pipeline_data/data_AbundanceRow09_C_IV.txt", sep = " ") ##read in data files
 df2=pd.read_csv("/mnt/scratch/f0104093/condensed_pipeline_data/data_AbundanceRow10_C_IV.txt", sep =" ")
 
 df1_work=df1[df1["lightray_index"]==1] ##filter to only ray1
 df2_work=df2[df2["lightray_index"]==1]
-
 df1_clumps = df1_work[["interval_start","interval_end"]] ##filter to only indexes
 df2_clumps = df2_work[["interval_start","interval_end"]]
 df1_st = np.asarray(df1_clumps["interval_start"]) ##make each interval start and end into lists for easy indexing
 df2_st = np.asarray(df2_clumps["interval_start"])
 df1_en = np.asarray(df1_clumps["interval_end"])
 df2_en = np.asarray(df2_clumps["interval_end"])
+
+mx= -np.inf 
+rowlist = [df1_clumps, df2_clumps]
+for ds in rowlist: #find the cell index of the furthest clump
+  row_mx = max(ds["interval end"])
+  if row_mx>mx:
+    mx=row_mx
+  
+super_clumps = np.zeros(int(mx))
+
+for ds in rowlist:
+  ds_clump_loc = np.zeros(int(mx))
+  for i in range(ds.shape[0]):
+    ds_clump_loc[int(ds["interval_start"][i]):int(ds["interval_end"][i])] = 1
+    super_clumps[int(ds["interval_start"][i]):int(ds["interval_end"][i])] = 1
+  nrows.append(ds_clump_loc)
+    
 
 match = {} ##create dictionaries to store indexes of clumps that correspond to one another
 slight_off = {}
