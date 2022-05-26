@@ -63,7 +63,7 @@ np.random.seed(11)
 
 # CK: Check that rays already exist, and that the have the additional fields contained
 # in the third argument (empty for now; might become a user parameter)
-check = check_rays(path, args.nrays, [])
+check = check_rays(path+"/rays", args.nrays, [])
 if not check:
     print("WARNING: rays not found. Generating new ones.")
     salsa.generate_lrays(ds, center.to('code_length'), args.nrays, max_impact, ion_list=['H I'], fields=other_fields, out_dir=(path + "/rays"))
@@ -73,9 +73,9 @@ for i in range(args.nrays):
     if len(str(i)) != len(str(args.nrays)):
         n = len(str(args.nrays)) - 1
         
-        ray_list.append(f'{path}/ray{i: 0{n}d}.h5')
+        ray_list.append(f'{path}/rays/ray{i: 0{n}d}.h5')
     else:
-        ray_list.append(f'{path}/ray{i}.h5')
+        ray_list.append(f'{path}/rays/ray{i}.h5')
 
 # CK: Taking a hint from SALSA on how to divvy up the ray list across procs
 ray_arr = np.array(ray_list)
