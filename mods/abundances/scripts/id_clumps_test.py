@@ -29,14 +29,14 @@ n = 0
 for j in range(len(df2_clumps)):
   split_inst = []
   merge_inst =[]
-  if df1_en[n] == df2_en[j] and df1_st[n] == df2_st[j]:
+  if df1_en[n] == df2_en[j] and df1_st[n] == df2_st[j]: ##conditions for identical matches
     match[str(n)] = j
     n += 1
-  elif ((df2_en[j] - err) <= df1_en[n] <= (df2_en[j] + err)) or ((df2_st[j] - err) <= df1_st[n] <= (df2_st[j] + err)):
+  elif ((df2_en[j] - err) <= df1_en[n] <= (df2_en[j] + err)) or ((df2_st[j] - err) <= df1_st[n] <= (df2_st[j] + err)): ##conditions for slight errors
     slight_off[str(n)] = j
     n += 1
-  ##elif ((df1_st[n] == df2_st[j]) and (df1_en[n] != df2_en[j]) or (df1_en[n] == df2_en[j] and df1_st[n] != df2_st[j]) or
-  elif df2_st[j] >= df1_st[n] and df2_en[j] <= df1_en[n]:
+  ##elif ((df1_st[n] == df2_st[j]) and (df1_en[n] != df2_en[j]) or (df1_en[n] == df2_en[j] and df1_st[n] != df2_st[j]) or ## commented out so still able to be seen
+  elif df2_st[j] >= df1_st[n] and df2_en[j] <= df1_en[n]: ##conditions for a split 
     split_inst.append(j)
     if df1_en[n] == df2_en[j]:
        split[str(n)]= split_inst
@@ -44,7 +44,7 @@ for j in range(len(df2_clumps)):
        n+=1
     else:
        continue
-  elif df1_st[n] >= df2_st[i] and df1_en[n] <= df2_en[i]:
+  elif df1_st[n] >= df2_st[i] and df1_en[n] <= df2_en[i]: ##conditions for a merge 
     merge_inst.append(j)
     if df1_en[n] == df2_en[j]:
        merge[str(n)]= merge_inst
