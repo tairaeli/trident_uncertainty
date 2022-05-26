@@ -35,6 +35,14 @@ for ds in rowlist:
   nrows.append(ds_clump_loc)
     
 
+one_locs = np.where(super_clumps == 1)[0]
+start_list = []
+end_list = []
+for i in range(len(one_locs)):
+  if one_locs[i+1] - one_locs[i] > 1:
+    start_list.append(one_locs[i+1])
+    end_list.append(one_locs[i])
+                    
 match = {} ##create dictionaries to store indexes of clumps that correspond to one another
 slight_off = {}
 merge = {}
