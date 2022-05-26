@@ -55,7 +55,7 @@ max_impact=15 #kpc
 units_dict = dict(density='g/cm**3', metallicity='Zsun')
 
 ray_num = f'{0:0{len(str(args.nrays))}d}'
-ray_file=f'{path}/ray{ray_num}.h5'
+ray_file=f'{path}/rays/ray{ray_num}.h5'
 
 np.random.seed(11)
 
@@ -66,7 +66,7 @@ np.random.seed(11)
 check = check_rays(path, args.nrays, [])
 if not check:
     print("WARNING: rays not found. Generating new ones.")
-    salsa.generate_lrays(ds, center.to('code_length'), args.nrays, max_impact, ion_list=['H I'], fields=other_fields, out_dir=path)
+    salsa.generate_lrays(ds, center.to('code_length'), args.nrays, max_impact, ion_list=['H I'], fields=other_fields, out_dir=(path + "/rays"))
 
 ray_list=[]
 for i in range(args.nrays):
