@@ -17,8 +17,6 @@ new_dir = "hist_clumps"
 if not os.path.exists(directory_path+f"{new_dir}"):
     os.mkdir(directory_path+f"{new_dir}")
 
-
-
 with open(args.filename_list) as f:
     files = f.read().splitlines()
     
@@ -37,7 +35,7 @@ for i in range(1, len(num_ticks)-1):
     tick_labels.append(f'row {i}')
 tick_labels.append(' ')
 
-for ray_num in range(int(preliminary_dummy_data['lightray_index'].max())):
+for ray_num in range(int(preliminary_dummy_data['lightray_index'].max()+1)):
     for i in range(len(files)):
         data = pd.read_csv(files[i], delim_whitespace=True)
         ray_data = data[data['lightray_index']==ray_num]
