@@ -29,8 +29,9 @@ for i in range(ion_position+1, ion_position+4):
 tick_range = int(round(len(files)/2, 0))
 num_ticks = list(range(-1*(tick_range+1), tick_range+1, 1))
 tick_labels = [' ']
-for i in range(1, len(num_ticks)-1):
+for i in range(1, len(num_ticks)-2):
     tick_labels.append(f'row {i}')
+tick_labels.append(' ')
 tick_labels.append(' ')
 
 for ray_num in range(int(preliminary_dummy_data['lightray_index'].max())+1):
