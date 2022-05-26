@@ -17,14 +17,18 @@ new_dir = "hist_clumps"
 if not os.path.exists(directory_path+f"{new_dir}"):
     os.mkdir(directory_path+f"{new_dir}")
 
+
+
 with open(args.filename_list) as f:
     files = f.read().splitlines()
+    
 preliminary_dummy_data = pd.read_csv(files[0], delim_whitespace=True)
-ion_position = files[0].find('.')-4
+ion_position = files[0].find('.',5)-4
+
 ion = files[0][ion_position]
+
 for i in range(ion_position+1, ion_position+4):
     ion += files[0][i]
-
 
 tick_range = int(round(len(files)/2, 0))
 num_ticks = list(range(-1*(tick_range+1), tick_range+1, 1))
