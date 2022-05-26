@@ -43,9 +43,10 @@ def generate_names(length, add=''):
 	saved_filename_list = []
 	
 	for i in range(length): ##made this so that it would sort correctly for making plots
-		n_len = len(str(i))
+		m= i+1
+		n_len = len(str(m))
 		n_zeros = ndigits - n_len
-		k = "0" * n_zeros + str(i)
+		k = "0" * n_zeros + str(m)
 		saved_filename_list.append(f'data_AbundanceRow{k}{add}')
 		
 	return saved_filename_list
