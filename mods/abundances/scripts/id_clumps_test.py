@@ -6,8 +6,8 @@ import argparse
 import sys
 import os
 
-df1=pd.read_csv("/mnt/scratch/f0104093/condensed_pipeline_data/data_AbundanceRow14_C_IV.txt", sep = " ") ##read in data files
-df2=pd.read_csv("/mnt/scratch/f0104093/condensed_pipeline_data/data_AbundanceRow16_C_IV.txt", sep =" ")
+df1=pd.read_csv("/mnt/scratch/f0104093/condensed_pipeline_data/data_AbundanceRow9_C_IV.txt", sep = " ") ##read in data files
+df2=pd.read_csv("/mnt/scratch/f0104093/condensed_pipeline_data/data_AbundanceRow10_C_IV.txt", sep =" ")
 
 df1_work=df1[df1["lightray_index"]==1] ##filter to only ray1
 df2_work=df2[df2["lightray_index"]==1]
