@@ -19,7 +19,7 @@ if not os.path.exists(directory_path+f"{new_dir}"):
 
 with open(args.filename_list) as f:
     files = f.read().splitlines()
-    
+
 preliminary_dummy_data = pd.read_csv(files[0], delim_whitespace=True)
 ion_position = files[0].find('.',5)-4
 
@@ -31,14 +31,17 @@ for i in range(ion_position+1, ion_position+4):
 tick_range = int(round(len(files)/2, 0))
 num_ticks = list(range(-1*(tick_range+1), tick_range+1, 1))
 tick_labels = [' ']
-for i in range(1, len(num_ticks)-1):
-    tick_labels.append(f'row {i}')
+for i in range(1, len(num_ticks)-2):
+    tick_labels.append(f'row {i-1}')
+tick_labels.append(' ')
 tick_labels.append(' ')
 
 for ray_num in range(int(preliminary_dummy_data['lightray_index'].max()+1)):
+    
     for i in range(len(files)):
         data = pd.read_csv(files[i], delim_whitespace=True)
         ray_data = data[data['lightray_index']==ray_num]
+        
         plt.hlines(np.ones(ray_data.shape[0])*num_ticks[i+1], ray_data['interval_start'], ray_data['interval_end'])
         plt.title(f"{ion} -- Cell Index {ray_num}")
         plt.xlabel("Cell Index")
