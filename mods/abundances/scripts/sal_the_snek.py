@@ -39,11 +39,15 @@ def generate_names(length, add=''):
 	
 	:add: Additional relevant information for keeping track of multiplots and data later on. Default add=''
 	"""
-	
+	ndigits = len(str(length))
 	saved_filename_list = []
 	
-	for i in range(length):
-		saved_filename_list.append(f'data_AbundanceRow{i}{add}')
+	for i in range(length): ##made this so that it would sort correctly for making plots
+		
+		n_len = len(str(i))
+		n_zeros = ndigits - n_len
+		k = "0" * n_zeros + str(i)
+		saved_filename_list.append(f'data_AbundanceRow{k}{add}')
 		
 	return saved_filename_list
 
@@ -55,7 +59,7 @@ max_impact=15 #kpc
 units_dict = dict(density='g/cm**3', metallicity='Zsun')
 
 ray_num = f'{0:0{len(str(args.nrays))}d}'
-ray_file=f'{path}/ray{ray_num}.h5'
+ray_file=f'{path}/rays/ray{ray_num}.h5'
 
 np.random.seed(11)
 
@@ -66,16 +70,16 @@ np.random.seed(11)
 check = check_rays(path, args.nrays, [])
 if not check:
     print("WARNING: rays not found. Generating new ones.")
-    salsa.generate_lrays(ds, center.to('code_length'), args.nrays, max_impact, ion_list=['H I'], fields=other_fields, out_dir=path)
+    salsa.generate_lrays(ds, center.to('code_length'), args.nrays, max_impact, ion_list=['H I'], fields=other_fields, out_dir=path+"/rays")
 
 ray_list=[]
 for i in range(args.nrays):
     if len(str(i)) != len(str(args.nrays)):
         n = len(str(args.nrays)) - 1
         
-        ray_list.append(f'{path}/ray{i: 0{n}d}.h5')
+        ray_list.append(f'{path}/rays/ray{i: 0{n}d}.h5')
     else:
-        ray_list.append(f'{path}/ray{i}.h5')
+        ray_list.append(f'{path}/rays/ray{i}.h5')
 
 # CK: Taking a hint from SALSA on how to divvy up the ray list across procs
 ray_arr = np.array(ray_list)
