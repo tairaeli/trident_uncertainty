@@ -13,22 +13,17 @@ pickle_short_off = open("short.pickle", 'rb')
 short = pickle.load(pickle_short_off)
 
 path = "/mnt/scratch/f0104093/condensed_pipeline_tests/data/" # modify as needed
-row_dictionary = {}
-coldens_dic = {}
-ion_list = ["C_II", "O_VI", "C_IV"] # modify as needed
-for ion in ion_list:
-    row_dictionary[f'{ion}'] = {}
-    coldens_dic[f'{ion}'] = {}
-    for i in range(26):
-        m = i+1
-        row_dictionary[f'{ion}'][f'row{m}'] = {}
-		n_len = len(str(m))
-		n_zeros = ndigits - n_len
-		k = "0" * n_zeros + str(m)
-        row_data = pd.read_csv(path+f"data_AbundanceRow{k}_{ion}.txt", delim_whitespace=True)
-        for ray in range(4):
-            row_dictionary[f'{ion}'][f'row{i+1}'][f'ray_index{ray}'] = row_data[row_data['lightray_index']==ray].reset_index()
-            # row_dictionary[f'{ion}'][f'row{i+1}'][f'ray_index{ray}'].reset_index()
-            coldens_dic[f'{ion}'][f'column_densities{ray}'] = np.zeros(26)
+data1 = pd.read_csv(path + "data_AbundanceRow09_C_IV.txt", sep = " ") ##read in data files
+data2 = pd.read_csv(path + "data_AbundanceRow10_C_IV.txt", sep =" ")
+df1_work=data1[data1["lightray_index"]==1] ##filter to only ray1
+df2_work=data2[data2["lightray_index"]==1]
+
+col_density_match = []
+for row, index in match:
+	row_clump = np.where(index == list((df1_work["interval_start"]), (df1_work["interval_end"])))
+	coldensity.append(df1_work["col_dens"][row_clump])
+plt.hist(col_density_match)
+plt.title(f"C_IV -- LightRay Index 1 -- Matches")
+plt.savefig(f"/mnt/scratch/f0104093/condensed_pipeline_tests/data/Hist_CIV_RayIndex1_Matches.png")
+
             
-##next step is to make histograms for column density for each clump we have data for
