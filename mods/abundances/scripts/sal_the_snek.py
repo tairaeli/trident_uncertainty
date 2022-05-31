@@ -55,7 +55,7 @@ def generate_names(length, add=''):
 ds = yt.load(args.ds_file)
 center = ds.arr([23876.757358761424, 23842.452527236022, 22995.717805638298], 'kpc')
 other_fields=['density', 'temperature', 'metallicity']
-max_impact=15 #kpc
+max_impact=600 #kpc
 units_dict = dict(density='g/cm**3', metallicity='Zsun')
 
 ray_num = f'{0:0{len(str(args.nrays))}d}'
