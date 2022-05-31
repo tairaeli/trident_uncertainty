@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Takes path to where SALSA abunance catalogs are stored and ion list used in generating them to extract necessary columnn density data into a big boi dictionary
-path = "/mnt/home/fuhrmane/pipeline_tests/hist_test/data/" # modify as needed
+path = "/mnt/home/f0104093/condensed_pipeline_tests/hist_test/data/" # modify as needed
 row_dictionary = {}
 coldens_dic = {}
 ion_list = ["C_II", "O_VI", "C_IV"] # modify as needed
@@ -27,11 +27,11 @@ for i in range(26):
     coldens_dic[ion][f'column_densities{ray}'][i] += row_dictionary[ion][f'row{i+1}'][f'ray_index{ray}']["col_dens"][interval]
 plt.hist(coldens_dic[ion][f'column_densities{ray}'])
 plt.title(f"{ion} -- LightRay Index {ray} -- Interval {str(interval)}")
-plt.savefig(f"/mnt/home/fuhrmane/pipeline_tests/hist_test/data/hist_clumps/Hist_{ion}_RayIndex{ray}_Int{interval}.png")
+plt.savefig(f"/mnt/home/f0104093/condensed_pipeline_tests/hist_test/data/hist_clumps/Hist_{ion}_RayIndex{ray}_Int{interval}.png")
 
 # Manually -- for when interval chunks for rows don't exactly line up
 coldens_dic[ion][f'column_densities{ray}'][0] += row_dictionary[ion][f'row1'][f'ray_index{ray}']["col_dens"][0]
 
 plt.hist(coldens_dic[ion][f'column_densities{ray}'])
 plt.title(f"{ion} -- LightRay Index {ray} -- Interval {str(interval)}")
-plt.savefig(f"/mnt/home/fuhrmane/pipeline_tests/hist_test/data/hist_clumps/Hist_{ion}}_RayIndex{ray}_Int{str(interval)}.png")
+plt.savefig(f"/mnt/home/f0104093/condensed_pipeline_tests/hist_test/data/hist_clumps/Hist_{ion}}_RayIndex{ray}_Int{str(interval)}.png")
