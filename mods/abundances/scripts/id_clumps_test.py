@@ -34,62 +34,77 @@ match = {} ##create dictionaries to store indexes of clumps in the row that corr
 short = {}
 merge = {}
 lonely = {}
+
 maybe_lonely = {}
 
 rownum = 0
-for row in clmaps: ##start by iterating over a whole row
-  rownum += 1 ##define which row we're working on
-  row=np.append(0, row) ##make indexing work
-  row=np.append(row, 0)
-  
-  ##make all the variables and lists necessary
-  row_st_count = 0 ##count how many starts of row clumps there have been within a super clump 
-  row_end_count = 0 ##how many ends of row clumps there have been within a super clump
-  row_st_ind = [] ##keep track of start location(s) of a row clump
-  row_en_ind = [] ##keep track of end location(s) of a row clump
-  
-  row_match=[]
-  row_short = []
-  row_merge = []
-  
-  if super_clumps[i-1] < super_clumps[i]: ##start of a super clump
-    sp_st = i-1 ##keep track of start location of a super clump
-    
-  if row[i-1] < row[i]: ##start of a clump in the row
-    row_st_ind.append(i-1) 
-    row_st_count += 1 
-    
-  elif row[i-1] > row[i]: ##end of a clump in row
-    row_en_ind.append(i-1) 
-    row_en_count += 1 
-  
-  if super_clumps[i-1] > super_clumps[i]: ##end of a super clump
-    sp_en = i-1 ##keep track of the location of the end of a super clump
-    
-    if (row_st_count == 1) and (row_en_count == 1): ##check for if there is only one row clump in the super clump
-      if (row_st_ind[0] == sp_st) and (row_en_ind[0] == sp_en): ##if the starts and ends match, the clumps are identical
-        row_match.append([row_st_ind[0], row_en_ind[0]]) ##thus, start and end indecies appended to a list of them
-      else:
-        row_short.append([row_st_ind[0], row_end_ind[0]]) ##if not, then the row clump must be shorter and the start and end indecies are appended to the appropraite list
-        
-    elif (row_st_count == 0) and (row_en_count ==0): ##check if there is nothing in the row that matches the super clump
-      if str([sp_st, sp_en]) in maybe_lonely.keys(): ##check if we have already seen this superclump, if not make the entry in the dictionary
-        maybe_lonely[str([sp_st, sp_en])] += 1
-      else: 
-        maybe_lonely[str([sp_st, sp_en])] = 1
-        
-    else: ##only other senario is there there was a merge
-      for j in range(len(row_st_ind)): ##organize the indecies to make the list in order
-        row_merge.append(row_st_ind[j], row_en_ind[j])
-    
-    row_st_count = 0 ##clear all the necessary variables
-    row_en_count = 0
-    row_st_ind = []
-    row_en_ind = []
 
-  match[rownum]=row_match ##at the end of each row, append all lists to thier espective dictionaries
-  short[rownum]=row_short
-  merge[rownum]=row_merge
+for row in clmaps:  ##start by iterating over a whole row
+
+    row = np.append(0,row) # adding an extra element to prevent booleans from failing
+    row = np.append(row,0)
+    rownum += 1 ##define which row we're working on
+
+    ##make all the variables and lists necessary
+    row_st_cnt = 0 ##count how many starts of row clumps there have been within a super clump
+    row_st_ind = []  ##keep track of start location(s) of a row clump
+    
+    row_en_cnt = 0 ##how many ends of row clumps there have been within a super clump
+    row_en_ind = [] ##keep track of end location(s) of a row clump
+
+    row_match = []
+    row_short = []
+    row_merge = []
+    
+ 
+    
+    for i in range(1,len(row)):
+        
+        if super_clumps[i-1]<super_clumps[i]: ##start of a super clump
+            sup_st = i-1 ##keep track of start location of a super clump
+            
+        if row[i-1]<row[i]:  ##start of a clump in the row
+            row_st_cnt += 1
+            row_st_ind.append(i-1)
+        
+        elif row[i-1]>row[i]: ##end of a clump in row
+            row_en_cnt += 1
+            row_en_ind.append(i-1)
+            
+        if super_clumps[i-1]>super_clumps[i]: ##end of a super clump
+            sup_en = i-1 ##keep track of the location of the end of a super clump
+            
+            if (row_st_count == 1) and (row_en_count == 1): ##check for if there is only one row clump in the super clump
+    
+                if (row_st_ind[0] == sup_st) & (row_en_ind[0] == sup_en): ##if the starts and ends match, the clumps are identical
+                    row_match.append([row_st_ind[0],row_en_ind[0]]) ##thus, start and end indecies appended to a list of them
+            
+                else:
+                    row_short.append([row_st_ind[0],row_en_ind[0]]) ##if not, then the row clump must be shorter and the start and end indecies are appended to the appropraite list
+            
+            elif (row_st_cnt == 0) & (row_en_cnt == 0): ##check if there is nothing in the row that matches the super clump
+                
+                if str([sup_st,sup_en]) in maybe_lonely.keys(): ##check if we have already seen this superclump, if not make the entry in the dictionary
+                    maybe_lonely[str([sup_st,sup_en])] += 1
+                                 
+                else:
+                    maybe_lonely[str([sup_st,sup_en])] = 1
+            
+            else: ##only other senario is there there was a merge
+            
+                for j in range(len(row_st_ind)): ##organize the indecies to make the list in order
+                    row_merge.append([row_st_ind[j],row_en_ind[j]]) 
+                                 
+            row_st_cnt = 0
+            row_st_ind = []
+            
+            row_en_cnt = 0
+            row_en_ind = []
+        
+        match[rownum] = row_match
+        short[rownum] = row_short
+        merge[rownum] = row_merge
+
                           
 #for clump in maybe_lonely: ##later must set a limits on the minimumm number of times something has to appear in maybe lonely for it to actually be considered lonely
 
