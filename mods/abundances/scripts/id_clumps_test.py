@@ -74,7 +74,7 @@ for row in clmaps:  ##start by iterating over a whole row
         if super_clumps[i-1]>super_clumps[i]: ##end of a super clump
             sup_en = i-1 ##keep track of the location of the end of a super clump
             
-            if (row_st_count == 1) and (row_en_count == 1): ##check for if there is only one row clump in the super clump
+            if (row_st_cnt == 1) and (row_en_cnt == 1): ##check for if there is only one row clump in the super clump
     
                 if (row_st_ind[0] == sup_st) & (row_en_ind[0] == sup_en): ##if the starts and ends match, the clumps are identical
                     row_match.append([row_st_ind[0],row_en_ind[0]]) ##thus, start and end indecies appended to a list of them
@@ -118,6 +118,6 @@ pickle.dump(merge, pickling_merge, protocol=3)
 pickling_merge.close() 
                           
 pickling_short = open("short.pickle","wb")
-pickle.dump(shorrt, pickling_short, protocol=3)
+pickle.dump(short, pickling_short, protocol=3)
 pickling_short.close()
   
