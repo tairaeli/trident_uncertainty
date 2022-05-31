@@ -2,18 +2,18 @@ import pandas as pd
 import numpy as np
 import pickle
 
-df1=pd.read_csv("/mnt/scratch/f0104093/condensed_pipeline_data/data_AbundanceRow09_C_IV.txt", sep = " ") ##read in data files
-df2=pd.read_csv("/mnt/scratch/f0104093/condensed_pipeline_data/data_AbundanceRow10_C_IV.txt", sep =" ")
+df1=pd.read_csv("/mnt/scratch/f0104093/condensed_pipeline_tests/data/data_AbundanceRow09_C_IV.txt", delim_whitespace=True) ##read in data files
+df2=pd.read_csv("/mnt/scratch/f0104093/condensed_pipeline_tests/data/data_AbundanceRow10_C_IV.txt", delim_whitespace=True)
 
 df1_work=df1[df1["lightray_index"]==1] ##filter to only ray1
 df2_work=df2[df2["lightray_index"]==1]
-df1_clumps = df1_work[["interval_start","interval_end"]] ##filter to only indexes
-df2_clumps = df2_work[["interval_start","interval_end"]]
+df1_clumps = df1_work[["interval_start","interval_end"]].reset_index().drop(columns="index")  ##filter to only indexes
+df2_clumps = df2_work[["interval_start","interval_end"]].reset_index().drop(columns="index") 
 
 mx= -np.inf  ##find how long each array should be
 rowlist = [df1_clumps, df2_clumps]
 for ds in rowlist: #find the cell index of the furthest clump
-  row_mx = max(ds["interval end"])
+  row_mx = max(ds["interval_end"])
   if row_mx>mx:
     mx=row_mx
   
@@ -23,6 +23,7 @@ clmaps = []
 for ds in rowlist: ##make masks for each row and form super_clumps
   ds_clump_loc = np.zeros(int(mx))
   for i in range(ds.shape[0]):
+    print(ds["interval_start"][i])
     ds_clump_loc[int(ds["interval_start"][i]):int(ds["interval_end"][i])] = 1
     super_clumps[int(ds["interval_start"][i]):int(ds["interval_end"][i])] = 1
   clmaps.append(ds_clump_loc)
@@ -79,7 +80,7 @@ for row in clmaps: ##start by iterating over a whole row
         
     else: ##only other senario is there there was a merge
       for j in range(len(row_st_ind)): ##organize the indecies to make the list in order
-        row_merge.append([row_st_ind[j], row_en_ind[j])
+        row_merge.append(row_st_ind[j], row_en_ind[j])
     
     row_st_count = 0 ##clear all the necessary variables
     row_en_count = 0
@@ -94,14 +95,14 @@ for row in clmaps: ##start by iterating over a whole row
 
 
 pickling_match = open("match.pickle","wb") ##saves the dictonaries so that they can be accesssed later
-pickle.dump(match, protocol=3, pickling_match)
+pickle.dump(match, pickling_match, protocol=3)
 pickling_match.close()
                           
 pickling_merge = open("merge.pickle","wb")
-pickle.dump(merge, protocol=3, pickling_merge)
+pickle.dump(merge, pickling_merge, protocol=3)
 pickling_merge.close() 
                           
 pickling_short = open("short.pickle","wb")
-pickle.dump(short, protocol=3, pickling_short)
+pickle.dump(shorrt, pickling_short, protocol=3)
 pickling_short.close()
   
