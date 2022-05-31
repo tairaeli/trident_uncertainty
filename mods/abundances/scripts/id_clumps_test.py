@@ -1,10 +1,6 @@
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt 
-import argparse
-# %matplotlib inline
-import sys
-import os
+import pickle
 
 df1=pd.read_csv("/mnt/scratch/f0104093/condensed_pipeline_data/data_AbundanceRow09_C_IV.txt", sep = " ") ##read in data files
 df2=pd.read_csv("/mnt/scratch/f0104093/condensed_pipeline_data/data_AbundanceRow10_C_IV.txt", sep =" ")
@@ -13,10 +9,6 @@ df1_work=df1[df1["lightray_index"]==1] ##filter to only ray1
 df2_work=df2[df2["lightray_index"]==1]
 df1_clumps = df1_work[["interval_start","interval_end"]] ##filter to only indexes
 df2_clumps = df2_work[["interval_start","interval_end"]]
-# df1_st = np.asarray(df1_clumps["interval_start"]) ##make each interval start and end into lists for easy indexing
-# df2_st = np.asarray(df2_clumps["interval_start"])
-# df1_en = np.asarray(df1_clumps["interval_end"])
-# df2_en = np.asarray(df2_clumps["interval_end"])
 
 mx= -np.inf  ##find how long each array should be
 rowlist = [df1_clumps, df2_clumps]
@@ -99,7 +91,17 @@ for row in clmaps: ##start by iterating over a whole row
   merge[rownum]=row_merge
                           
 #for clump in maybe_lonely: ##later must set a limits on the minimumm number of times something has to appear in maybe lonely for it to actually be considered lonely
-   
-  
-                         
+
+
+pickling_match = open("match.pickle","wb") ##saves the dictonaries so that they can be accesssed later
+pickle.dump(match, protocol=3, pickling_match)
+pickling_match.close()
+                          
+pickling_merge = open("merge.pickle","wb")
+pickle.dump(merge, protocol=3, pickling_merge)
+pickling_merge.close() 
+                          
+pickling_short = open("short.pickle","wb")
+pickle.dump(short, protocol=3, pickling_short)
+pickling_short.close()
   
