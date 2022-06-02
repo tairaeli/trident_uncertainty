@@ -12,19 +12,18 @@
 
 ########## Command Lines for Job Running ##########
 
-DS=$ds
-NRAYS=$nrays
-UV_BACK=$uv_back
-CONFIG_LOC=$config_loc
-ABUN=$abun
-HALO=$halo
+DS=$1
+NRAYS=$2
+UV_BACK=$3
+CONFIG_LOC=$4
+ABUN=$5
 
 cd /mnt/home/tairaeli/trident_uncertainty/mods/backgrounds
 
 module load Python/3.6.4
 
-python make_rays.py --ds DS --nrays NRAYS -- halo HALO
+python make_rays.py --ds $DS --nrays $NRAYS #-- halo $HALO
 
-python define_uvb.py background_file UV_BACK config_loc CONFIG_LOC
+python define_uvb.py --background_file $UV_BACK --config_loc $CONFIG_LOC
 
-python make_tables.py --ds DS --nrays NRAYS --abun ABUN --halo HALO
+python make_tables.py --ds $DS --nrays $NRAYS --abun $ABUN #--halo $HALO

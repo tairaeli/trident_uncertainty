@@ -23,7 +23,7 @@ if not os.path.exists(path+"/data"):
 ds = yt.load(args.ds_file)
 center = ds.arr([23876.757358761424, 23842.452527236022, 22995.717805638298], 'kpc')
 other_fields=['density', 'temperature', 'metallicity']
-max_impact=600 #kpc
+max_impact=15 #kpc
 units_dict = dict(density='g/cm**3', metallicity='Zsun')
 
 np.random.seed(11)

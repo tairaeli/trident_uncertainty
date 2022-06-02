@@ -1,14 +1,12 @@
 /opt/software/Python/3.6.4-foss-2018a/lib/python3.6/_collections_abc.py:666: MatplotlibDeprecationWarning: The global colormaps dictionary is no longer considered public API.
   self[key]
-usage: make_rays.py [-h] --ds [PATH] [--nrays NRAYS]
+usage: make_rays.py [-h] --ds [PATH] [--nrays NRAYS] [--halo DS_FILE]
 make_rays.py: error: argument --nrays: invalid int value: 'NRAYS'
-Traceback (most recent call last):
-  File "define_uvb.py", line 5, in <module>
-    parser.add_argument('background_file', action = 'store', dest = 'background_file', default = os.path.expanduser("~/.trident/hm2012_ss_hr.h5"))
-  File "/opt/software/Python/3.6.4-foss-2018a/lib/python3.6/argparse.py", line 1315, in add_argument
-    raise ValueError('dest supplied twice for positional argument')
-ValueError: dest supplied twice for positional argument
-  File "make_tables.py", line 57
-    ray_arr = np.array(ray_list)
-          ^
-SyntaxError: invalid syntax
+usage: define_uvb.py [-h] [background_file] [config_loc]
+define_uvb.py: error: unrecognized arguments: config_loc CONFIG_LOC
+/opt/software/Python/3.6.4-foss-2018a/lib/python3.6/_collections_abc.py:666: MatplotlibDeprecationWarning: The global colormaps dictionary is no longer considered public API.
+  self[key]
+Let's do some math, kids
+usage: make_tables.py [-h] --ds [PATH] [--nrays NRAYS] [--abun FILE_PATH]
+                      [--halo DS_FILE]
+make_tables.py: error: argument --nrays: invalid int value: 'NRAYS'
