@@ -25,7 +25,7 @@ for i in range(datanum):
   p = "0" * n_zeros + str(m)
   row_data = pd.read_csv(path+f"data_AbundanceRow{p}_C_IV.txt", delim_whitespace=True) ##read in data files
   row_work = row_data[row_data["lightray_index"]==1] ##filter to only ray1
-  df = row_work[["interval_start","interval_end"]].reset_index().drop(columns="index") ##filter to only indexes
+  df = row_work.reset_index().drop(columns="index")
   ver_rows.append(df)
 
 sup_st = []
