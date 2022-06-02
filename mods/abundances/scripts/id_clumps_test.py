@@ -2,16 +2,23 @@ import pandas as pd
 import numpy as np
 import pickle
 
-df1=pd.read_csv("/mnt/scratch/f0104093/condensed_pipeline_tests/data/data_AbundanceRow09_C_IV.txt", delim_whitespace=True) ##read in data files
-df2=pd.read_csv("/mnt/scratch/f0104093/condensed_pipeline_tests/data/data_AbundanceRow10_C_IV.txt", delim_whitespace=True)
+rowlist = []
+path = "/mnt/scratch/f0104093/condensed_pipeline_tests/data/"
 
-df1_work=df1[df1["lightray_index"]==1] ##filter to only ray1
-df2_work=df2[df2["lightray_index"]==1]
-df1_clumps = df1_work[["interval_start","interval_end"]].reset_index().drop(columns="index")  ##filter to only indexes
-df2_clumps = df2_work[["interval_start","interval_end"]].reset_index().drop(columns="index") 
+for i in range(26):
+    m = i+1
+		n_len = len(str(m))
+		n_zeros = ndigits - n_len
+		k = "0" * n_zeros + str(m)
+    row_data = pd.read_csv(path+f"data_AbundanceRow{k}_C_IV.txt", delim_whitespace=True) ##read in data files
+    row_work = row_data[row_data["lightray_index"]==1] ##filter to only ray1
+    df[f'{k}'] = row_work[["interval_start","interval_end"]].reset_index().drop(columns="index") ##filter to only indexes
+    rowlist.append(df[f'{k}'])
+
+
 
 mx= -np.inf  ##find how long each array should be
-rowlist = [df1_clumps, df2_clumps]
+
 for ds in rowlist: #find the cell index of the furthest clump
   row_mx = max(ds["interval_end"])
   if row_mx>mx:
