@@ -14,8 +14,8 @@ for i in range(datanum):
   k = "0" * n_zeros + str(m)
   row_data = pd.read_csv(path+f"data_AbundanceRow{k}_C_IV.txt", delim_whitespace=True) ##read in data files
   row_work = row_data[row_data["lightray_index"]==1] ##filter to only ray1
-  df[f'{i}'] = row_work[["interval_start","interval_end"]].reset_index().drop(columns="index") ##filter to only indexes
-  rowlist.append(df[f'{i}'])
+  df = row_work[["interval_start","interval_end"]].reset_index().drop(columns="index") ##filter to only indexes
+  rowlist.append(df)
 
 
 
