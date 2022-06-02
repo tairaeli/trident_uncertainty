@@ -4,16 +4,18 @@ import pickle
 
 rowlist = []
 path = "/mnt/scratch/f0104093/condensed_pipeline_tests/data/"
+datanum = 26 ##number of rows on the abundance table, modify as needed
+ndigits= len(str(datanum))
 
-for i in range(26):
-    m = i+1
-		n_len = len(str(m))
-		n_zeros = ndigits - n_len
-		k = "0" * n_zeros + str(m)
-    row_data = pd.read_csv(path+f"data_AbundanceRow{k}_C_IV.txt", delim_whitespace=True) ##read in data files
-    row_work = row_data[row_data["lightray_index"]==1] ##filter to only ray1
-    df[f'{k}'] = row_work[["interval_start","interval_end"]].reset_index().drop(columns="index") ##filter to only indexes
-    rowlist.append(df[f'{k}'])
+for i in range(datanum):
+  m = i+1
+  n_len = len(str(m))
+  n_zeros = ndigits - n_len
+  k = "0" * n_zeros + str(m)
+  row_data = pd.read_csv(path+f"data_AbundanceRow{k}_C_IV.txt", delim_whitespace=True) ##read in data files
+  row_work = row_data[row_data["lightray_index"]==1] ##filter to only ray1
+  df[f'{i}'] = row_work[["interval_start","interval_end"]].reset_index().drop(columns="index") ##filter to only indexes
+  rowlist.append(df[f'{i}'])
 
 
 
