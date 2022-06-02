@@ -14,11 +14,19 @@ short = pickle.load(pickle_short_off)
 
 super_clumps = np.load('super_clumps_array.npy')
 
-path = "/mnt/scratch/f0104093/condensed_pipeline_tests/data/" # modify as needed
-data1 = pd.read_csv(path + "data_AbundanceRow09_C_IV.txt", sep = " ") ##read in data files
-data2 = pd.read_csv(path + "data_AbundanceRow10_C_IV.txt", sep =" ")
-df1_work=data1[data1["lightray_index"]==1].reset_index().drop(columns="index")  ##filter to only ray1
-df2_work=data2[data2["lightray_index"]==1].reset_index().drop(columns="index") 
+var_rows = []
+path = "/mnt/scratch/f0104093/condensed_pipeline_tests/data/"
+datanum = 26 ##number of rows on the abundance table, modify as needed
+ndigits= len(str(datanum))
+for i in range(datanum):
+  m = i+1
+  n_len = len(str(m))
+  n_zeros = ndigits - n_len
+  p = "0" * n_zeros + str(m)
+  row_data = pd.read_csv(path+f"data_AbundanceRow{p}_C_IV.txt", delim_whitespace=True) ##read in data files
+  row_work = row_data[row_data["lightray_index"]==1] ##filter to only ray1
+  df = row_work[["interval_start","interval_end"]].reset_index().drop(columns="index") ##filter to only indexes
+  ver_rows.append(df)
 
 sup_st = []
 sup_en = []
@@ -29,7 +37,6 @@ for i in range(1, len(super_clumps)):
     elif super_clumps[n]>super_clumps[i]: ##end of a super clump
         sup_en.append(n)
 	
-var_rows = [df1_work, df2_work]
 for k in range(len(sup_st)):
     col_density_match = []
     col_density_merge = []
@@ -51,7 +58,8 @@ for k in range(len(sup_st)):
             if (indexs[j][0]>=sup_st[k]) and (indexs[j][1]<=sup_en[k]):
                 ds = var_rows[rows-1]
                 col_density_short.append(ds["col_dens"][j])
-    plt.hist((col_density_match, col_density_merge, col_density_short), histtype='barstacked', label=['col_density_match', 'col_density_merge', 'col_density_short'])
+    sum_merge = sum(col_density_merge)
+    plt.hist((col_density_match, sum_merge, col_density_short), histtype='barstacked', label=['col_density_match', 'col_density_merge', 'col_density_short'])
     plt.legend()
     plt.title(f"C_IV -- LightRay Index 1 -- Super Clump {k}")
     plt.savefig(f"/mnt/scratch/f0104093/condensed_pipeline_tests/visuals/super_clump_hist/Hist_CIV_RayIndex1_SuperClump{k}_.png")
