@@ -47,11 +47,16 @@ for k in range(len(sup_st)):
                 ds = var_rows[row-1]
                 col_density_match.append(ds["col_dens"][j])
 				
-    for rowm, indexm in merge.items():
+    for rowm, indexm in merge.items(): ##FIXME: add mods made in the hpcc, avg merge function doesnt work yet
         for j in range(len(indexm)):
+		temp_col_dens =[]
             if (indexm[j][0]>=sup_st[k]) and (indexm[j][1]<=sup_en[k]):
                 ds = var_rows[rowm-1]
-                col_density_merge.append(ds["col_dens"][j])
+		indexq = np.where((indexm[j][0]) == (var_rows[rowm-1]["interval_start"]))
+		temp_col_dens.append(ds["col_dens"][indexq]
+	    if len(temp_col_dens) != 0:
+		avg_dens = sum(temp_col_dens)/len(temp_col_dens)
+                col_density_merge.append(avg_dens)
 				
     for rows, indexs in short.items():
         for j in range(len(indexs)):
