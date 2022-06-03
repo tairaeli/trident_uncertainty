@@ -98,14 +98,14 @@ for r in range(raynum):
                           
 #for clump in maybe_lonely: ##later must set a limits on the minimumm number of times something has to appear in maybe lonely for it to actually be considered lonely
 	print(match)
-	pickling_match = open("match.pickle","wb") ##saves the dictonaries so that they can be accesssed later
+	pickling_match = open(f"matchRay{r}.pickle","wb") ##saves the dictonaries so that they can be accesssed later
 	pickle.dump(match, pickling_match, protocol=3)	
 	pickling_match.close()
                           
-	pickling_merge = open("merge.pickle","wb")
+	pickling_merge = open(f"mergeRay{r}.pickle","wb")
 	pickle.dump(merge, pickling_merge, protocol=3)
 	pickling_merge.close() 
                           
-	pickling_short = open("short.pickle","wb")
+	pickling_short = open(f"shortRay{r}.pickle","wb")
 	pickle.dump(short, pickling_short, protocol=3)
 	pickling_short.close()
