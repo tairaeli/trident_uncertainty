@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+##ADD capibilites to do all rays
 pickle_match_off = open("match.pickle", 'rb')
 match = pickle.load(pickle_match_off)
 
