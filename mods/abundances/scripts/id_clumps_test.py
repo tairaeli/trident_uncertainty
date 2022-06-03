@@ -38,7 +38,7 @@ for r in range(raynum):
     clmaps.append(ds_clump_loc)
   super_clumps=np.append(0, super_clumps)  ##make indexing work  
   super_clumps=np.append(super_clumps, 0)
-  np.save('super_clumps_array', super_clumps)
+  np.save(f'super_clumps_array_Ray{r}', super_clumps)
                     
   match = {} ##create dictionaries to store indexes of clumps in the row that correspond to one another, keys will be row numbers and values will be indecies except for the lonlies
   short = {}
