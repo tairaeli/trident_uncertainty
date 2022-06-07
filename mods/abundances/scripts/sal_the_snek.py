@@ -43,10 +43,10 @@ def generate_names(length, add=''):
 	saved_filename_list = []
 	
 	for i in range(length): ##made this so that it would sort correctly for making plots
-		
-		n_len = len(str(i))
+		m= i+1
+		n_len = len(str(m))
 		n_zeros = ndigits - n_len
-		k = "0" * n_zeros + str(i)
+		k = "0" * n_zeros + str(m)
 		saved_filename_list.append(f'data_AbundanceRow{k}{add}')
 		
 	return saved_filename_list
@@ -54,6 +54,7 @@ def generate_names(length, add=''):
 #preliminary shenanigans -- load halo data; define handy variables; plant the seed, as it were
 ds = yt.load(args.ds_file)
 center = ds.arr([23876.757358761424, 23842.452527236022, 22995.717805638298], 'kpc')
+gal_vel = ds.arr([-0.02410298432958413, -136.9259851493111, -147.88486721075668], 'km/s')
 other_fields=['density', 'temperature', 'metallicity']
 max_impact=15 #kpc
 units_dict = dict(density='g/cm**3', metallicity='Zsun')
@@ -67,11 +68,12 @@ np.random.seed(11)
 
 # CK: Check that rays already exist, and that the have the additional fields contained
 # in the third argument (empty for now; might become a user parameter)
-check = check_rays(path, args.nrays, [])
+
+check = check_rays(path+"/rays", args.nrays, [])
 if not check:
     print("WARNING: rays not found. Generating new ones.")
-    salsa.generate_lrays(ds, center.to('code_length'), args.nrays, max_impact, ion_list=['H I'], fields=other_fields, out_dir=path+"/rays")
-
+    salsa.generate_lrays(ds, center.to('code_length'), args.nrays, max_impact, ion_list=['H I'], fields=other_fields, out_dir=(path + "/rays"),field_parameters={'bulk_velocity', gal_vel})
+    
 ray_list=[]
 for i in range(args.nrays):
     if len(str(i)) != len(str(args.nrays)):
@@ -106,6 +108,7 @@ else:
 	saved = generate_names(nrows)
 	for i in ion_list:
 		abs_ext = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, abundance_table = None, calc_missing=True)
+		print(type(abs_ext))
 		df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=units_dict)
 		df.to_csv(f'{args.path}/data/data_SolAb_{i.replace(" ", "_")}.txt', sep = ' ')
 		print("Go look at your data!")

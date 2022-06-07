@@ -1,0 +1,1 @@
+sbatch uvb_clump_recognition.sh /mnt/home/tairaeli/trident_uncertainty/mods/backgrounds/clump_rec_dat 4 ./fg2009_lr.h5 /mnt/home/tairaeli/.trident/config.tri /mnt/home/tairaeli/trident_uncertainty/mods/abundances/sal_test/cgm_abundances.txt
