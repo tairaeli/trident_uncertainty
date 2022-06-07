@@ -56,7 +56,7 @@ ds = yt.load(args.ds_file)
 center = ds.arr([23876.757358761424, 23842.452527236022, 22995.717805638298], 'kpc')
 gal_vel = ds.arr([-0.02410298432958413, -136.9259851493111, -147.88486721075668], 'km/s')
 other_fields=['density', 'temperature', 'metallicity']
-max_impact=600 #kpc
+max_impact=15 #kpc
 units_dict = dict(density='g/cm**3', metallicity='Zsun')
 
 ray_num = f'{0:0{len(str(args.nrays))}d}'
@@ -71,7 +71,7 @@ np.random.seed(11)
 check = check_rays(path+"/rays", args.nrays, [])
 if not check:
     print("WARNING: rays not found. Generating new ones.")
-    salsa.generate_lrays(ds, center.to('code_length'), args.nrays, max_impact, ion_list=['H I'], fields=other_fields, out_dir=(path + "/rays"), field_parameters={'bulk_velocity', gal_vel})
+    salsa.generate_lrays(ds, center.to('code_length'), args.nrays, max_impact, field_parameters={'bulk_velocity', gal_vel}, ion_list=['H I'], fields=other_fields, out_dir=(path + "/rays"))
 
 ray_list=[]
 for i in range(args.nrays):
