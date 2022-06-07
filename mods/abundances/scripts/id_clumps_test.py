@@ -16,7 +16,7 @@ for r in range(raynum):
 		k = "0" * n_zeros + str(m)
 		row_data = pd.read_csv(path+f"data_AbundanceRow{k}_C_IV.txt", delim_whitespace=True) ##read in data files
  		row_work = row_data[row_data["lightray_index"]==r] ##filter to only ray1
-		df = row_work[["interval_start","interval_end"]].reset_index().drop(columns="index") ##filter to only indexes
+		df = row_work[["vel_dispersion","interval_start","interval_end"]].reset_index().drop(columns="index") ##filter to only indexes and velocites
 		rowlist.append(df)
 
 	mx= -np.inf  ##find how long each array should be
@@ -36,9 +36,19 @@ for r in range(raynum):
 	super_clumps=np.append(super_clumps, 0)
 	np.save('super_clumps_array', super_clumps)
                     
+	sup_st = [] ##get indexes of superclumps
+	sup_en = []
+	for j in range(1, len(super_clumps)):
+    		n= j-1
+    		if super_clumps[n]<super_clumps[j]: ##start of a super clump
+        		sup_st.append(n) 
+    		elif super_clumps[n]>super_clumps[j]: ##end of a super clump
+        		sup_en.append(n)
+		
 	match = {} ##create dictionaries to store indexes of clumps in the row that correspond to one another, keys will be row numbers and values will be indecies except for the lonlies
 	short = {}
 	merge = {}
+	false_merge = {}
 	lonely = {}
 	maybe_lonely = {}
 	rownum = 0
@@ -60,44 +70,70 @@ for r in range(raynum):
 		for i in range(1,len(row)):
         	if super_clumps[i-1]<super_clumps[i]: ##start of a super clump
 				sup_st = i-1 ##keep track of start location of a super clump
-            if row[i-1]<row[i]:  ##start of a clump in the row
-				row_st_cnt += 1
-				row_st_ind.append(i-1)
+		if row[i-1]<row[i]:  ##start of a clump in the row
+			row_st_cnt += 1
+			row_st_ind.append(i-1)
         
-			elif row[i-1]>row[i]: ##end of a clump in row
-				row_en_cnt += 1
-				row_en_ind.append(i-1)
+		elif row[i-1]>row[i]: ##end of a clump in row
+			row_en_cnt += 1
+			row_en_ind.append(i-1)
             
-			if super_clumps[i-1]>super_clumps[i]: ##end of a super clump
-				sup_en = i-1 ##keep track of the location of the end of a super clump
+		if super_clumps[i-1]>super_clumps[i]: ##end of a super clump
+			sup_en = i-1 ##keep track of the location of the end of a super clump
           
-				if (row_st_cnt == 1) and (row_en_cnt == 1): ##check for if there is only one row clump in the super clump
+			if (row_st_cnt == 1) and (row_en_cnt == 1): ##check for if there is only one row clump in the super clump
     
-					if (row_st_ind[0] == sup_st) & (row_en_ind[0] == sup_en): ##if the starts and ends match, the clumps are identical
-						row_match.append([row_st_ind[0],row_en_ind[0]]) ##thus, start and end indecies appended to a list of them
-            		else:
-						row_short.append([row_st_ind[0],row_en_ind[0]]) ##if not, then the row clump must be shorter and the start and end indecies are appended to the appropraite list
+				if (row_st_ind[0] == sup_st) and (row_en_ind[0] == sup_en): ##if the starts and ends match, the clumps are identical
+					row_match.append([row_st_ind[0],row_en_ind[0]]) ##thus, start and end indecies appended to a list of them
+            			else:
+					row_short.append([row_st_ind[0],row_en_ind[0]]) ##if not, then the row clump must be shorter and the start and end indecies are appended to the appropraite list
             	
-				elif (row_st_cnt == 0) & (row_en_cnt == 0): ##check if there is nothing in the row that matches the super clump
+			elif (row_st_cnt == 0) and (row_en_cnt == 0): ##check if there is nothing in the row that matches the super clump
                 
-					if str([sup_st,sup_en]) in maybe_lonely.keys(): ##check if we have already seen this superclump, if not make the entry in the dictionary
-						maybe_lonely[str([sup_st,sup_en])] += 1
-					else:
-						maybe_lonely[str([sup_st,sup_en])] = 1
-            	else: ##only other senario is there there was a merge
-					for j in range(len(row_st_ind)): ##organize the indecies to make the list in order
+				if str([sup_st,sup_en]) in maybe_lonely.keys(): ##check if we have already seen this superclump, if not make the entry in the dictionary
+					maybe_lonely[str([sup_st,sup_en])] += 1
+				else:
+					maybe_lonely[str([sup_st,sup_en])] = 1
+        	    	else: ##only other senario is there there was a merge
+				for j in range(len(row_st_ind)): ##organize the indecies to make the list in order
 						row_merge.append([row_st_ind[j],row_en_ind[j]]) 
                                  
-				row_st_cnt = 0
-				row_st_ind = []
-				row_en_cnt = 0
-				row_en_ind = []
-				match[rownum] = row_match
-				short[rownum] = row_short
-				merge[rownum] = row_merge
+		row_st_cnt = 0
+		row_st_ind = []
+		row_en_cnt = 0
+		row_en_ind = []
+		match[rownum] = row_match
+		short[rownum] = row_short
+		merge[rownum] = row_merge
                           
 #for clump in maybe_lonely: ##later must set a limits on the minimumm number of times something has to appear in maybe lonely for it to actually be considered lonely
-	print(match)
+	for dict in [match, short, merge]: ##iterate over all the dictionaries
+		for key in dict:
+			true_spans = [] ##array of indecies where clumps really are
+			for n in range(len(rowlist[i-1])):
+				true_spans.append(rowlist[key-1]["interval_start"], rowlist[key-1]["interval_end"].astype(int))
+			false_clumps = []
+			for span in dict[key]:
+				if span in true_spans: ##pass by if it really is a clump
+					continue
+				else: ##some weird merge happened so we have to fix it
+					true_span_arr = np.array(true_spans)
+					sp_st = span[0]
+					sp_end = span[1]
+					n = int(np.where(sp_st == true_span_arr[:,1])[0])
+					p = 0
+					while sp_en >= true_span_arr[n+p, 1]:
+						false_clumps.append(int([true_span_arr[n+p, 0]), int(true_spans[n+p, 1])]) ##make it so we have the start and end indecies
+						p += 1
+						if (n+p) >= len(true_span_arr[:,1]):
+							break
+				if i in false_merge.keys():
+					false_merge[key].append(false_clumps)
+				else:
+					false_merge[key] = false_clumps
+				dict[key].remove(span) ##modify og dictionaries to help later			
+	
+							    
 	pickling_match = open(f"matchRay{r}.pickle","wb") ##saves the dictonaries so that they can be accesssed later
 	pickle.dump(match, pickling_match, protocol=3)	
 	pickling_match.close()
@@ -109,3 +145,7 @@ for r in range(raynum):
 	pickling_short = open(f"shortRay{r}.pickle","wb")
 	pickle.dump(short, pickling_short, protocol=3)
 	pickling_short.close()
+								    
+	pickling_false_merge = open(f"FalseMergeRay{r}.pickle","wb")
+	pickle.dump(false_merge, pickling_false_merge, protocol=3)
+	pickling_merge.close() 
