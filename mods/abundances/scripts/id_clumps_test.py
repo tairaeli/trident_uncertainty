@@ -126,10 +126,11 @@ for r in range(raynum):
 							break
 							
 				if h+1 in false_merge.keys():
-					false_merge[h+1].append(false_clumps)
-					
+					false_merge[h+1].append(false_clumps[0])
+					false_merge[h+1].append(false_clumps[1])
 				else:
 					false_merge[h+1] = false_clumps
+				
 				dic[h+1].remove(span) ##modify og dictionaries to help later	
                           
 #for clump in maybe_lonely: ##later must set a limits on the minimumm number of times something has to appear in maybe lonely for it to actually be considered lonely
