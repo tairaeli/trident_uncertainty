@@ -97,7 +97,7 @@ if 'file_path' in dic_args:
 	for row_num in range(nrows):
 		for i in ion_list:
 			abundances = abun.iloc[row_num].to_dict()
-			abs_ext = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, abundance_table = abundances, calc_missing=True)
+			abs_ext = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, velocity_res =20, abundance_table = abundances, calc_missing=True)
 			df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=units_dict)
 			df.to_csv(f'{args.path}/data/{saved[row_num]}_{i.replace(" ", "_")}.txt', sep = ' ')
 			print("Go look at your data!")
