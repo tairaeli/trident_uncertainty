@@ -12,9 +12,6 @@ merge = pickle.load(pickle_merge_off)
 pickle_short_off = open("ShortRay1.pickle", 'rb')
 short = pickle.load(pickle_short_off)
 
-pickle_false_merge_off = open("FalseMergeRay1.pickle", 'rb')
-false_merge = pickle.load(pickle_false_merge_off)
-
 super_clumps = np.load('super_clumps_array_ray1.npy')
 
 var_rows = []
@@ -45,7 +42,6 @@ for k in range(len(sup_st)): ##depending on which category each clump belongs to
     col_density_match = []
     col_density_merge = []
     col_density_short = []
-    col_density_fal_merge = []
 
     for row, index in match.items():
         for j in range(len(index)):
@@ -72,15 +68,9 @@ for k in range(len(sup_st)): ##depending on which category each clump belongs to
                 indexq = np.where((indexs[j][0]) == (var_rows[rows-1]["interval_start"]))
                 col_density_short.append(ds["col_dens"][int(indexq[0])])
 
-    for rowf, indexf in false_merge.items():
-        for j in range(len(indexf)):
-            if (indexf[j][0]>=sup_st[k]) and (indexf[j][1]<=sup_en[k]):
-                ds = var_rows[rowf-1]
-                indexq = np.where((indexf[j][0]) == (var_rows[rowf-1]["interval_start"]))
-                col_density_fal_merge.append(ds["col_dens"][int(indexq[0])])
-
+    
    ##plot the results##
-     plt.hist((col_density_match, col_density_merge, col_density_short, col_density_fal_merge), histtype='barstacked', label=['col_density_match', 'col_density_merge', 'col_density_short', 'col_density_false_merge'])
+     plt.hist((col_density_match, col_density_merge, col_density_short), histtype='barstacked', label=['col_density_match', 'col_density_merge', 'col_density_short', 'col_density_false_merge'])
     plt.legend()
     plt.title(f"C_IV -- LightRay Index 1 -- Super Clump {k}")
     plt.savefig(f"/mnt/scratch/f0104093/condensed_pipeline_tests/visuals/super_clump_hist/Hist_CIV_RayIndex1_SuperClump{k}_.png")
