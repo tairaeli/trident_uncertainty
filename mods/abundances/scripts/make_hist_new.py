@@ -33,9 +33,15 @@ sup_en = []
 for i in range(1, len(super_clumps)):
     n= i-1
     if super_clumps[n]<super_clumps[i]: ##start of a super clump
-        sup_st.append(n)
+        if super_clumps[n]== 2:
+           sup_st.append(n-1)
+        else: 
+           sup_st.append(n)
     elif super_clumps[n]>super_clumps[i]: ##end of a super clump
-        sup_en.append(n)
+        if super_clumps[n] ==2:
+           sup_en.append(n-1)
+        else:
+           sup_en.append(n)
 
 	
 for k in range(len(sup_st)): ##depending on which category each clump belongs to in super_clumps, append its column density to a list
@@ -70,7 +76,7 @@ for k in range(len(sup_st)): ##depending on which category each clump belongs to
 
     
    ##plot the results##
-     plt.hist((col_density_match, col_density_merge, col_density_short), histtype='barstacked', label=['col_density_match', 'col_density_merge', 'col_density_short', 'col_density_false_merge'])
+    plt.hist((col_density_match, col_density_merge, col_density_short), histtype='barstacked', label=['col_density_match', 'col_density_merge', 'col_density_short', 'col_density_false_merge'])
     plt.legend()
     plt.title(f"C_IV -- LightRay Index 1 -- Super Clump {k}")
     plt.savefig(f"/mnt/scratch/f0104093/condensed_pipeline_tests/visuals/super_clump_hist/Hist_CIV_RayIndex1_SuperClump{k}_.png")
@@ -79,4 +85,3 @@ for k in range(len(sup_st)): ##depending on which category each clump belongs to
 
 
 print("Go Look!")
-
