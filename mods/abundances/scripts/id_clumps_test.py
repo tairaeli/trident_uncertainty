@@ -7,8 +7,7 @@ datanum = 26 ##number of rows on the abundance table, modify as needed
 ndigits= len(str(datanum))
 raynum = 4 ##number of rays used, modify as needed
 
-for r in range(1,2):
-    rowlist = []
+for r in range(raynum):
     rowlist = []
     for i in range(datanum):
         m = i+1
@@ -27,6 +26,8 @@ for r in range(1,2):
             mx=row_mx
     super_clumps = np.zeros(int(mx))
     clmaps = []
+    
+    problems = []
     for ds in rowlist: ##make masks for each row and form super_clumps
         ds_clump_loc = np.zeros(int(mx))
         for j in range(ds.shape[0]):
@@ -39,25 +40,37 @@ for r in range(1,2):
                 
                 if not (float(ds["delta_v"][j-1]) - 1.5 * (float(ds["vel_dispersion"][j-1]))) <= float(ds["delta_v"][j]) <= 1.5 * (float(ds["delta_v"][j-1]) + (float(ds["vel_dispersion"][j-1]))):
                     ds_clump_loc[int(ds["interval_start"][j])] = 2
-                
+                    
+                    if int(ds["interval_end"][j-1]) not in problems:
+                        problems.append(int(ds["interval_end"][j-1]))
+                    
                     if (super_clumps[int(ds["interval_end"][j-1])] == 0) or (super_clumps[int(ds["interval_end"][j-1])] == 2):
                         super_clumps[int(ds["interval_start"][j]):int(ds["interval_end"][j])] = 1
                         super_clumps[int(ds["interval_start"][j])] = 2
-                        print(f'2 is done on: {int(ds["interval_start"][j])}')
+                        
                 
                 else:
                     super_clumps[int(ds["interval_start"][j]):int(ds["interval_end"][j])] = 1
                 
                 
             else:
-                print(f'2 is erased on: {int(ds["interval_start"][j])}, {int(ds["interval_end"][j])}')
-            super_clumps[int(ds["interval_start"][j]):int(ds["interval_end"][j])] = 1  ##FIXME, overwrites 2s on last iteration
+                super_clumps[int(ds["interval_start"][j]):int(ds["interval_end"][j])] = 1  ##FIXME, overwrites 2s on last iteration
         
         clmaps.append(ds_clump_loc)
+        
+        for index in problems:
+            for row in clmaps:
+                if row[index-1] == 0 or row[index+1] == 0:
+                    super_clumps[index] = 2
+                
+        
+        
+        
+        
+        
     super_clumps=np.append(0, super_clumps)  ##make indexing work  
     super_clumps=np.append(super_clumps, 0)
-    np.save('super_clumps_array', super_clumps)
-    super_clumps[882] =2
+    np.save('super_clumps_array_ray{r}', super_clumps)
     match = {} ##create dictionaries to store indexes of clumps in the row that correspond to one another, keys will be row numbers and values will be indecies except for the lonlies
     short = {}
     merge = {}
@@ -103,7 +116,7 @@ for r in range(1,2):
             if super_clumps[i-1]>super_clumps[i]: ##end of a super clump
                
                 if super_clumps[i-1]==2:
-                    print("working")
+                    
                     sup_en = i-2
                     sup_st = sup_st_true[0]
                     
@@ -129,7 +142,7 @@ for r in range(1,2):
                 else: ##only other senario is there there was a merge
                     for j in range(len(row_en_ind)): ##organize the indecies to make the list in order
                         row_merge.append([row_st_ind[j],row_en_ind[j]]) 
-                        print(row_st_ind,row_en_ind, sup_st, sup_en, row_st_cnt, row_en_cnt)
+                        
                         
                 if super_clumps[i-1]==2:
                     sup_st=sup_st_true[1]
@@ -164,6 +177,7 @@ for r in range(1,2):
 	pickle.dump(short, pickling_short, protocol=3)
 	pickling_short.close()
 	
-# 	pickling_false_merge = open(f"FalseMergeRay{r}.pickle","wb")
-# 	pickle.dump(false_merge, pickling_false_merge, protocol=3)
-# 	pickling_false_merge.close() 
+	pickling_maybe_lonely = open(f"MaybeLonelyRay{r}.pickle","wb")
+	pickle.dump(maybe_lonely, pickling_maybe_lonely, protocol=3)
+	pickling_maybe_lonely.close()
+	
