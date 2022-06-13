@@ -39,12 +39,13 @@ for r in range(raynum):
 
             elif int(ds["interval_end"][j-1]) == int(ds["interval_start"][j]):
 
-                #print(f"{float(ds['delta_v'][j-1]) - 1.5 * (float(ds['vel_dispersion'][j-1]))}, {float(ds['delta_v'][j])}, {(1.5 * (float(ds['delta_v'][j-1])) + (float(ds['vel_dispersion'][j-1])))}")
+                #check for wether or not two clumps are within thier standard deviations
                 if not (float(ds["delta_v"][j-1]) - 1.5 * (float(ds["vel_dispersion"][j-1]))) <= float(ds["delta_v"][j]) <= 1.5 * (float(ds["delta_v"][j-1]) + (float(ds["vel_dispersion"][j-1]))):
                     ds_clump_loc[int(ds["interval_start"][j])] = 2
+		    #edge case handling
                     if int(ds["interval_end"][j-1]) not in problems:
-                        problems.append(int(ds["interval_end"][j-1]))
-                    
+                        problems.append(int(ds["interval_end"][j-1])) 
+                     #to make sure the bigger clumps stays in superclumps:
                     if (super_clumps[int(ds["interval_end"][j-1])] == 0) or (super_clumps[int(ds["interval_end"][j-1])] == 2):
                         super_clumps[int(ds["interval_start"][j]):int(ds["interval_end"][j])] = 1
                         super_clumps[int(ds["interval_start"][j])] = 2
@@ -55,13 +56,13 @@ for r in range(raynum):
                 
                 
             else:
-                super_clumps[int(ds["interval_start"][j]):int(ds["interval_end"][j])] = 1  ##FIXME, overwrites 2s on last iteration
+                super_clumps[int(ds["interval_start"][j]):int(ds["interval_end"][j])] = 1  
         
         clmaps.append(ds_clump_loc)
         
         for index in problems:
             for row in clmaps:
-                if ((row[index-1] == 0 and row[index+1] != 0) or (row[index+1] == 0 and row[index-1] != 0)) and (row[index] != 0):
+                if ((row[index-1] == 0 and row[index+1] != 0) or (row[index+1] == 0 and row[index-1] != 0)) and (row[index] != 0): ##edge case handling
                     super_clumps[index] = 2
                     
                 
@@ -69,11 +70,10 @@ for r in range(raynum):
     
     super_clumps=np.append(0, super_clumps)  ##make indexing work  
     super_clumps=np.append(super_clumps, 0)
-#     super_clumps[1784]=1
-    np.save(f'super_clumps_array_O_VI_ray{r}', super_clumps)
+    np.save(f'super_clumps_array_O_VI_ray{r}', super_clumps) ##save super_clumps for future reference
     match = {} ##create dictionaries to store indexes of clumps in the row that correspond to one another, keys will be row numbers and values will be indecies except for the lonlies
     short = {}
-    merge = {}
+    split = {}
     lonely = {}
     maybe_lonely = {}
     rownum = 0
@@ -90,7 +90,7 @@ for r in range(raynum):
         row_en_ind = [] ##keep track of end location(s) of a row clump
         row_match = []
         row_short = []
-        row_merge = []
+        row_split = []
         sup_st_true =[]
         weird_index = 0
 
@@ -101,17 +101,17 @@ for r in range(raynum):
                 sup_st_true.append(sup_st)
                 
             if row[i-1]<row[i] and len(row_st_ind) == 0:##start of a clump in the row
-                if super_clumps[i-1] == 2:
+                if super_clumps[i-1] == 2: ##if oops is printed, there is another edge case, debugging must begin again
                     print("oops")
-                elif super_clumps[i] != 2 or len(row_st_ind)!=0:
+                elif super_clumps[i] != 2 or len(row_st_ind)!=0: ##normal clumps look like this
                     row_st_ind.append(i-1)
                     row_st_cnt += 1
-                else:
+                else: ##edge case handling
                     weird_index = i-1
 
             elif row[i-1]>row[i]: ##end of a clump in row
                 row_en_cnt += 1
-                if row[i-1]==2:
+                if row[i-1]==2: ## edge case handling
                     row_en_ind.append(i-2)
                 else:
                     row_en_ind.append(i-1)
@@ -119,7 +119,7 @@ for r in range(raynum):
             if super_clumps[i-1]>super_clumps[i]: ##end of a super clump
                 if super_clumps[i-1]==2:
                     sup_en = i-2
-                    sup_st = sup_st_true[0]
+                    sup_st = sup_st_true[0] ##edge case handling
                     
                 if super_clumps[i-1] == 0 or super_clumps[i-1] == 1:
                     sup_en = i-1 ##keep track of the location of the end of a super clump
@@ -127,7 +127,7 @@ for r in range(raynum):
                
                
                 if (row_st_cnt == 1) or (row_en_cnt == 1): ##check for if there is only one row clump in the super clump
-                    if weird_index != 0:
+                    if weird_index != 0: ##edge case handling
                         row_st_ind.append(weird_index)
                         
                     if len(row_en_ind) == 0:
@@ -144,14 +144,14 @@ for r in range(raynum):
                     else:
                         maybe_lonely[str([sup_st,sup_en])] = 1
                         
-                else: ##only other senario is there there was a merge
+                else: ##only other senario is there there was a split
                     for j in range(len(row_en_ind)): ##organize the indecies to make the list in order
-                        row_merge.append([row_st_ind[j],row_en_ind[j]]) 
+                        row_split.append([row_st_ind[j],row_en_ind[j]]) 
                         
                         
                 if super_clumps[i-1]==2:
                     sup_st=sup_st_true[1]
-                        
+                ##reset variables      
                 row_st_cnt = 0
                 row_st_ind = []
                 row_en_cnt = 0
@@ -159,7 +159,7 @@ for r in range(raynum):
                 sup_st_true = []
                 match[rownum] = row_match
                 short[rownum] = row_short
-                merge[rownum] = row_merge
+                split[rownum] = row_split
                 if super_clumps[i-1] == 2:
                     sup_st = i-2
                     if row[i-1]>row[i]:
@@ -174,9 +174,9 @@ for r in range(raynum):
     pickle.dump(match, pickling_match, protocol=3)	
     pickling_match.close()
                           
-    pickling_merge = open(f"MergeOVIRay{r}.pickle","wb")
-    pickle.dump(merge, pickling_merge, protocol=3)
-    pickling_merge.close() 
+    pickling_split = open(f"SplitOVIRay{r}.pickle","wb")
+    pickle.dump(split, pickling_split, protocol=3)
+    pickling_split.close() 
                       
     pickling_short = open(f"ShortOVIRay{r}.pickle","wb")
     pickle.dump(short, pickling_short, protocol=3)
@@ -185,4 +185,3 @@ for r in range(raynum):
     pickling_maybe_lonely = open(f"MaybeLonelyOVIRay{r}.pickle","wb")
     pickle.dump(maybe_lonely, pickling_maybe_lonely, protocol=3)
     pickling_maybe_lonely.close()
-	
