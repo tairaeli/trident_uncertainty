@@ -42,37 +42,63 @@ for i in range(1, len(super_clumps)):
            sup_en.append(n-1)
         else:
            sup_en.append(n)
-
 	
+def get_col_density(dic, row_list, out_list):
+    for row, index in dic.items():
+        for j in range(len(index)):
+            if (index[j][0] == sup_st[k]) and (index[j][1] == sup_en[k]):
+		ds = row_list[row-1]
+                indexq = np.where((index[j][0]) == (ds["interval_start"]))
+		out_list.append(ds["col_dens"][int(indexq[0])])
+    return out_list
+	
+def get_split_col_density(dic, row_list, out_list):
+    for row, index in dic.items():
+	temp_list = []
+	for j in range(len(index)):
+            if (index[j][0] == sup_st[k]) and (index[j][1] == sup_en[k]):
+		ds = row_list[row-1]
+                indexq = np.where((index[j][0]) == (ds["interval_start"]))
+		temp_list.append(10 ** ds["col_dens"][int(indexq[0])])
+        if len(temp_list) != 0:
+            log_sum_dens = np.log10(sum(temp_list))
+	    out_list.append(log_sum_dens)
+    return out_list
+		
+		
 for k in range(len(sup_st)): ##depending on which category each clump belongs to in super_clumps, append its column density to a list
     col_density_match = []
     col_density_split = []
     col_density_short = []
+    
+    get_col_density(match, var_rows, col_density_match)
+    get_split_col_density(split, var_rows, col_density_split)
+    get_col_density(short, var_rows, col_density_short)
+    
+#     for row, index in match.items():
+#         for j in range(len(index)):
+#             if (index[j][0]==sup_st[k]) and (index[j][1]==sup_en[k]):
+#                 ds = var_rows[row-1]
+#                 indexq = np.where((index[j][0]) == (var_rows[row-1]["interval_start"]))
+#                 col_density_match.append(ds["col_dens"][int(indexq[0])])
 
-    for row, index in match.items():
-        for j in range(len(index)):
-            if (index[j][0]==sup_st[k]) and (index[j][1]==sup_en[k]):
-                ds = var_rows[row-1]
-                indexq = np.where((index[j][0]) == (var_rows[row-1]["interval_start"]))
-                col_density_match.append(ds["col_dens"][int(indexq[0])])
+#     for rowm, indexm in split.items(): ##split is a bit weird so we have to sum the densities
+#         temp_col_dens =[]
+#         for j in range(len(indexm)):
+#             if (indexm[j][0]>=sup_st[k]) and (indexm[j][1]<=sup_en[k]):
+#                 ds = var_rows[rowm-1]
+#                 indexq = np.where((indexm[j][0]) == (var_rows[rowm-1]["interval_start"]))
+#                 temp_col_dens.append(10 ** ds["col_dens"][int(indexq[0])])
+#         if len(temp_col_dens) != 0:
+#             log_sum_dens = np.log10(sum(temp_col_dens))
+#             col_density_split.append(log_sum_dens)
 
-    for rowm, indexm in split.items(): ##split is a bit weird so we have to sum the densities
-        temp_col_dens =[]
-        for j in range(len(indexm)):
-            if (indexm[j][0]>=sup_st[k]) and (indexm[j][1]<=sup_en[k]):
-                ds = var_rows[rowm-1]
-                indexq = np.where((indexm[j][0]) == (var_rows[rowm-1]["interval_start"]))
-                temp_col_dens.append(10 ** ds["col_dens"][int(indexq[0])])
-        if len(temp_col_dens) != 0:
-            log_sum_dens = np.log10(sum(temp_col_dens))
-            col_density_split.append(log_sum_dens)
-
-    for rows, indexs in short.items():
-        for j in range(len(indexs)):
-            if (indexs[j][0]>=sup_st[k]) and (indexs[j][1]<=sup_en[k]):
-                ds = var_rows[rows-1]
-                indexq = np.where((indexs[j][0]) == (var_rows[rows-1]["interval_start"]))
-                col_density_short.append(ds["col_dens"][int(indexq[0])])
+#     for rows, indexs in short.items():
+#         for j in range(len(indexs)):
+#             if (indexs[j][0]>=sup_st[k]) and (indexs[j][1]<=sup_en[k]):
+#                 ds = var_rows[rows-1]
+#                 indexq = np.where((indexs[j][0]) == (var_rows[rows-1]["interval_start"]))
+#                 col_density_short.append(ds["col_dens"][int(indexq[0])])
 
     
    ##plot the results##
