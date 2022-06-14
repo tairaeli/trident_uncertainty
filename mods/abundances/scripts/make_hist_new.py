@@ -56,7 +56,7 @@ for k in range(len(sup_st)): ##depending on which category each clump belongs to
                 indexq = np.where((index[j][0]) == (var_rows[row-1]["interval_start"]))
                 col_density_match.append(ds["col_dens"][int(indexq[0])])
 
-    for rowm, indexm in split.items(): ##split is a bit weird so we have to average the densities maybe should sum though?
+    for rowm, indexm in split.items(): ##split is a bit weird so we have to sum the densities
         temp_col_dens =[]
         for j in range(len(indexm)):
             if (indexm[j][0]>=sup_st[k]) and (indexm[j][1]<=sup_en[k]):
@@ -76,7 +76,7 @@ for k in range(len(sup_st)): ##depending on which category each clump belongs to
 
     
    ##plot the results##
-    plt.hist((col_density_match, col_density_split, col_density_short), histtype='barstacked', label=['col_density_match', 'col_density_split', 'col_density_short', 'col_density_false_split'])
+    plt.hist((col_density_match, col_density_split, col_density_short), histtype='barstacked', label=['col_density_match', 'col_density_split', 'col_density_short'])
     plt.legend()
     plt.title(f"C_II -- LightRay Index 0 -- Super Clump {k}")
     plt.savefig(f"/mnt/scratch/f0104093/condensed_pipeline_tests/visuals/super_clump_hist/Hist_CII_RayIndex0_SuperClump{k}_.png")
