@@ -28,8 +28,12 @@ for r in range(raynum):
     clmaps = []
     
     problems = []
+    hassles = {}
+    row_tracker = 0
     for ds in rowlist: ##make masks for each row and form super_clumps
         ds_clump_loc = np.zeros(int(mx))
+	row_tracker +=1
+	hassles_ind = []
         for j in range(ds.shape[0]):
             ds_clump_loc[int(ds["interval_start"][j]):int(ds["interval_end"][j])] = 1
             #print(f"Row Start: {int(ds['interval_start'][j])}, Row End: {int(ds['interval_end'][j])}")
@@ -49,15 +53,19 @@ for r in range(raynum):
                     if (super_clumps[int(ds["interval_end"][j-1])] == 0) or (super_clumps[int(ds["interval_end"][j-1])] == 2):
                         super_clumps[int(ds["interval_start"][j]):int(ds["interval_end"][j])] = 1
                         super_clumps[int(ds["interval_start"][j])] = 2
-                        
+		else:
+		    if int(ds["interval_start"][j-1]) not in hassles_ind and int(ds["interval_end"][j-1]) not in hassles_ind:
+                        hassles_ind.append(int(ds["interval_start"][j-1]), int(ds["interval_end"][j-1]))
+		    if int(ds["interval_start"][j]) not in hassles_ind and int(ds["interval_end"][j]) not in hassles_ind:
+                        hassles_ind.append(int(ds["interval_start"][j]), int(ds["interval_end"][j]))                
                 
                 else:
                     super_clumps[int(ds["interval_start"][j]):int(ds["interval_end"][j])] = 1
                 
-                
             else:
                 super_clumps[int(ds["interval_start"][j]):int(ds["interval_end"][j])] = 1  
-        
+		
+        hassles[row_tracker]=hassles_ind
         clmaps.append(ds_clump_loc)
         
         for index in problems:
@@ -132,6 +140,13 @@ for r in range(raynum):
                         
                     if len(row_en_ind) == 0:
                         break
+		    if rownum in hassles.keys(): ##even more edge case handling
+		        if [row_st_ind[0], row_en_ind[0]] in hassles.values():
+			    for j in range(len(row_en_ind)): ##organize the indecies to make the list in order
+                                row_split.append([row_st_ind[j],row_en_ind[j]])
+			break	
+			
+		    
                     if (row_st_ind[0] == sup_st) and (row_en_ind[0] == sup_en): ##if the starts and ends match, the clumps are identical
                         row_match.append([row_st_ind[0],row_en_ind[0]]) ##thus, start and end indecies appended to a list of them
                     else:
