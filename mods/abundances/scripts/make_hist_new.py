@@ -3,16 +3,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-pickle_match_off = open("MatchCIIRay0.pickle", 'rb')
+r = 0
+
+pickle_match_off = open(f"MatchCIIRay{r}.pickle", 'rb')
 match = pickle.load(pickle_match_off)
 
-pickle_split_off = open("SplitCIIRay0.pickle", 'rb')
+pickle_split_off = open(f"SplitCIIRay{r}.pickle", 'rb')
 split = pickle.load(pickle_split_off)
 
-pickle_short_off = open("ShortCIIRay0.pickle", 'rb')
+pickle_short_off = open(f"ShortCIIRay{r}.pickle", 'rb')
 short = pickle.load(pickle_short_off)
 
-super_clumps = np.load('super_clumps_array_C_II_ray0.npy')
+super_clumps = np.load(f'super_clumps_array_C_II_ray{r}.npy')
 
 var_rows = []
 path = "/mnt/scratch/f0104093/condensed_pipeline_tests/data/"
@@ -24,7 +26,7 @@ for i in range(datanum):
   n_zeros = ndigits - n_len
   p = "0" * n_zeros + str(m)
   row_data = pd.read_csv(path+f"data_AbundanceRow{p}_C_II.txt", delim_whitespace=True) ##read in data files
-  row_work = row_data[row_data["lightray_index"]==0] ##filter to only one ray
+  row_work = row_data[row_data["lightray_index"]==r] ##filter to only one ray
   df = row_work.reset_index().drop(columns="index") ##make indexing work
   var_rows.append(df)
 
@@ -104,8 +106,8 @@ for k in range(len(sup_st)): ##depending on which category each clump belongs to
    ##plot the results##
     plt.hist((col_density_match, col_density_split, col_density_short), histtype='barstacked', label=['col_density_match', 'col_density_split', 'col_density_short'])
     plt.legend()
-    plt.title(f"C_II -- LightRay Index 0 -- Super Clump {k}")
-    plt.savefig(f"/mnt/scratch/f0104093/condensed_pipeline_tests/visuals/super_clump_hist/Hist_CII_RayIndex0_SuperClump{k}_.png")
+    plt.title(f"C_II -- LightRay Index {r} -- Super Clump {k}")
+    plt.savefig(f"/mnt/scratch/f0104093/condensed_pipeline_tests/visuals/super_clump_hist/Hist_CII_RayIndex{r}_SuperClump{k}_.png")
     plt.close()
     print("Plotted!")
 
