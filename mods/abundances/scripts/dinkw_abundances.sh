@@ -13,7 +13,7 @@
 
 cd /mnt/home/f0104093/trident_uncertainty/mods/abundances/scripts
 module load python/3.6.4
-srun -n 128 python sal_the_snek.py --ds /mnt/scratch/f0104093/condensed_pipeline_tests/  --nrays 4 --abun /mnt/home/f0104093/new_abundances/new_abundances/cgm_abundances.txt
+srun -n 128 python sal_the_snek.py --ds /mnt/scratch/f0104093/condensed_pipeline_tests/  --nrays 4 --abun /mnt/home/f0104093/new_abundances/cgm_abundances.txt
 
 for ION in C_II C_IV O_VI
 do
