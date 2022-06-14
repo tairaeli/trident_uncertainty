@@ -14,7 +14,7 @@ for r in range(raynum):
         n_len = len(str(m))
         n_zeros = ndigits - n_len
         k = "0" * n_zeros + str(m)
-        row_data = pd.read_csv(path+f"data_AbundanceRow{k}_O_VI.txt", delim_whitespace=True) ##read in data files
+        row_data = pd.read_csv(path+f"data_AbundanceRow{k}_C_II.txt", delim_whitespace=True) ##read in data files
         row_work = row_data[row_data["lightray_index"]==r] ##filter to only ray1
         df = row_work.reset_index().drop(columns="index") ##make indexing work
         rowlist.append(df)
@@ -29,45 +29,44 @@ for r in range(raynum):
     
     problems = []
     hassles = {}
+    
     row_tracker = 0
     for ds in rowlist: ##make masks for each row and form super_clumps
         ds_clump_loc = np.zeros(int(mx))
-	row_tracker +=1
-	hassles_ind = []
+        row_tracker +=1
+        print(f"Before: {row_tracker}")
+        hassles_ind = []
         for j in range(ds.shape[0]):
             ds_clump_loc[int(ds["interval_start"][j]):int(ds["interval_end"][j])] = 1
-            #print(f"Row Start: {int(ds['interval_start'][j])}, Row End: {int(ds['interval_end'][j])}")
+                #print(f"Row Start: {int(ds['interval_start'][j])}, Row End: {int(ds['interval_end'][j])}")
 
             if j-1 == -1:
                 super_clumps[int(ds["interval_start"][j]):int(ds["interval_end"][j])] = 1
 
             elif int(ds["interval_end"][j-1]) == int(ds["interval_start"][j]):
 
-                #check for wether or not two clumps are within thier standard deviations
+                    #check for wether or not two clumps are within thier standard deviations
                 if not (float(ds["delta_v"][j-1]) - 1.5 * (float(ds["vel_dispersion"][j-1]))) <= float(ds["delta_v"][j]) <= 1.5 * (float(ds["delta_v"][j-1]) + (float(ds["vel_dispersion"][j-1]))):
                     ds_clump_loc[int(ds["interval_start"][j])] = 2
-		    #edge case handling
+                #edge case handling
                     if int(ds["interval_end"][j-1]) not in problems:
                         problems.append(int(ds["interval_end"][j-1])) 
-                     #to make sure the bigger clumps stays in superclumps:
+                         #to make sure the bigger clumps stays in superclumps:
                     if (super_clumps[int(ds["interval_end"][j-1])] == 0) or (super_clumps[int(ds["interval_end"][j-1])] == 2):
                         super_clumps[int(ds["interval_start"][j]):int(ds["interval_end"][j])] = 1
                         super_clumps[int(ds["interval_start"][j])] = 2
-		else:
-		    if int(ds["interval_start"][j-1]) not in hassles_ind and int(ds["interval_end"][j-1]) not in hassles_ind:
-                        hassles_ind.append(int(ds["interval_start"][j-1]), int(ds["interval_end"][j-1]))
-		    if int(ds["interval_start"][j]) not in hassles_ind and int(ds["interval_end"][j]) not in hassles_ind:
-                        hassles_ind.append(int(ds["interval_start"][j]), int(ds["interval_end"][j]))                
-                
                 else:
+                    hassles_ind.append([int(ds["interval_start"][j-1]), int(ds["interval_end"][j-1])])
+                    hassles_ind.append([int(ds["interval_start"][j]), int(ds["interval_end"][j])])                
                     super_clumps[int(ds["interval_start"][j]):int(ds["interval_end"][j])] = 1
-                
+                    print(row_tracker, hassles_ind)
+
             else:
                 super_clumps[int(ds["interval_start"][j]):int(ds["interval_end"][j])] = 1  
-		
+
         hassles[row_tracker]=hassles_ind
         clmaps.append(ds_clump_loc)
-        
+
         for index in problems:
             for row in clmaps:
                 if ((row[index-1] == 0 and row[index+1] != 0) or (row[index+1] == 0 and row[index-1] != 0)) and (row[index] != 0): ##edge case handling
@@ -78,7 +77,7 @@ for r in range(raynum):
     
     super_clumps=np.append(0, super_clumps)  ##make indexing work  
     super_clumps=np.append(super_clumps, 0)
-    np.save(f'super_clumps_array_O_VI_ray{r}', super_clumps) ##save super_clumps for future reference
+    np.save(f'super_clumps_array_C_II_ray{r}', super_clumps) ##save super_clumps for future reference
     match = {} ##create dictionaries to store indexes of clumps in the row that correspond to one another, keys will be row numbers and values will be indecies except for the lonlies
     short = {}
     split = {}
@@ -90,6 +89,7 @@ for r in range(raynum):
         row = np.append(0,row) # adding an extra element to prevent booleans from failing
         row = np.append(row,0)
         rownum += 1 ##define which row we're working on
+        print(f"After: {rownum}")
         ##make all the variables and lists necessary
         row_st_cnt = 0 ##count how many starts of row clumps there have been within a super clump
         row_st_ind = []  ##keep track of start location(s) of a row clump
@@ -138,18 +138,32 @@ for r in range(raynum):
                     if weird_index != 0: ##edge case handling
                         row_st_ind.append(weird_index)
                         
-                    if len(row_en_ind) == 0:
+                    if (len(row_en_ind) == 0 and len(row_st_ind) != 0) or (len(row_st_ind) == 0 and len(row_en_ind) != 0):
+                        print(rownum)
                         break
-		    if rownum in hassles.keys(): ##even more edge case handling
-		        if [row_st_ind[0], row_en_ind[0]] in hassles.values():
-			    for j in range(len(row_en_ind)): ##organize the indecies to make the list in order
-                                row_split.append([row_st_ind[j],row_en_ind[j]])
-			break	
-			
-		    
-                    if (row_st_ind[0] == sup_st) and (row_en_ind[0] == sup_en): ##if the starts and ends match, the clumps are identical
+                        
+                    hassle_st = []
+                    hassle_en = []
+                    
+                    if rownum in hassles.keys(): ##even more edge case handling
+                        for value in hassles.values():
+                            for t in value:
+                                hassle_st.append(t[0])
+                                hassle_en.append(t[1])
+                            
+                        if row_st_ind[0] in hassle_st:
+                            for j in range(len(hassle_st)):
+                                if [hassle_st[j], hassle_en[j]] not in row_split:
+                                    row_split.append([hassle_st[j], hassle_en[j]])
+                        elif row_en_ind[0] in hassle_en:
+                            print(rownum)
+                            continue
+                        
+                    if (row_st_ind[0] == sup_st) and (row_en_ind[0] == sup_en) and (row_st_ind[0] not in hassle_st) and (row_en_ind[0] not in hassle_en): ##if the starts and ends match, the clumps are identical
+                
                         row_match.append([row_st_ind[0],row_en_ind[0]]) ##thus, start and end indecies appended to a list of them
-                    else:
+                    
+                    elif (row_st_ind[0] not in hassle_st) and (row_en_ind[0] not in hassle_en):
                         row_short.append([row_st_ind[0],row_en_ind[0]]) ##if not, then the row clump must be shorter and the start and end indecies are appended to the appropraite list
                         
                 elif (row_st_cnt == 0) and (row_en_cnt == 0): ##check if there is nothing in the row that matches the super clump
@@ -166,6 +180,7 @@ for r in range(raynum):
                         
                 if super_clumps[i-1]==2:
                     sup_st=sup_st_true[1]
+                    
                 ##reset variables      
                 row_st_cnt = 0
                 row_st_ind = []
@@ -175,28 +190,27 @@ for r in range(raynum):
                 match[rownum] = row_match
                 short[rownum] = row_short
                 split[rownum] = row_split
+                
                 if super_clumps[i-1] == 2:
                     sup_st = i-2
                     if row[i-1]>row[i]:
                         row_st_ind.append(i-2)
                         row_st_cnt += 1
-                        
-                
                           
-# #for clump in maybe_lonely: ##later must set a limits on the minimumm number of times something has to appear in maybe lonely for it to actually be considered lonely
+#for clump in maybe_lonely: ##later must set a limits on the minimumm number of times something has to appear in maybe lonely for it to actually be considered lonely
 
-    pickling_match = open(f"MatchOVIRay{r}.pickle","wb") ##saves the dictonaries so that they can be accesssed later
+    pickling_match = open(f"MatchCIIRay{r}.pickle","wb") ##saves the dictonaries so that they can be accesssed later
     pickle.dump(match, pickling_match, protocol=3)	
     pickling_match.close()
                           
-    pickling_split = open(f"SplitOVIRay{r}.pickle","wb")
+    pickling_split = open(f"SplitCIIRay{r}.pickle","wb")
     pickle.dump(split, pickling_split, protocol=3)
     pickling_split.close() 
                       
-    pickling_short = open(f"ShortOVIRay{r}.pickle","wb")
+    pickling_short = open(f"ShortCIIRay{r}.pickle","wb")
     pickle.dump(short, pickling_short, protocol=3)
     pickling_short.close()
     
-    pickling_maybe_lonely = open(f"MaybeLonelyOVIRay{r}.pickle","wb")
+    pickling_maybe_lonely = open(f"MaybeLonelyCIIRay{r}.pickle","wb")
     pickle.dump(maybe_lonely, pickling_maybe_lonely, protocol=3)
     pickling_maybe_lonely.close()
