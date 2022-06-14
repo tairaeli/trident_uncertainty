@@ -20,7 +20,7 @@ parser.add_argument('--nrays', action='store', dest='nrays', default=4, type=int
 parser.add_argument('--abun', action='store', dest='file_path', default=argparse.SUPPRESS, help='Path to abundance file, if any. Defaults to solar abundances.')
 parser.add_argument('--halo_dir', action='store', dest='halo_dir', default='/mnt/research/galaxies-REU/sims/FOGGIE', help='Path to halo data.')
 parser.add_argument('--pat', action='store', dest='pat_lis', default=[2392, 2878, 4123, 5016, 5036,8508], type=list, help='List of different halo pattern file IDs')
-parser.add_argument('--rshift', action='store', dest='r_lis', default=[20,18,16], type=list, help='List of different redshift file IDs')
+parser.add_argument('--rshift', action='store', dest='rs_lis', default=[20,18,16], type=list, help='List of different redshift file IDs')
 
 args = parser.parse_args()
 dic_args = vars(args)
@@ -46,9 +46,34 @@ def generate_names(length, add=''):
         		
         	return saved_filename_list
 
+# defining analysis parameters
+# Note: these dictionaries are temporary and should most likely be included in the arguments at some point
+
+# EDIT THIS LINE TO LOCAL FOGGIE LOCATION
+foggie_dir = "/mnt/home/tairaeli/foggie/foggie/halo_infos"
+
+# takes in the foggie halo info directory
+# outputs a dictionary of galactic center locations/velocities for all redshifts in each halo pattern
+def foggie_defunker(foggie_dir):
+    center_dat = {}
+    for halo in args.pat_lis:
+        param_dir[halo] = {}
+        cen_dat = pd.read_csv(foggie_dir+f'/{halo}/halo_c_v', sep = ' | ')
+        for rs in args.rs_lis:
+            param_dir[halo][rs] = {}
+            
+            rs_dat = cen_dat[cen['name'] == 'RD00'+str(rs)]
+            
+            param_dir[halo][rshift]['pos'] = [rs_dat["xc"],rs_dat["yc"],rs_dat["zc"]]
+            param_dir[halo][rshift]['vel'] = [rs_dat["xv"],rs_dat["yv"],rs_dat["zv"]]
+            
+    return center_dat
+
+center_dat = foggie_defunker()
+
 # iterates through each halo pattern at each redshift
 for halo in args.pat_lis:
-    for rshift in args.r_lis:
+    for rshift in args.rs_lis:
         
         # creating variable names for data bin locations
         path = os.path.expandvars(os.path.expanduser(args.path))
@@ -63,11 +88,16 @@ for halo in args.pat_lis:
         os.mkdir(dat_path)
         os.mkdir(vis_path)
         
-        #preliminary shenanigans -- load halo data; define handy variables; plant the seed, as it were
-        
+        # load halo data
         ds = yt.load(f'args.halo_dir/halo_00{halo}/nref11c_nref9f/RD00{rshift}/RD00{rshift}')
-        center = ds.arr([23876.757358761424, 23842.452527236022, 22995.717805638298], 'kpc')
-        gal_vel = ds.arr([-0.02410298432958413, -136.9259851493111, -147.88486721075668], 'km/s')
+        
+        # defining analysis parameters
+        # Note: these dictionaries are temporary and should most likely be included in the arguments at some point
+        
+        
+        
+        center = ds.arr(param_dir[halo][rshift]['pos'], 'kpc')
+        gal_vel = ds.arr(param_dir[halo][rshift]['vel'], 'km/s')
         other_fields=['density', 'temperature', 'metallicity', 'radius']
         max_impact=15 #kpc
         units_dict = dict(density='g/cm**3', metallicity='Zsun')
