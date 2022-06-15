@@ -21,7 +21,7 @@ parser.add_argument('--abun', action='store', dest='file_path', default=argparse
 parser.add_argument('--halo_dir', action='store', dest='halo_dir', default='/mnt/research/galaxies-REU/sims/FOGGIE', help='Path to halo data.')
 parser.add_argument('--pat', action='store', dest='pat_lis', default=[2392, 2878, 4123, 5016, 5036,8508], type=list, help='List of different halo pattern file IDs')
 parser.add_argument('--rshift', action='store', dest='rs_lis', default=[20,18,16], type=list, help='List of different redshift file IDs')
-parser.add_argument('--nb',action="store", dest='mk_new_bins', default = True, help='Set to TRUE to make new bins. Otherwise, set to FALSE if bins already exist')
+parser.add_argument('--nb',action="store", dest='mk_new_bins', default = True, help='Set to TRUE to make new bins for storing output data. Otherwise, set to FALSE if bins already exist')
 
 args = parser.parse_args()
 dic_args = vars(args)
@@ -55,27 +55,36 @@ foggie_dir = "/mnt/home/tairaeli/foggie/foggie/halo_infos"
 
 # takes in the foggie halo info directory
 # outputs a dictionary of galactic center locations/velocities for all redshifts in each halo pattern
+# NOTE: this function is temporary and has some hard-coded variables that will need to be changed
 def foggie_defunker(foggie_dir):
+    # initializing dictionary to store all of the galactic center data
     center_dat = {}
     for halo in args.pat_lis:
+        # creating branch for each halo
         center_dat[halo] = {}
+        # some hardcoded pipelies that will need to be changed
         cen_dat = pd.read_csv("/mnt/home/tairaeli/foggie/foggie/halo_infos/002392/nref11c_nref9f/halo_c_v", sep = '|', names = ['null','redshift','name','xc','yc','zc','xv','yv','zv','null2'])
+        # making some fixes specific to these files
         cen_dat = cen_dat.drop(0)
         cen_dat = cen_dat.drop(columns = ['null','null2'])
         for rs in args.rs_lis:
+            # creating branch for each redshift in each halo 
             center_dat[halo][rs] = {}
-            
+            # isolating data to a specific redshift 
             rs_dat = cen_dat[cen_dat['name'] == ' RD00'+str(rs)+' ']
-            
+            # making 2 more branches to store the position and velocity data of the galactic center
             center_dat[halo][rs]['pos'] = [float(rs_dat["xc"]),float(rs_dat["yc"]),float(rs_dat["zc"])]
             center_dat[halo][rs]['vel'] = [float(rs_dat["xv"]),float(rs_dat["yv"]),float(rs_dat["zv"])]
             
     return center_dat
 
+# fetching the galactic center data for all halo patterns and redshifts
 center_dat = foggie_defunker(foggie_dir)
+
 # identifying the path argument as a variable
 path = os.path.expandvars(os.path.expanduser(args.path))
 
+# function for creating new paths to store output data
 def mk_new_dirs():
     for halo in args.pat_lis:
         os.mkdir(path+'/halo'+f'{halo}')
@@ -93,13 +102,14 @@ def mk_new_dirs():
     
     return
 
+# creating dictionaries to store all of our data
 if args.mk_new_bins == True:
     mk_new_dirs()
 
 # iterates through each halo pattern at each redshift
 for halo in args.pat_lis:
     for rshift in args.rs_lis:
-        
+        # creating variable names for data bin locations
         ray_path = path+'/halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/rays'
         dat_path = path+'/halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/data'
         vis_path = path+'/halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/visuals'
