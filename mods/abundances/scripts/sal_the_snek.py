@@ -21,6 +21,7 @@ parser.add_argument('--abun', action='store', dest='file_path', default=argparse
 parser.add_argument('--halo_dir', action='store', dest='halo_dir', default='/mnt/research/galaxies-REU/sims/FOGGIE', help='Path to halo data.')
 parser.add_argument('--pat', action='store', dest='pat_lis', default=[2392, 2878, 4123, 5016, 5036,8508], type=list, help='List of different halo pattern file IDs')
 parser.add_argument('--rshift', action='store', dest='rs_lis', default=[20,18,16], type=list, help='List of different redshift file IDs')
+parser.add_argument('--nb',action="store", dest='mk_new_bins', default = True, help='Set to TRUE to make new bins. Otherwise, set to FALSE if bins already exist')
 
 args = parser.parse_args()
 dic_args = vars(args)
@@ -57,48 +58,59 @@ foggie_dir = "/mnt/home/tairaeli/foggie/foggie/halo_infos"
 def foggie_defunker(foggie_dir):
     center_dat = {}
     for halo in args.pat_lis:
-        param_dir[halo] = {}
-        cen_dat = pd.read_csv(foggie_dir+f'/{halo}/halo_c_v', sep = ' | ')
+        center_dat[halo] = {}
+        cen_dat = pd.read_csv("/mnt/home/tairaeli/foggie/foggie/halo_infos/002392/nref11c_nref9f/halo_c_v", sep = '|', names = ['null','redshift','name','xc','yc','zc','xv','yv','zv','null2'])
+        cen_dat = cen_dat.drop(0)
+        cen_dat = cen_dat.drop(columns = ['null','null2'])
         for rs in args.rs_lis:
-            param_dir[halo][rs] = {}
+            center_dat[halo][rs] = {}
             
-            rs_dat = cen_dat[cen['name'] == 'RD00'+str(rs)]
+            rs_dat = cen_dat[cen_dat['name'] == ' RD00'+str(rs)+' ']
             
-            param_dir[halo][rshift]['pos'] = [rs_dat["xc"],rs_dat["yc"],rs_dat["zc"]]
-            param_dir[halo][rshift]['vel'] = [rs_dat["xv"],rs_dat["yv"],rs_dat["zv"]]
+            center_dat[halo][rs]['pos'] = [float(rs_dat["xc"]),float(rs_dat["yc"]),float(rs_dat["zc"])]
+            center_dat[halo][rs]['vel'] = [float(rs_dat["xv"]),float(rs_dat["yv"]),float(rs_dat["zv"])]
             
     return center_dat
 
-center_dat = foggie_defunker()
+center_dat = foggie_defunker(foggie_dir)
+# identifying the path argument as a variable
+path = os.path.expandvars(os.path.expanduser(args.path))
+
+def mk_new_dirs():
+    for halo in args.pat_lis:
+        os.mkdir(path+'/halo'+f'{halo}')
+        for rshift in args.rs_lis:
+            # creating variable names for data bin locations
+            ray_path = path+'/halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/rays'
+            dat_path = path+'/halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/data'
+            vis_path = path+'/halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/visuals'
+            
+            # making the directories
+            os.mkdir(path+'/halo'+f'{halo}'+'/redshift'+f'{rshift}')
+            os.mkdir(ray_path) 
+            os.mkdir(dat_path)
+            os.mkdir(vis_path)
+    
+    return
+
+if args.mk_new_bins == True:
+    mk_new_dirs()
 
 # iterates through each halo pattern at each redshift
 for halo in args.pat_lis:
     for rshift in args.rs_lis:
         
-        # creating variable names for data bin locations
-        path = os.path.expandvars(os.path.expanduser(args.path))
         ray_path = path+'/halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/rays'
         dat_path = path+'/halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/data'
         vis_path = path+'/halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/visuals'
         
-        # creating directories for storing data
-        os.mkdir(path+'/halo'+f'{halo}')
-        os.mkdir(path+'/halo'+f'{halo}'+'/redshift'+f'{rshift}')
-        os.mkdir(ray_path) 
-        os.mkdir(dat_path)
-        os.mkdir(vis_path)
-        
         # load halo data
-        ds = yt.load(f'args.halo_dir/halo_00{halo}/nref11c_nref9f/RD00{rshift}/RD00{rshift}')
-        
+        ds = yt.load(f'{args.halo_dir}/halo_00{halo}/nref11c_nref9f/RD00{rshift}/RD00{rshift}')
         # defining analysis parameters
         # Note: these dictionaries are temporary and should most likely be included in the arguments at some point
-        
-        
-        
-        center = ds.arr(param_dir[halo][rshift]['pos'], 'kpc')
-        gal_vel = ds.arr(param_dir[halo][rshift]['vel'], 'km/s')
-        other_fields=['density', 'temperature', 'metallicity', 'radius']
+        center = ds.arr(center_dat[halo][rshift]['pos'], 'kpc')
+        gal_vel = ds.arr(center_dat[halo][rshift]['vel'], 'km/s')
+        other_fields=['density', 'temperature', 'metallicity']
         max_impact=15 #kpc
         units_dict = dict(density='g/cm**3', metallicity='Zsun')
         
@@ -108,13 +120,12 @@ for halo in args.pat_lis:
         np.random.seed(11)
         
         #get those rays babyyyy
-        
         # CK: Check that rays already exist, and that the have the additional fields contained
         # in the third argument (empty for now; might become a user parameter)
-        check = check_rays(ray_path+"/rays", args.nrays, [])
+        check = check_rays(ray_path, args.nrays, [])
         if not check:
             print("WARNING: rays not found. Generating new ones.")
-            salsa.generate_lrays(ds, center.to('code_length'), args.nrays, max_impact, length=600, field_parameters={'bulk_velocity', gal_vel}, ion_list=['H I'], fields=other_fields, out_dir=(ray_path))
+            salsa.generate_lrays(ds, center.to('code_length'), args.nrays, max_impact, length=600, field_parameters={'bulk_velocity':gal_vel}, ion_list=['H I'], fields=other_fields, out_dir=ray_path)
         
         ray_list=[]
         for i in range(args.nrays):
