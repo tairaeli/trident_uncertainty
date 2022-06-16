@@ -96,12 +96,12 @@ def make_full_list(list_in, list_out):
                 indexq = np.where((indexs[j][0]) == (var_rows[rows-1]["interval_start"]))
 				col_density_short.append(ds["col_dens"][int(indexq[0])])
 				if match_num == 0 and short_num == 1:
-                      distances.append(ds["radius"][int(indexq[0])])
-                      central_v.append(ds["delta_v"][int(indexq[0])])
-                      vel_dispersions.append(["vel_dispersion"][int(indexq[0])])
-                      densities.append(["density"][int(indexq[0])])
-                      temperatures.append(["temperature"][int(indexq[0])])
-                      rows_of_rep_clumps.append(row)
+                       			distances.append(ds["radius"][int(indexq[0])])
+					central_v.append(ds["delta_v"][int(indexq[0])])
+					vel_dispersions.append(["vel_dispersion"][int(indexq[0])])
+					densities.append(["density"][int(indexq[0])])
+					temperatures.append(["temperature"][int(indexq[0])])
+					rows_of_rep_clumps.append(row)
 					
       for rowm, indexm in split.items(): ##split is a bit weird so we have to average the densities maybe should sum though?
           temp_col_dens =[]
@@ -111,16 +111,16 @@ def make_full_list(list_in, list_out):
 				ds = var_rows[rowm-1]
                 indexq = np.where((indexm[j][0]) == (var_rows[rowm-1]["interval_start"]))
                 if len(list(indexq[0])) > 0:
-					temp_col_dens.append(10 ** ds["col_dens"][int(indexq[0])])
+			temp_col_dens.append(10 ** ds["col_dens"][int(indexq[0])])
 					
-					if match_num == 0 and short_num == 0 and 2 <= split_num <= 4:
-                      distances.append(ds["radius"][int(indexq[0])])
-                      central_v.append(ds["delta_v"][int(indexq[0])])
-                      vel_dispersions.append(["vel_dispersion"][int(indexq[0])])
-                      densities.append(["density"][int(indexq[0])])
-                      temperatures.append(["temperature"][int(indexq[0])])
-                      rows_of_rep_clumps.append(row)
-					  print("come back and fix this, it happens")
+			if match_num == 0 and short_num == 0 and 2 <= split_num <= 4:
+				distances.append(ds["radius"][int(indexq[0])])
+				central_v.append(ds["delta_v"][int(indexq[0])])
+				vel_dispersions.append(["vel_dispersion"][int(indexq[0])])
+				densities.append(["density"][int(indexq[0])])
+				temperatures.append(["temperature"][int(indexq[0])])
+			        rows_of_rep_clumps.append(row)
+				print("come back and fix this, it happens")
 					
           if len(temp_col_dens) != 0:
               log_sum_dens = np.log10(sum(temp_col_dens))
