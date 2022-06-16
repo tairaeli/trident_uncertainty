@@ -21,7 +21,7 @@ parser.add_argument('--abun', action='store', dest='file_path', default=argparse
 parser.add_argument('--halo_dir', action='store', dest='halo_dir', default='/mnt/research/galaxies-REU/sims/FOGGIE', help='Path to halo data.')
 parser.add_argument('--pat', action='store', dest='pat_lis', default=[2392, 2878, 4123, 5016, 5036,8508], type=list, help='List of different halo pattern file IDs')
 parser.add_argument('--rshift', action='store', dest='rs_lis', default=[20,18,16], type=list, help='List of different redshift file IDs')
-parser.add_argument('--nb',action="store", dest='mk_new_bins', default = True, help='Set to TRUE to make new bins for storing output data. Otherwise, set to FALSE if bins already exist')
+parser.add_argument('--nb',action="store", dest='mk_new_bins', default = 'True', help='Set to True to make new bins for storing output data. Otherwise, set to False if bins already exist')
 
 args = parser.parse_args()
 dic_args = vars(args)
@@ -100,10 +100,9 @@ def mk_new_dirs():
             os.mkdir(dat_path)
             os.mkdir(vis_path)
     
-    return
 
 # creating dictionaries to store all of our data
-if args.mk_new_bins == True:
+if args.mk_new_bins == "True":
     mk_new_dirs()
 
 # iterates through each halo pattern at each redshift
