@@ -6,15 +6,16 @@ path = "/mnt/scratch/f0104093/condensed_pipeline_tests/data/"
 datanum = 26 ##number of rows on the abundance table, modify as needed
 ndigits= len(str(datanum))
 raynum = 4 ##number of rays used, modify as needed
+ion  = "C_IV"
 
-for r in range(raynum):
+for r in range(1,2):
     rowlist = []
     for i in range(datanum):
         m = i+1
         n_len = len(str(m))
         n_zeros = ndigits - n_len
         k = "0" * n_zeros + str(m)
-        row_data = pd.read_csv(path+f"data_AbundanceRow{k}_C_II.txt", delim_whitespace=True) ##read in data files
+        row_data = pd.read_csv(path+f"data_AbundanceRow{k}_{ion}.txt", delim_whitespace=True) ##read in data files
         row_work = row_data[row_data["lightray_index"]==r] ##filter to only ray1
         df = row_work.reset_index().drop(columns="index") ##make indexing work
         rowlist.append(df)
@@ -34,7 +35,6 @@ for r in range(raynum):
     for ds in rowlist: ##make masks for each row and form super_clumps
         ds_clump_loc = np.zeros(int(mx))
         row_tracker +=1
-        print(f"Before: {row_tracker}")
         hassles_ind = []
         for j in range(ds.shape[0]):
             ds_clump_loc[int(ds["interval_start"][j]):int(ds["interval_end"][j])] = 1
@@ -59,7 +59,7 @@ for r in range(raynum):
                     hassles_ind.append([int(ds["interval_start"][j-1]), int(ds["interval_end"][j-1])])
                     hassles_ind.append([int(ds["interval_start"][j]), int(ds["interval_end"][j])])                
                     super_clumps[int(ds["interval_start"][j]):int(ds["interval_end"][j])] = 1
-                    print(row_tracker, hassles_ind)
+                    print(f"Hassles: {row_tracker, hassles_ind}")
 
             else:
                 super_clumps[int(ds["interval_start"][j]):int(ds["interval_end"][j])] = 1  
@@ -77,7 +77,7 @@ for r in range(raynum):
     
     super_clumps=np.append(0, super_clumps)  ##make indexing work  
     super_clumps=np.append(super_clumps, 0)
-    np.save(f'super_clumps_array_C_II_ray{r}', super_clumps) ##save super_clumps for future reference
+    np.save(f'super_clumps_array_{ion}_ray{r}', super_clumps) ##save super_clumps for future reference
     match = {} ##create dictionaries to store indexes of clumps in the row that correspond to one another, keys will be row numbers and values will be indecies except for the lonlies
     short = {}
     split = {}
@@ -89,7 +89,6 @@ for r in range(raynum):
         row = np.append(0,row) # adding an extra element to prevent booleans from failing
         row = np.append(row,0)
         rownum += 1 ##define which row we're working on
-        print(f"After: {rownum}")
         ##make all the variables and lists necessary
         row_st_cnt = 0 ##count how many starts of row clumps there have been within a super clump
         row_st_ind = []  ##keep track of start location(s) of a row clump
@@ -108,13 +107,15 @@ for r in range(raynum):
                 sup_st = i-1 ##keep track of start location of a super clump
                 sup_st_true.append(sup_st)
                 
-            if row[i-1]<row[i] and len(row_st_ind) == 0:##start of a clump in the row
+            if row[i-1]<row[i] and (len(row_st_ind) == 0 or len(row_st_ind) ==1):##start of a clump in the row
+                print(i-2, i-1, i)
                 if super_clumps[i-1] == 2: ##if oops is printed, there is another edge case, debugging must begin again
                     print("oops")
                 elif super_clumps[i] != 2 or len(row_st_ind)!=0: ##normal clumps look like this
                     row_st_ind.append(i-1)
                     row_st_cnt += 1
-                else: ##edge case handling
+                    print(row_st_ind, rownum)
+                else: ##edge case handling ##FIXME
                     weird_index = i-1
 
             elif row[i-1]>row[i]: ##end of a clump in row
@@ -139,7 +140,7 @@ for r in range(raynum):
                         row_st_ind.append(weird_index)
                         
                     if (len(row_en_ind) == 0 and len(row_st_ind) != 0) or (len(row_st_ind) == 0 and len(row_en_ind) != 0):
-                        print(rownum)
+                        
                         break
                         
                     hassle_st = []
@@ -156,7 +157,7 @@ for r in range(raynum):
                                 if [hassle_st[j], hassle_en[j]] not in row_split:
                                     row_split.append([hassle_st[j], hassle_en[j]])
                         elif row_en_ind[0] in hassle_en:
-                            print(rownum)
+                            
                             continue
                         
                     if (row_st_ind[0] == sup_st) and (row_en_ind[0] == sup_en) and (row_st_ind[0] not in hassle_st) and (row_en_ind[0] not in hassle_en): ##if the starts and ends match, the clumps are identical
@@ -174,7 +175,7 @@ for r in range(raynum):
                         maybe_lonely[str([sup_st,sup_en])] = 1
                         
                 else: ##only other senario is there there was a split
-                    for j in range(len(row_en_ind)): ##organize the indecies to make the list in order
+                    for j in range(min([len(row_en_ind), len(row_st_ind)])): ##organize the indecies to make the list in order
                         row_split.append([row_st_ind[j],row_en_ind[j]]) 
                         
                         
@@ -199,18 +200,18 @@ for r in range(raynum):
                           
 #for clump in maybe_lonely: ##later must set a limits on the minimumm number of times something has to appear in maybe lonely for it to actually be considered lonely
 
-    pickling_match = open(f"MatchCIIRay{r}.pickle","wb") ##saves the dictonaries so that they can be accesssed later
+    pickling_match = open(f"Match_{ion}_Ray{r}.pickle","wb") ##saves the dictonaries so that they can be accesssed later
     pickle.dump(match, pickling_match, protocol=3)	
     pickling_match.close()
                           
-    pickling_split = open(f"SplitCIIRay{r}.pickle","wb")
+    pickling_split = open(f"Split_{ion}_Ray{r}.pickle","wb")
     pickle.dump(split, pickling_split, protocol=3)
     pickling_split.close() 
                       
-    pickling_short = open(f"ShortCIIRay{r}.pickle","wb")
+    pickling_short = open(f"Short_{ion}_Ray{r}.pickle","wb")
     pickle.dump(short, pickling_short, protocol=3)
     pickling_short.close()
     
-    pickling_maybe_lonely = open(f"MaybeLonelyCIIRay{r}.pickle","wb")
+    pickling_maybe_lonely = open(f"MaybeLonely_{ion}_Ray{r}.pickle","wb")
     pickle.dump(maybe_lonely, pickling_maybe_lonely, protocol=3)
     pickling_maybe_lonely.close()
