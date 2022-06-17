@@ -19,7 +19,7 @@ temperatures = []
 num_clumps = []
 rows_of_rep_clumps = []
 
-def weighted_average(values, weights):
+def weighted_av(values, weights):
     weighted_sum = []
     for value, weight in zip(values, weights):
         weighted_sum.append(value * weight)
@@ -52,7 +52,7 @@ for r in range(raynum):
         n_len = len(str(m))
         n_zeros = ndigits - n_len
         p = "0" * n_zeros + str(m)
-        row_data = pd.read_csv(path+f"data_AbundanceRow{p}_C_IV.txt", delim_whitespace=True) ##read in data files
+        row_data = pd.read_csv(path+f"data_AbundanceRow{p}_{ion}.txt", delim_whitespace=True) ##read in data files
         row_work = row_data[row_data["lightray_index"]==r] ##filter to only one ray
         df = row_work.reset_index().drop(columns="index") ##make indexing work
         var_rows.append(df)
@@ -127,12 +127,12 @@ for r in range(raynum):
 
         for rowm, indexm in split.items(): ##split is a bit weird so we have to average the densities maybe should sum though?
             temp_col_dens =[]
-	    	temp_delta_v = []
-	    	temp_vel_dis = []
-			temp_dens = []
-			temp_temp = []
-			temp_rad = []
-			col_dens_for_weights = []
+            temp_delta_v = []
+            temp_vel_dis = []
+            temp_dens = []
+            temp_temp = []
+            temp_rad = []
+            col_dens_for_weights = []
 			
             for j in range(len(indexm)):
                 
@@ -142,20 +142,20 @@ for r in range(raynum):
                     
                     if len(list(indexq[0])) > 0:
                         temp_col_dens.append(10 ** ds["col_dens"][int(indexq[0])])
-						col_dens_for_weights.append(ds["col_dens"][int(indexq[0])])
-						temp_delta_v.append(ds["delta_v"][int(indexq[0])]
-	    				temp_vel_dis.append(ds["vel_dispersion"][int(indexq[0])])
-						temp_dens.append(ds["density"][int(indexq[0])])
-						temp_temp.append(ds["temperature"][int(indexq[0])]
-						temp_rad.append(ds["radius"][int(indexq[0])])
+                        col_dens_for_weights.append(ds["col_dens"][int(indexq[0])])
+                        temp_delta_v.append(ds["delta_v"][int(indexq[0])])
+                        temp_vel_dis.append(ds["vel_dispersion"][int(indexq[0])])
+                        temp_dens.append(ds["density"][int(indexq[0])])
+                        temp_temp.append(ds["temperature"][int(indexq[0])])
+                        #temp_rad.append(ds["radius"][int(indexq[0])])
 						
                         
                         if len(match_done) == 0 and len(short_done) == 0 and sup_st[k] not in split_done:
-                            #distances.append(weighted average(temp_rad, col_dens_for_weights))
-                            central_v.append(weighted average(temp_delta_v, col_dens_for_weights))
-                            vel_dispersions.append(weighted average(temp_vel_dis, col_dens_for_weights))
-                            densities.append(weighted average(temp_dens, col_dens_for_weights))
-                            temperatures.append(weighted average(temp_temp, col_dens_for_weights))
+                            #distances.append(weighted_av(temp_rad, col_dens_for_weights))
+                            central_v.append(weighted_av(temp_delta_v, col_dens_for_weights))
+                            vel_dispersions.append(weighted_av(temp_vel_dis, col_dens_for_weights))
+                            densities.append(weighted_av(temp_dens, col_dens_for_weights))
+                            temperatures.append(weighted_av(temp_temp, col_dens_for_weights))
                             rows_of_rep_clumps.append(row)
                             split_done.append(sup_st[k])
                             
@@ -193,7 +193,4 @@ clump_stats["rep_clumps_row"] = rows_of_rep_clumps
 print(len(ray_nums), len(super_cl_nums), len(med_col_dens), len(mad_for_med), len(central_v), len(vel_dispersions))
 
 df = pd.DataFrame.from_dict(clump_stats)
-df.to_csv("halo_rshift_CIV_abun_model-family_all-clumps.csv" ,sep = ' ')
-	  
-    
-    
+df.to_csv(f"halo_rshift_{ion}_abun_model-family_all-clumps.csv" ,sep = ' ')
