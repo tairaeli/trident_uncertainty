@@ -15,7 +15,10 @@ A Pipeline designed to generate SALSA absorber catalogs from Trident for the pur
 * --ds: Path where rays and output data will be stored. Directory should contain two other directories called "data" and "rays",for program to run smoothly (if neither are there, the program will make them using Python's os module)
 * --nrays: The number of lightray objects to be generated
 * --abun: Path to abundance file, if any. Defaults to solar abundances.
-* --halo: Path to halo data.
+* --halo_dir: Path to halo data.
+* --pat: List of different halo pattern file IDs
+* --rshift: List of different redshift file IDs
+* --nb: Set to TRUE to make new bins for storing output data. Otherwise, set to FALSE if bins already exist
 
 # Notes for the user
 * Many of these scripts make use of default filepaths that are specific to me -- they will need to be modified to fit the user!

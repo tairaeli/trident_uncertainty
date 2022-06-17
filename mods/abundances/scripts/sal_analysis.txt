@@ -1,8 +1,12 @@
+######################################################################################
+Below shows an example of how to run plot_clumps.py using the data from sal_the_snek.py
+NOTE: Inputs may vary depending on the location of one's files
+######################################################################################
+
 for ION in C_II C_IV O_VI
 do
-    ls ~/pipeline_tests/hist_test/data/*${ION}.txt > temp_filelist.txt
-    python plot_clumps.py --ds ~/pipeline_tests/hist_test/data/ --fn temp_filelist.txt
-    cat /dev/null > temp_filelist.txt
+    ls ../sal_test/data/*${ION}.txt > ./temp_filelist.txt
+    python plot_clumps.py --ds ../sal_test/ --fn ./temp_filelist.txt
+    cat /dev/null > ./temp_filelist.txt
+    echo "Created plots for ${ION}" 
 done
-
-echo "All done :)"
