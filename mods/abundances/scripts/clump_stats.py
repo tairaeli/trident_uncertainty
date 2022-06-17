@@ -96,7 +96,7 @@ for r in range(raynum):
                     col_density_match.append(ds["col_dens"][int(indexq[0])])
                 
                     if sup_st[k] not in match_done:
-                        print(row, index[j][0], sup_st[k])
+                        print(row, indexs[j][0], sup_st[k])
                         #distances.append(ds["radius"][int(indexq[0])])
                         central_v.append(ds["delta_v"][int(indexq[0])])
                         vel_dispersions.append(ds["vel_dispersion"][int(indexq[0])])
