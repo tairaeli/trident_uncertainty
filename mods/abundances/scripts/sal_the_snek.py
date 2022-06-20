@@ -51,7 +51,7 @@ def generate_names(length, add=''):
 # Note: these dictionaries are temporary and should most likely be included in the arguments at some point
 
 # EDIT THIS LINE TO LOCAL FOGGIE LOCATION
-foggie_dir = "/mnt/home/tairaeli/foggie/foggie/halo_infos"
+foggie_dir = "/mnt/home/f0104093/foggie/foggie/halo_infos"
 
 # takes in the foggie halo info directory
 # outputs a dictionary of galactic center locations/velocities for all redshifts in each halo pattern
@@ -63,7 +63,7 @@ def foggie_defunker(foggie_dir):
         # creating branch for each halo
         center_dat[halo] = {}
         # some hardcoded pipelies that will need to be changed
-        cen_dat = pd.read_csv("/mnt/home/tairaeli/foggie/foggie/halo_infos/002392/nref11c_nref9f/halo_c_v", sep = '|', names = ['null','redshift','name','xc','yc','zc','xv','yv','zv','null2'])
+        cen_dat = pd.read_csv("/mnt/home/f0104093/foggie/foggie/halo_infos/002392/nref11c_nref9f/halo_c_v", sep = '|', names = ['null','redshift','name','xc','yc','zc','xv','yv','zv','null2'])
         # making some fixes specific to these files
         cen_dat = cen_dat.drop(0)
         cen_dat = cen_dat.drop(columns = ['null','null2'])
@@ -119,7 +119,7 @@ for halo in args.pat_lis:
         # Note: these dictionaries are temporary and should most likely be included in the arguments at some point
         center = ds.arr(center_dat[halo][rshift]['pos'], 'kpc')
         gal_vel = ds.arr(center_dat[halo][rshift]['vel'], 'km/s')
-        other_fields=['density', 'temperature', 'metallicity']
+        other_fields=['density', 'temperature', 'metallicity', 'radius']
         max_impact=15 #kpc
         units_dict = dict(density='g/cm**3', metallicity='Zsun')
         
