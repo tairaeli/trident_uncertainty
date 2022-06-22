@@ -13,18 +13,9 @@
 
 cd /mnt/home/f0104093/trident_uncertainty/mods/abundances/scripts
 module load python/3.6.4
-srun -n 128 python sal_the_snek.py --ds /mnt/scratch/f0104093/condensed_pipeline_tests/  --nrays 4 --abun /mnt/home/f0104093/new_abundances/cgm_abundances.txt
-
-for ION in C_II C_IV O_VI
-do
-    ls /mnt/scratch/f0104093/condensed_pipeline_tests/data/*${ION}.txt > temp_filelist.txt
-    python plot_clumps.py --ds /mnt/scratch/f0104093/condensed_pipeline_tests/visuals/ --fn temp_filelist.txt
-    cat /dev/null > temp_filelist.txt
-done
-echo "All done :)"
-
+srun -n 128 python sal_the_snek.py --ds /mnt/scratch/f0104093/cgm_abundance_variance/  --nrays 4 --abun /mnt/home/f0104093/new_abundances/cgm_abundances.txt
 pyhton id_clumps_test.py
-python make_hist_new.py
+python clumps_stats.py
 
 #scontrol show job $SLURM_JOB_ID
 #js -j $SLURM_JOB_ID
