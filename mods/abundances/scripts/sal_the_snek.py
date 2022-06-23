@@ -68,7 +68,7 @@ def foggie_defunker(foggie_dir):
     # creating branch for each halo
     center_dat[halo] = {}
     # some hardcoded pipelies that will need to be changed
-    cen_dat = pd.read_csv("/mnt/home/tairaeli/astro_libs/foggie/foggie/halo_infos/002392/nref11c_nref9f/halo_c_v", sep = '|', names = ['null','redshift','name','xc','yc','zc','xv','yv','zv','null2'])
+    cen_dat = pd.read_csv(f"/mnt/home/tairaeli/astro_libs/foggie/foggie/halo_infos/00{halo}/nref11c_nref9f/halo_c_v", sep = '|', names = ['null','redshift','name','xc','yc','zc','xv','yv','zv','null2'])
     # making some fixes specific to these files
     cen_dat = cen_dat.drop(0)
     cen_dat = cen_dat.drop(columns = ['null','null2'])
