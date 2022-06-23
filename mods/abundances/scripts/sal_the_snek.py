@@ -51,10 +51,12 @@ def generate_names(length, add=''):
 # Note: these dictionaries are temporary and should most likely be included in the arguments at some point
 
 # EDIT THIS LINE TO LOCAL FOGGIE LOCATION
+
 foggie_dir = "/mnt/home/tairaeli/astro_libs/foggie/foggie/halo_infos"
 
 # set desired halo pattern
 halo = args.pattern
+
 
 # takes in the foggie halo info directory
 # outputs a dictionary of galactic center locations/velocities for all redshifts in each halo pattern
@@ -62,6 +64,7 @@ halo = args.pattern
 def foggie_defunker(foggie_dir):
     # initializing dictionary to store all of the galactic center data
     center_dat = {}
+
     # creating branch for each halo
     center_dat[halo] = {}
     # some hardcoded pipelies that will need to be changed
@@ -77,7 +80,7 @@ def foggie_defunker(foggie_dir):
         # making 2 more branches to store the position and velocity data of the galactic center
         center_dat[halo][rs]['pos'] = [float(rs_dat["xc"]),float(rs_dat["yc"]),float(rs_dat["zc"])]
         center_dat[halo][rs]['vel'] = [float(rs_dat["xv"]),float(rs_dat["yv"]),float(rs_dat["zv"])]
-        
+     
     return center_dat
 
 # fetching the galactic center data for all halo patterns and redshifts
@@ -107,6 +110,7 @@ if args.mk_new_bins == "True":
     mk_new_dirs()
 
 # iterates through each halo pattern at each redshift
+
 
 for rshift in args.rs_lis:
     # creating variable names for data bin locations
@@ -174,3 +178,5 @@ for rshift in args.rs_lis:
     		df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=units_dict)
     		df.to_csv(f'{dat_path}/data_SolAb_{i.replace(" ", "_")}.txt', sep = ' ')
     		print("Go look at your data!")
+
+
