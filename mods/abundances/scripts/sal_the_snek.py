@@ -109,12 +109,15 @@ def mk_new_dirs():
         ray_path = path+'/halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/rays'
         dat_path = path+'/halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/data'
         vis_path = path+'/halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/visuals'
+        stat_path = path+'halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/stats'
+
         
         # making the directories
         os.mkdir(path+'/halo'+f'{halo}'+'/redshift'+f'{rshift}')
         os.mkdir(ray_path) 
         os.mkdir(dat_path)
         os.mkdir(vis_path)
+        os.mkdir(stat_path)
     
 
 # creating dictionaries to store all of our data
@@ -129,6 +132,8 @@ for rshift in args.rs_lis:
     ray_path = path+'/halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/rays'
     dat_path = path+'/halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/data'
     vis_path = path+'/halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/visuals'
+    stat_path = path+'halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/stats'
+
     
     # load halo data
     ds = yt.load(f'{args.halo_dir}/halo_00{halo}/nref11c_nref9f/RD00{rshift}/RD00{rshift}')
