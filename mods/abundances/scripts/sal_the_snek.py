@@ -577,3 +577,8 @@ for rshift in args.rs_lis:
 
         df = pd.DataFrame.from_dict(clump_stats)
         df.to_csv(f"{halo}_z{rshift}_{ion}_abun_all-model-families_all-clumps.csv" ,sep = ' ') ##save the files to scratch
+         ##as we're done with each file, delete it so we don't get residual data we don't need
+        os.remove(f"Match_{ion}_Ray{r}.pickle")
+        os.remove(f"Short_{ion}_Ray{r}.pickle")
+        os.remove(f"Split_{ion}_Ray{r}.pickle")
+        os.remove(f'super_clumps_array_{ion}_ray{r}.npy')
