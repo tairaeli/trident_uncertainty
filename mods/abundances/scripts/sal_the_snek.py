@@ -51,9 +51,20 @@ def generate_names(length, add=''):
 # defining analysis parameters
 # Note: these dictionaries are temporary and should most likely be included in the arguments at some point
 
+def weighted_av(values, weights): ##functions that are necessary in doing statistics
+        weighted_sum = []
+        for value, weight in zip(values, weights):
+                weighted_sum.append(value * weight)
+        return sum(weighted_sum) / sum(weights)
+
+def make_full_list(list_in, list_out):
+       for element in list_in:
+                list_out.append(element)
+       return list_out
+
 # EDIT THIS LINE TO LOCAL FOGGIE LOCATION
 
-foggie_dir = "/mnt/home/f0104093/astro_libs/foggie/foggie/halo_infos"
+foggie_dir = "/mnt/home/f0104093/foggie/foggie/halo_infos"
 
 # set desired halo pattern
 halo = args.pattern
@@ -69,7 +80,7 @@ def foggie_defunker(foggie_dir):
     # creating branch for each halo
     center_dat[halo] = {}
     # some hardcoded pipelies that will need to be changed
-    cen_dat = pd.read_csv(f"/mnt/home/f0104093/astro_libs/foggie/foggie/halo_infos/00{halo}/nref11c_nref9f/halo_c_v", sep = '|', names = ['null','redshift','name','xc','yc','zc','xv','yv','zv','null2'])
+    cen_dat = pd.read_csv(f"/mnt/home/f0104093/foggie/foggie/halo_infos/00{halo}/nref11c_nref9f/halo_c_v", sep = '|', names = ['null','redshift','name','xc','yc','zc','xv','yv','zv','null2'])
     # making some fixes specific to these files
     cen_dat = cen_dat.drop(0)
     cen_dat = cen_dat.drop(columns = ['null','null2'])
@@ -396,7 +407,7 @@ for rshift in args.rs_lis:
         
         ####make stats files for each super_clump#####
         
-        ray_nums = []
+        ray_nums = [] ##define lists that will eventually go into pandas sets
         super_cl_nums = []
         med_col_dens = []
         mad_for_med = []
@@ -408,18 +419,6 @@ for rshift in args.rs_lis:
         num_clumps = []
         rows_of_rep_clumps = []
 
-        def weighted_av(values, weights):
-            weighted_sum = []
-            for value, weight in zip(values, weights):
-                weighted_sum.append(value * weight)
-
-            return sum(weighted_sum) / sum(weights)
-
-        def make_full_list(list_in, list_out):
-                for element in list_in:
-                    list_out.append(element)
-                return list_out
-
         for r in range(raynum):
             pickle_match_off = open(f"Match_{ion}_Ray{r}.pickle", 'rb')
             match = pickle.load(pickle_match_off)
@@ -430,7 +429,7 @@ for rshift in args.rs_lis:
             pickle_short_off = open(f"Short_{ion}_Ray{r}.pickle", 'rb')
             short = pickle.load(pickle_short_off)
 
-            super_clumps = np.load(f'super_clumps_array_{ion}_ray{r}.npy')
+            super_clumps = np.load(f'super_clumps_array_{ion}_ray{r}.npy') ##get previously made data
 
             var_rows = []
             
@@ -459,18 +458,16 @@ for rshift in args.rs_lis:
                     else:
                         sup_en.append(n)
 
-            print(sup_st)
-            print(sup_en)
 
             for k in range(len(sup_st)): ##depending on which category each clump belongs to in super_clumps, append its column density to a list
-                col_density_match = []
+                col_density_match = [] ##lists for col_density
                 col_density_split = []
                 col_density_short = []
-                match_done = []
+                match_done = []##keep track of which super clumps already have a representative
                 short_done = []
                 split_done = []
 
-                for row, index in match.items():
+                for row, index in match.items():  ##first, see what matches the super clump
 
                     for j in range(len(index)):
 
@@ -478,13 +475,11 @@ for rshift in args.rs_lis:
 
                             ds = var_rows[row-1]
                             indexq = np.where((index[j][0]) == (ds["interval_start"]))
+                            col_density_match.append(ds["col_dens"][int(indexq[0])])##get column density
 
-        #                     if len(list(indexq[0]))>0:
-                            col_density_match.append(ds["col_dens"][int(indexq[0])])
-
-                            if sup_st[k] not in match_done:
+                            if sup_st[k] not in match_done: ##if this is the first one done for a super clump, get all the other data and make this clump a "representative" of the super clump
                                 print(row, index[j][0], sup_st[k])
-                                #distances.append(ds["radius"][int(indexq[0])])
+                                distances.append(ds["radius"][int(indexq[0])])
                                 central_v.append(ds["delta_v"][int(indexq[0])])
                                 vel_dispersions.append(ds["vel_dispersion"][int(indexq[0])])
                                 densities.append(ds["density"][int(indexq[0])])
@@ -493,7 +488,7 @@ for rshift in args.rs_lis:
                                 match_done.append(sup_st[k])
 
 
-                for rows, indexs in short.items():
+                for rows, indexs in short.items():##exactly the same method as match, but do it second bc if there is a match, we want to use that as our representataive
 
                     for j in range(len(indexs)):
 
@@ -504,7 +499,7 @@ for rshift in args.rs_lis:
 
                             if len(match_done) == 0 and (sup_st[k] not in short_done):
                                 print(row, indexs[j][0], sup_st[k])
-                                #distances.append(ds["radius"][int(indexq[0])])
+                                distances.append(ds["radius"][int(indexq[0])])
                                 central_v.append(ds["delta_v"][int(indexq[0])])
                                 vel_dispersions.append(ds["vel_dispersion"][int(indexq[0])])
                                 densities.append(ds["density"][int(indexq[0])])
@@ -512,8 +507,8 @@ for rshift in args.rs_lis:
                                 rows_of_rep_clumps.append(row)
                                 short_done.append(sup_st[k])
 
-                for rowm, indexm in split.items(): ##split is a bit weird so we have to average the densities maybe should sum though?
-                    temp_col_dens =[]
+                for rowm, indexm in split.items(): ##split is a bit weird bc there are multiple in a single super clump
+                    temp_col_dens =[]##create temporary lists 
                     temp_delta_v = []
                     temp_vel_dis = []
                     temp_dens = []
@@ -528,17 +523,17 @@ for rshift in args.rs_lis:
                             indexq = np.where((indexm[j][0]) == (var_rows[rowm-1]["interval_start"]))
 
                             if len(list(indexq[0])) > 0:
-                                temp_col_dens.append(10 ** ds["col_dens"][int(indexq[0])])
+                                temp_col_dens.append(10 ** ds["col_dens"][int(indexq[0])])##col_dens is on a log scale, so to add it all togeher must make it the exponent of 10
                                 col_dens_for_weights.append(ds["col_dens"][int(indexq[0])])
-                                temp_delta_v.append(ds["delta_v"][int(indexq[0])])
+                                temp_delta_v.append(ds["delta_v"][int(indexq[0])])## append the other dictionaries with the temporary values
                                 temp_vel_dis.append(ds["vel_dispersion"][int(indexq[0])])
                                 temp_dens.append(ds["density"][int(indexq[0])])
                                 temp_temp.append(ds["temperature"][int(indexq[0])])
-                                #temp_rad.append(ds["radius"][int(indexq[0])])
+                                temp_rad.append(ds["radius"][int(indexq[0])])
 
 
                                 if len(match_done) == 0 and len(short_done) == 0 and sup_st[k] not in split_done:
-                                    #distances.append(weighted_av(temp_rad, col_dens_for_weights))
+                                    distances.append(weighted_av(temp_rad, col_dens_for_weights))##use the col_dens as a weight for each value so we get a weight average if a split is chosen as a "represenatative"
                                     central_v.append(weighted_av(temp_delta_v, col_dens_for_weights))
                                     vel_dispersions.append(weighted_av(temp_vel_dis, col_dens_for_weights))
                                     densities.append(weighted_av(temp_dens, col_dens_for_weights))
@@ -547,7 +542,7 @@ for rshift in args.rs_lis:
                                     split_done.append(sup_st[k])
 
 
-                    if len(temp_col_dens) != 0:
+                    if len(temp_col_dens) != 0: ##finally, get one value for the col_dens of the whole thing
                         log_sum_dens = np.log10(sum(temp_col_dens))
                         col_density_split.append(log_sum_dens)
 
@@ -563,7 +558,8 @@ for rshift in args.rs_lis:
                 mad_for_med.append(stats.median_abs_deviation(full_col_density))
 
                 num_clumps.append(len(full_col_density))
-
+                
+        ##make and fill the dictorary that will be convered into a csv file
         clump_stats = {}
         clump_stats["ray_num"] = ray_nums
         clump_stats["super_clump_number"] = super_cl_nums 
@@ -580,4 +576,4 @@ for rshift in args.rs_lis:
         print(len(ray_nums), len(super_cl_nums), len(med_col_dens), len(mad_for_med), len(central_v), len(vel_dispersions))
 
         df = pd.DataFrame.from_dict(clump_stats)
-        df.to_csv(f"{halo}_z{rshift}_{ion}_abun_all-model-families_all-clumps.csv" ,sep = ' ')
+        df.to_csv(f"{halo}_z{rshift}_{ion}_abun_all-model-families_all-clumps.csv" ,sep = ' ') ##save the files to scratch
