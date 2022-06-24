@@ -1,4 +1,3 @@
-# from sal_the_snake import *
 import salsa
 from salsa.utils import check_rays
 import numpy as np
@@ -21,7 +20,7 @@ parser.add_argument('--nrays', action='store', dest='nrays', default=4, type=int
 parser.add_argument('--abun', action='store', dest='file_path', default=argparse.SUPPRESS, help='Path to abundance file, if any. Defaults to solar abundances.')
 parser.add_argument('--halo_dir', action='store', dest='halo_dir', default='/mnt/research/galaxies-REU/sims/FOGGIE', help='Path to halo data.')
 parser.add_argument('--pat', action='store', dest='pattern', default=2392, type=int, help='Desired halo pattern file ID')
-parser.add_argument('--rshift', action='store', dest='rs_lis', default=[20,18,16], type=list, help='List of different redshift file IDs')
+parser.add_argument('--rshift', action='store', dest='rs_lis', default=[20,18], type=list, help='List of different redshift file IDs')
 parser.add_argument('--nb',action="store", dest='mk_new_bins', default = 'True', help='Set to True to make new bins for storing output data. Otherwise, set to False if bins already exist')
 
 args = parser.parse_args()
@@ -51,16 +50,17 @@ def generate_names(length, add=''):
 # defining analysis parameters
 # Note: these dictionaries are temporary and should most likely be included in the arguments at some point
 
-def weighted_av(values, weights): ##functions that are necessary in doing statistics
-        weighted_sum = []
-        for value, weight in zip(values, weights):
-                weighted_sum.append(value * weight)
-        return sum(weighted_sum) / sum(weights)
+def weighted_av(values, weights): ##define functions necessary in making statistics
+    weighted_sum = []
+    for value, weight in zip(values, weights):
+        weighted_sum.append(value * weight)
+
+    return sum(weighted_sum) / sum(weights)
 
 def make_full_list(list_in, list_out):
-       for element in list_in:
-                list_out.append(element)
-       return list_out
+    for element in list_in:
+        list_out.append(element)
+    return list_out
 
 # EDIT THIS LINE TO LOCAL FOGGIE LOCATION
 
@@ -133,7 +133,6 @@ for rshift in args.rs_lis:
     dat_path = path+'/halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/data'
     vis_path = path+'/halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/visuals'
     stat_path = path+'halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/stats'
-
     
     # load halo data
     ds = yt.load(f'{args.halo_dir}/halo_00{halo}/nref11c_nref9f/RD00{rshift}/RD00{rshift}')
@@ -148,7 +147,7 @@ for rshift in args.rs_lis:
     ray_num=f'{0:0{len(str(args.nrays))}d}'
     ray_file=f'{ray_path}/ray{ray_num}.h5'
     
-    np.random.seed(11)
+    np.random.seed(13)
     
     #get those rays babyyyy
     # CK: Check that rays already exist, and that the have the additional fields contained
@@ -183,7 +182,7 @@ for rshift in args.rs_lis:
     		for i in ion_list:
     			abundances = abun.iloc[row_num].to_dict()
     			abs_ext = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, velocity_res =20, abundance_table = abundances, calc_missing=True)
-    			df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=units_dict)
+    			df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=units_dict).drop(columns='index')
     			df.to_csv(f'{dat_path}/{saved[row_num]}_{i.replace(" ", "_")}.txt', sep = ' ')
     			print("Go look at your data!")
     
@@ -424,8 +423,9 @@ for rshift in args.rs_lis:
         num_clumps = []
         rows_of_rep_clumps = []
 
+        
         for r in range(raynum):
-            pickle_match_off = open(f"Match_{ion}_Ray{r}.pickle", 'rb')
+            pickle_match_off = open(f"Match_{ion}_Ray{r}.pickle", 'rb') ##get previously made data
             match = pickle.load(pickle_match_off)
 
             pickle_split_off = open(f"Split_{ion}_Ray{r}.pickle", 'rb')
@@ -434,7 +434,7 @@ for rshift in args.rs_lis:
             pickle_short_off = open(f"Short_{ion}_Ray{r}.pickle", 'rb')
             short = pickle.load(pickle_short_off)
 
-            super_clumps = np.load(f'super_clumps_array_{ion}_ray{r}.npy') ##get previously made data
+            super_clumps = np.load(f'super_clumps_array_{ion}_ray{r}.npy')
 
             var_rows = []
             
@@ -463,16 +463,15 @@ for rshift in args.rs_lis:
                     else:
                         sup_en.append(n)
 
-
-            for k in range(len(sup_st)): ##depending on which category each clump belongs to in super_clumps, append its column density to a list
+            for k in range(len(sup_st)): ##depending on which category each clump belongs to in super_clumps
                 col_density_match = [] ##lists for col_density
                 col_density_split = []
                 col_density_short = []
-                match_done = []##keep track of which super clumps already have a representative
+                match_done = [] ##keep track of which super clumps already have a representative
                 short_done = []
                 split_done = []
 
-                for row, index in match.items():  ##first, see what matches the super clump
+                for row, index in match.items(): ##first, see what matches the super clump
 
                     for j in range(len(index)):
 
@@ -480,7 +479,7 @@ for rshift in args.rs_lis:
 
                             ds = var_rows[row-1]
                             indexq = np.where((index[j][0]) == (ds["interval_start"]))
-                            col_density_match.append(ds["col_dens"][int(indexq[0])])##get column density
+                            col_density_match.append(ds["col_dens"][int(indexq[0])]) ##get column density
 
                             if sup_st[k] not in match_done: ##if this is the first one done for a super clump, get all the other data and make this clump a "representative" of the super clump
                                 print(row, index[j][0], sup_st[k])
@@ -493,7 +492,7 @@ for rshift in args.rs_lis:
                                 match_done.append(sup_st[k])
 
 
-                for rows, indexs in short.items():##exactly the same method as match, but do it second bc if there is a match, we want to use that as our representataive
+                for rows, indexs in short.items(): ##exactly the same method as match, but do it second bc if there is a match, we want to use that as our representataive
 
                     for j in range(len(indexs)):
 
@@ -513,7 +512,7 @@ for rshift in args.rs_lis:
                                 short_done.append(sup_st[k])
 
                 for rowm, indexm in split.items(): ##split is a bit weird bc there are multiple in a single super clump
-                    temp_col_dens =[]##create temporary lists 
+                    temp_col_dens =[] ##create temporary lists 
                     temp_delta_v = []
                     temp_vel_dis = []
                     temp_dens = []
@@ -528,8 +527,8 @@ for rshift in args.rs_lis:
                             indexq = np.where((indexm[j][0]) == (var_rows[rowm-1]["interval_start"]))
 
                             if len(list(indexq[0])) > 0:
-                                temp_col_dens.append(10 ** ds["col_dens"][int(indexq[0])])##col_dens is on a log scale, so to add it all togeher must make it the exponent of 10
-                                col_dens_for_weights.append(ds["col_dens"][int(indexq[0])])
+                                temp_col_dens.append(10 ** ds["col_dens"][int(indexq[0])]) ##col_dens is on a log scale, so to add it all togeher must make it the exponent of 10
+                                col_dens_for_weights.append(ds["col_dens"][int(indexq[0])]) 
                                 temp_delta_v.append(ds["delta_v"][int(indexq[0])])## append the other dictionaries with the temporary values
                                 temp_vel_dis.append(ds["vel_dispersion"][int(indexq[0])])
                                 temp_dens.append(ds["density"][int(indexq[0])])
@@ -538,7 +537,7 @@ for rshift in args.rs_lis:
 
 
                                 if len(match_done) == 0 and len(short_done) == 0 and sup_st[k] not in split_done:
-                                    distances.append(weighted_av(temp_rad, col_dens_for_weights))##use the col_dens as a weight for each value so we get a weight average if a split is chosen as a "represenatative"
+                                    distances.append(weighted_av(temp_rad, col_dens_for_weights)) ##use the col_dens as a weight for each value so we get a weight average if a split is chosen as a "represenatative"
                                     central_v.append(weighted_av(temp_delta_v, col_dens_for_weights))
                                     vel_dispersions.append(weighted_av(temp_vel_dis, col_dens_for_weights))
                                     densities.append(weighted_av(temp_dens, col_dens_for_weights))
@@ -563,7 +562,7 @@ for rshift in args.rs_lis:
                 mad_for_med.append(stats.median_abs_deviation(full_col_density))
 
                 num_clumps.append(len(full_col_density))
-                
+
         ##make and fill the dictorary that will be convered into a csv file
         clump_stats = {}
         clump_stats["ray_num"] = ray_nums
@@ -581,9 +580,10 @@ for rshift in args.rs_lis:
         print(len(ray_nums), len(super_cl_nums), len(med_col_dens), len(mad_for_med), len(central_v), len(vel_dispersions))
 
         df = pd.DataFrame.from_dict(clump_stats)
-        df.to_csv(f"{halo}_z{rshift}_{ion}_abun_all-model-families_all-clumps.csv" ,sep = ' ') ##save the files to scratch
-         ##as we're done with each file, delete it so we don't get residual data we don't need
+        df.to_csv(f"{stat-path}/{halo}_z{rshift}_{ion}_abun_all-model-families_all-clumps.csv" ,sep = ' ') ##save the files to scratch
+        ##as we're done with each file, delete it so we don't get residual data we don't need
         os.remove(f"Match_{ion}_Ray{r}.pickle")
         os.remove(f"Short_{ion}_Ray{r}.pickle")
         os.remove(f"Split_{ion}_Ray{r}.pickle")
         os.remove(f'super_clumps_array_{ion}_ray{r}.npy')
+        
