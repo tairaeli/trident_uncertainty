@@ -11,11 +11,10 @@
 
 ########## Command Lines for Job Running ##########
 
-cd /mnt/home/f0104093/trident_uncertainty/mods/abundances/scripts
+cd /mnt/home/f0104093/trident_uncertainty/mods/abundances/scripts ##change to run from scratch
 module load python/3.6.4
-srun -n 128 python sal_the_snek.py --ds /mnt/scratch/f0104093/cgm_abundance_variance/  --nrays 4 --abun /mnt/home/f0104093/new_abundances/cgm_abundances.txt
-pyhton id_clumps_test.py
-python clumps_stats.py
+python sal_the_snek.py --ds /mnt/scratch/f0104093/cgm_abundance_variance/  --nrays 4 --abun /mnt/scratch/f0104093/cgm_abundance_variance/abundances/abundances_ABG_massive_yields_halo2392.txt --pat 2392
+
 
 #scontrol show job $SLURM_JOB_ID
 #js -j $SLURM_JOB_ID
