@@ -199,7 +199,7 @@ for rshift in args.rs_lis:
         ##categorize clumps##
         datanum = len(pd.read_csv(args.file_path, delim_whitespace=True)) ##number of rows on the abundance table
         ndigits= len(str(datanum))
-        raynum = nrays ##number of rays used, modify as needed
+        raynum = args.nrays ##number of rays used, modify as needed
 
         for r in range(raynum):
             rowlist = []
@@ -208,7 +208,7 @@ for rshift in args.rs_lis:
                 n_len = len(str(m))
                 n_zeros = ndigits - n_len
                 k = "0" * n_zeros + str(m)
-                row_data = pd.read_csv(dat_path+f"data_AbundanceRow{k}_{ion}.txt", delim_whitespace=True) ##read in data files
+                row_data = pd.read_csv(dat_path+f"/data_AbundanceRow{k}_{ion}.txt", delim_whitespace=True) ##read in data files
                 row_work = row_data[row_data["lightray_index"]==r] ##filter to only ray1
                 df = row_work.reset_index().drop(columns="index") ##make indexing work
                 rowlist.append(df)
