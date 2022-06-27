@@ -140,7 +140,7 @@ for rshift in args.rs_lis:
     # Note: these dictionaries are temporary and should most likely be included in the arguments at some point
     center = ds.arr(center_dat[halo][rshift]['pos'], 'kpc')
     gal_vel = ds.arr(center_dat[halo][rshift]['vel'], 'km/s')
-    other_fields=['density', 'temperature', 'metallicity']
+    other_fields=['density', 'temperature', 'metallicity', ('index', 'radius')]
     max_impact=15 #kpc
     units_dict = dict(density='g/cm**3', metallicity='Zsun')
     
