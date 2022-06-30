@@ -6,8 +6,8 @@ import os
 import argparse
 import pickle
 import fsps
-from astropy.cosmology import FlatLambdaCDM # Not sure what cosmology to use
-                           # So I just picked the one in the example for astropy
+from astropy.cosmology import FlatLambdaCDM # not sure what cosmology to use
+                           # so I just picked the one in the example for astropy
 
 
 parser = argparse.ArgumentParser(description = "Pipeline variables and constants for running FSPS")
@@ -24,52 +24,63 @@ sp = fsps.StellarPopulation(zcontinuous=3, imf_type=1, add_agb_dust_model=True,
 
 om_dat = pd.read_csv(args.om_dat)
 
-# Not sure if these parameters are correct. May need to adjust later
+# not sure if these parameters are correct. May need to adjust later
 fl = FlatLambdaCDM(H0=70, Om0=0.3)
 
-# Need Omega+ to run
+# need Omega+ to run
 ages = np.asarray(om_dat["age"])
 sfr_in = np.asarray(om_dat["sfr_in"])
 
 Z = np.asarray(om_dat["metal"]) # may need to set floor so fsps doesn't complain
 
-# Seems like there are multiple negative Z values here.... why?
-# Zmin = np.min(sp.zlegend)
-
+# seems like there are multiple negative Z values here.... why?
+# removing all z vals less than 0
 nZmin = np.min(Z[Z>0])
-
 Z[Z<=0] = nZmin
 
+# prepping sp object to extract spectrum data
 sp.set_tabular_sfh(ages, sfr_in, Z)
 
-univ_age = 13.8 # Gyr
+# setting age of universe in Gyr
+univ_age = 13.8 
 
+# preparing value to be included in Cloud input data
 lJ_pad = -50
 
+# iterates through each distance and each redshift to create the 
+# input data for cloudy for each distance
 for d in args.d_list:
+    # making a separate directory for each distance
     if not os.path.isdir(args.path+f"/{d}_kpc_dat"):
         os.mkdir(args.path+f"/{d}_kpc_dat")
     
+    # do we need a source? either way... I'm just gonna leave this here...
     source = "Taira"
     
+    # initializing list to store redshift data
     conv_rs = []
-
     
     for rs in args.rs_list:
         conv_rs.append(f"{rs:.4e}")
-        
+        # conversion of redshift to age (may need more precise value for universe age)
         age = univ_age - fl.lookback_time(rs).to_value()
         
+        # generating luminosity at each wavelength
         wave,spec = sp.get_spectrum(tage = age)
         
+        # converting wave data into Angstroms
         Ryd = 2.1798723611035e-18 * u.J
         wave = wave * u.Angstrom
         nu = wave.to("J", equivalence="spectral") / Ryd
-        spec = np.log(spec)
         
+        # converting spectral luminosities into intensity
+        spec = np.log(spec/d**2)
+        
+        # generate interpolation function
         interp = interp1d(nu, spec, fill_value = "extrapolate")
         
-        fname = args.path+f"/{d}_kpc_dat/{rs}/fz_{z:.4e}.out"
+        # generating file where data is stored
+        fname = args.path+f"/{d}_kpc_dat/z_{rs:.4e}.out"
         with open(fname, "w") as f:
             f.write(f"# {source}\n")
             f.write(f"# z = {rs:.6f}\n")
@@ -88,6 +99,6 @@ for d in args.d_list:
             x = 10**interp(1)
             f.write(f"f(nu) = {np.log10(x * 4 * np.pi):.10f} at {1:.10f} Ryd\n")
     
-    with open(f'd_{d}_kpc_rs.pkl','wb') as f:
+    with open(args.path+f'd_{d}_kpc_rs.pkl','wb') as f:
         pickle.dump(conv_rs,f)
 
