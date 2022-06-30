@@ -62,21 +62,24 @@ for d in args.d_list:
     
     for rs in args.rs_list:
         conv_rs.append(f"{rs:.4e}")
-        
+        # conversion of redshift to age (may need more precise value for universe age)
         age = univ_age - fl.lookback_time(rs).to_value()
         
+        # generating luminosity at each wavelength
         wave,spec = sp.get_spectrum(tage = age)
         
-        # shouldn't need this
-        # uv_mask = (wave > 1e3) & (wave < 4e3)
-        
+        # converting wave data into Angstroms
         Ryd = 2.1798723611035e-18 * u.J
         wave = wave * u.Angstrom
         nu = wave.to("J", equivalence="spectral") / Ryd
+        
+        # converting spectral luminosities into intensity
         spec = np.log(spec/d**2)
         
+        # generate interpolation function
         interp = interp1d(nu, spec, fill_value = "extrapolate")
         
+        # generating file where data is stored
         fname = args.path+f"/{d}_kpc_dat/z_{rs:.4e}.out"
         with open(fname, "w") as f:
             f.write(f"# {source}\n")
