@@ -51,10 +51,12 @@ def generate_names(length, add=''):
 # Note: these dictionaries are temporary and should most likely be included in the arguments at some point
 
 # EDIT THIS LINE TO LOCAL FOGGIE LOCATION
+
 foggie_dir = "/mnt/home/tairaeli/astro_libs/foggie/foggie/halo_infos"
 
 # set desired halo pattern
 halo = args.pattern
+
 
 # takes in the foggie halo info directory
 # outputs a dictionary of galactic center locations/velocities for all redshifts in each halo pattern
@@ -62,10 +64,11 @@ halo = args.pattern
 def foggie_defunker(foggie_dir):
     # initializing dictionary to store all of the galactic center data
     center_dat = {}
+
     # creating branch for each halo
     center_dat[halo] = {}
     # some hardcoded pipelies that will need to be changed
-    cen_dat = pd.read_csv("/mnt/home/tairaeli/astro_libs/foggie/foggie/halo_infos/002392/nref11c_nref9f/halo_c_v", sep = '|', names = ['null','redshift','name','xc','yc','zc','xv','yv','zv','null2'])
+    cen_dat = pd.read_csv(f"/mnt/home/tairaeli/astro_libs/foggie/foggie/halo_infos/00{halo}/nref11c_nref9f/halo_c_v", sep = '|', names = ['null','redshift','name','xc','yc','zc','xv','yv','zv','null2'])
     # making some fixes specific to these files
     cen_dat = cen_dat.drop(0)
     cen_dat = cen_dat.drop(columns = ['null','null2'])
@@ -77,7 +80,7 @@ def foggie_defunker(foggie_dir):
         # making 2 more branches to store the position and velocity data of the galactic center
         center_dat[halo][rs]['pos'] = [float(rs_dat["xc"]),float(rs_dat["yc"]),float(rs_dat["zc"])]
         center_dat[halo][rs]['vel'] = [float(rs_dat["xv"]),float(rs_dat["yv"]),float(rs_dat["zv"])]
-        
+     
     return center_dat
 
 # fetching the galactic center data for all halo patterns and redshifts
@@ -108,6 +111,7 @@ if args.mk_new_bins == "True":
 
 # iterates through each halo pattern at each redshift
 rshift = args.rs
+
 
 # creating variable names for data bin locations
 ray_path = path+'/halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/rays'
