@@ -19,7 +19,7 @@ parser.add_argument('--nrays', action='store', dest='nrays', default=4, type=int
 parser.add_argument('--abun', action='store', dest='file_path', default=argparse.SUPPRESS, help='Path to abundance file, if any. Defaults to solar abundances.')
 parser.add_argument('--halo_dir', action='store', dest='halo_dir', default='/mnt/research/galaxies-REU/sims/FOGGIE', help='Path to halo data.')
 parser.add_argument('--pat', action='store', dest='pattern', default=2392, type=int, help='Desired halo pattern file ID')
-parser.add_argument('--rshift', action='store', dest='rs_lis', default=[20,18], type=list, help='List of different redshift file IDs')
+parser.add_argument('--rshift', action='store', dest='rs', default=20, type=int, help='Redshift file IDs')
 parser.add_argument('--nb',action="store", dest='mk_new_bins', default = 'True', help='Set to True to make new bins for storing output data. Otherwise, set to False if bins already exist')
 
 args = parser.parse_args()
@@ -83,7 +83,7 @@ def foggie_defunker(foggie_dir):
     # making some fixes specific to these files
     cen_dat = cen_dat.drop(0)
     cen_dat = cen_dat.drop(columns = ['null','null2'])
-    for rs in args.rs_lis:
+    for rs in args.rs:
         # creating branch for each redshift in each halo 
         center_dat[halo][rs] = {}
         # isolating data to a specific redshift 
@@ -103,7 +103,7 @@ path = os.path.expandvars(os.path.expanduser(args.path))
 # function for creating new paths to store output data
 def mk_new_dirs():
     os.mkdir(path+'/halo'+f'{halo}')
-    for rshift in args.rs_lis:
+    for rshift in args.rs:
         # creating variable names for data bin locations
         ray_path = path+'/halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/rays'
         dat_path = path+'/halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/data'
@@ -125,7 +125,7 @@ if args.mk_new_bins == "True":
 # iterates through each halo pattern at each redshift
 
 
-for rshift in args.rs_lis:
+for rshift in args.rs:
     # creating variable names for data bin locations
     ray_path = path+'halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/rays'
     dat_path = path+'halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/data'
