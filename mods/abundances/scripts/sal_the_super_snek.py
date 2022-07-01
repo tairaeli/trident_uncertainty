@@ -21,11 +21,18 @@ parser.add_argument('--nrays', action='store', dest='nrays', default=4, type=int
 parser.add_argument('--abun', action='store', dest='file_path', default=argparse.SUPPRESS, help='Path to abundance file, if any. Defaults to solar abundances.')
 parser.add_argument('--halo_dir', action='store', dest='halo_dir', default='/mnt/research/galaxies-REU/sims/FOGGIE', help='Path to halo data.')
 parser.add_argument('--pat', action='store', dest='pattern', default=2392, type=int, help='Desired halo pattern file ID')
-parser.add_argument('--rshift', action='store', dest='rs_lis', default=[20,18], type=list, help='List of different redshift file IDs')
+parser.add_argument('--rshift', action='store', dest='rs', default=20, type=int, help='Redshift file IDs')
 parser.add_argument('--nb',action="store", dest='mk_new_bins', default = 'True', help='Set to True to make new bins for storing output data. Otherwise, set to False if bins already exist')
 
 args = parser.parse_args()
 dic_args = vars(args)
+
+def get_true_rs(val):
+    if val == 20:
+        true_rs = '2.0'
+    elif val == 18:
+        true_rs = '2.5'
+    return true_rs
 
 def generate_names(length, add=''):
         
@@ -85,7 +92,7 @@ def foggie_defunker(foggie_dir):
     # making some fixes specific to these files
     cen_dat = cen_dat.drop(0)
     cen_dat = cen_dat.drop(columns = ['null','null2'])
-    for rs in args.rs_lis:
+    for rs in args.rs:
         # creating branch for each redshift in each halo 
         center_dat[halo][rs] = {}
         # isolating data to a specific redshift 
@@ -105,15 +112,16 @@ path = os.path.expandvars(os.path.expanduser(args.path))
 # function for creating new paths to store output data
 def mk_new_dirs():
     os.mkdir(path+'/halo'+f'{halo}')
-    for rshift in args.rs_lis:
+    for rshift in args.rs:
+        true_rs = get_true_rs(rshift)
         # creating variable names for data bin locations
-        ray_path = path+'/halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/rays'
-        dat_path = path+'/halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/data'
-        vis_path = path+'/halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/visuals'
-        stat_path = path+'halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/stats'
+        ray_path = path+'/halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/rays'
+        dat_path = path+'/halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/data'
+        vis_path = path+'/halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/visuals'
+        stat_path = path+'halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/stats'
 
         # making the directories
-        os.mkdir(path+'/halo'+f'{halo}'+'/redshift'+f'{rshift}')
+        os.mkdir(path+'/halo'+f'{halo}'+'/redshift'+f'{true_rs}')
         os.mkdir(ray_path) 
         os.mkdir(dat_path)
         os.mkdir(vis_path)
@@ -127,12 +135,13 @@ if args.mk_new_bins == "True":
 # iterates through each halo pattern at each redshift
 
 
-for rshift in args.rs_lis:
+for rshift in args.rs:
     # creating variable names for data bin locations
-    ray_path = path+'halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/rays'
-    dat_path = path+'halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/data'
-    vis_path = path+'halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/visuals'
-    stat_path = path+'halo'+f'{halo}'+'/redshift'+f'{rshift}'+'/stats'
+    true_rs = get_true_rs(rshift)
+    ray_path = path+'halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/rays'
+    dat_path = path+'halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/data'
+    vis_path = path+'halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/visuals'
+    stat_path = path+'halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/stats'
     
     # load halo data
     ds = yt.load(f'{args.halo_dir}/halo_00{halo}/nref11c_nref9f/RD00{rshift}/RD00{rshift}')
@@ -581,7 +590,7 @@ for rshift in args.rs_lis:
         print(len(ray_nums), len(super_cl_nums), len(med_col_dens), len(mad_for_med), len(central_v), len(vel_dispersions))
 
         df = pd.DataFrame.from_dict(clump_stats)
-        df.to_csv(f"{stat-path}/{halo}_z{rshift}_{ion}_abun_all-model-families_all-clumps.csv" ,sep = ' ') ##save the files to scratch
+        df.to_csv(f"{stat-path}/{halo}_z{true_rs}_{ion}_abun_all-model-families_all-clumps.csv" ,sep = ' ') ##save the files to scratch
         ##as we're done with each file, delete it so we don't get residual data we don't need
         os.remove(f"Match_{ion}_Ray{r}.pickle")
         os.remove(f"Short_{ion}_Ray{r}.pickle")
