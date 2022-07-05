@@ -22,7 +22,6 @@ parser.add_argument('--abun', action='store', dest='file_path', default=argparse
 parser.add_argument('--halo_dir', action='store', dest='halo_dir', default='/mnt/research/galaxies-REU/sims/FOGGIE', help='Path to halo data.')
 parser.add_argument('--pat', action='store', dest='pattern', default=2392, type=int, help='Desired halo pattern file ID')
 parser.add_argument('--rshift', action='store', dest='rs', default=20, type=int, help='Redshift file IDs')
-parser.add_argument('--nb',action="store", dest='mk_new_bins', default = 'True', help='Set to True to make new bins for storing output data. Otherwise, set to False if bins already exist')
 
 args = parser.parse_args()
 dic_args = vars(args)
@@ -109,37 +108,22 @@ center_dat = foggie_defunker(foggie_dir)
 # identifying the path argument as a variable
 path = os.path.expandvars(os.path.expanduser(args.path))
 
-# function for creating new paths to store output data
-def mk_new_dirs():
-    os.mkdir(path+'/halo'+f'{halo}')
-    rshift = args.rs
-    true_rs = get_true_rs(rshift)
-    # creating variable names for data bin locations
-    ray_path = path+'/halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/rays'
-    dat_path = path+'/halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/data'
-    vis_path = path+'/halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/visuals'
-    stat_path = path+'halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/stats'
+#  creating variable names for data bin locations
+halo_path = path+'/halo'+f'{halo}'
+rs_path = halo_path + '/redshift'+f'{rshift}'
+ray_path = rs_path +'/rays'
+dat_path = rs_path +'/data'
+vis_path = rs_path +'/visuals'
 
-    # making the directories
-    os.mkdir(path+'/halo'+f'{halo}'+'/redshift'+f'{true_rs}')
+# creating dictionaries to store all of our data (if they don't already exist)
+if os.path.exists(halo_path) == "False":
+    os.mkdir(path+'/halo'+f'{halo}')
+    
+if os.path.exists(rs_path) == "False":
     os.mkdir(ray_path) 
     os.mkdir(dat_path)
     os.mkdir(vis_path)
-    os.mkdir(stat_path)
     
-
-# creating dictionaries to store all of our data
-if args.mk_new_bins == "True":
-    mk_new_dirs()
-
-
-rshift = args.rs
-true_rs = get_true_rs(rshift)
-# creating variable names for data bin locations
-ray_path = path+'halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/rays'
-dat_path = path+'halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/data'
-vis_path = path+'halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/visuals'
-stat_path = path+'halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/stats'
 
 # load halo data
 ds = yt.load(f'{args.halo_dir}/halo_00{halo}/nref11c_nref9f/RD00{rshift}/RD00{rshift}')
@@ -384,8 +368,7 @@ for ion in new_ion_list:
                             row_split.append([row_st_ind[j],row_en_ind[j]]) 
 
 
-                    if super_clumps[i-1]==2:
-                        sup_st=sup_st_true[1]
+                    
 
                     ##reset variables      
                     row_st_cnt = 0
