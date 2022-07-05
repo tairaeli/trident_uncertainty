@@ -27,7 +27,7 @@ parser.add_argument('--nb',action="store", dest='mk_new_bins', default = 'True',
 args = parser.parse_args()
 dic_args = vars(args)
 
-def get_true_rs(val):
+def get_true_rs(val): ##define how to get actual rshift numbers
     if val == 20:
         true_rs = '2.0'
     elif val == 18:
@@ -92,14 +92,14 @@ def foggie_defunker(foggie_dir):
     # making some fixes specific to these files
     cen_dat = cen_dat.drop(0)
     cen_dat = cen_dat.drop(columns = ['null','null2'])
-    for rs in args.rs:
-        # creating branch for each redshift in each halo 
-        center_dat[halo][rs] = {}
-        # isolating data to a specific redshift 
-        rs_dat = cen_dat[cen_dat['name'] == ' RD00'+str(rs)+' ']
-        # making 2 more branches to store the position and velocity data of the galactic center
-        center_dat[halo][rs]['pos'] = [float(rs_dat["xc"]),float(rs_dat["yc"]),float(rs_dat["zc"])]
-        center_dat[halo][rs]['vel'] = [float(rs_dat["xv"]),float(rs_dat["yv"]),float(rs_dat["zv"])]
+    rs = args.rs
+    # creating branch for each redshift in each halo 
+    center_dat[halo][rs] = {}
+    # isolating data to a specific redshift 
+    rs_dat = cen_dat[cen_dat['name'] == ' RD00'+str(rs)+' ']
+    # making 2 more branches to store the position and velocity data of the galactic center
+    center_dat[halo][rs]['pos'] = [float(rs_dat["xc"]),float(rs_dat["yc"]),float(rs_dat["zc"])]
+    center_dat[halo][rs]['vel'] = [float(rs_dat["xv"]),float(rs_dat["yv"]),float(rs_dat["zv"])]
      
     return center_dat
 
@@ -112,339 +112,343 @@ path = os.path.expandvars(os.path.expanduser(args.path))
 # function for creating new paths to store output data
 def mk_new_dirs():
     os.mkdir(path+'/halo'+f'{halo}')
-    for rshift in args.rs:
-        true_rs = get_true_rs(rshift)
-        # creating variable names for data bin locations
-        ray_path = path+'/halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/rays'
-        dat_path = path+'/halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/data'
-        vis_path = path+'/halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/visuals'
-        stat_path = path+'halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/stats'
+    rshift = args.rs
+    true_rs = get_true_rs(rshift)
+    # creating variable names for data bin locations
+    ray_path = path+'/halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/rays'
+    dat_path = path+'/halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/data'
+    vis_path = path+'/halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/visuals'
+    stat_path = path+'halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/stats'
 
-        # making the directories
-        os.mkdir(path+'/halo'+f'{halo}'+'/redshift'+f'{true_rs}')
-        os.mkdir(ray_path) 
-        os.mkdir(dat_path)
-        os.mkdir(vis_path)
-        os.mkdir(stat_path)
+    # making the directories
+    os.mkdir(path+'/halo'+f'{halo}'+'/redshift'+f'{true_rs}')
+    os.mkdir(ray_path) 
+    os.mkdir(dat_path)
+    os.mkdir(vis_path)
+    os.mkdir(stat_path)
     
 
 # creating dictionaries to store all of our data
 if args.mk_new_bins == "True":
     mk_new_dirs()
 
-# iterates through each halo pattern at each redshift
 
+rshift = args.rs
+true_rs = get_true_rs(rshift)
+# creating variable names for data bin locations
+ray_path = path+'halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/rays'
+dat_path = path+'halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/data'
+vis_path = path+'halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/visuals'
+stat_path = path+'halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/stats'
 
-for rshift in args.rs:
-    # creating variable names for data bin locations
-    true_rs = get_true_rs(rshift)
-    ray_path = path+'halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/rays'
-    dat_path = path+'halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/data'
-    vis_path = path+'halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/visuals'
-    stat_path = path+'halo'+f'{halo}'+'/redshift'+f'{true_rs}'+'/stats'
-    
-    # load halo data
-    ds = yt.load(f'{args.halo_dir}/halo_00{halo}/nref11c_nref9f/RD00{rshift}/RD00{rshift}')
-    print(type(ds))
-    # defining analysis parameters
-    # Note: these dictionaries are temporary and should most likely be included in the arguments at some point
-    center = ds.arr(center_dat[halo][rshift]['pos'], 'kpc')
-    gal_vel = ds.arr(center_dat[halo][rshift]['vel'], 'km/s')
-    other_fields=['density', 'temperature', 'metallicity', ('index', 'radius')]
-    max_impact=15 #kpc
-    units_dict = dict(density='g/cm**3', metallicity='Zsun')
-    
-    ray_num=f'{0:0{len(str(args.nrays))}d}'
-    ray_file=f'{ray_path}/ray{ray_num}.h5'
-    
-    np.random.seed(13)
-    
-    #get those rays babyyyy
-    # CK: Check that rays already exist, and that the have the additional fields contained
-    # in the third argument (empty for now; might become a user parameter)
-    check = check_rays(ray_path, args.nrays, [])
-    if not check:
-        print("WARNING: rays not found. Generating new ones.")
-        salsa.generate_lrays(ds, center.to('code_length'), args.nrays, max_impact, length=600, field_parameters={'bulk_velocity':gal_vel}, ion_list=['H I'], fields=other_fields, out_dir=ray_path)
-    
-    ray_list=[]
-    for i in range(args.nrays):
-        if len(str(i)) != len(str(args.nrays)):
-            n = len(str(args.nrays)) - 1
-            
-            ray_list.append(f'{ray_path}/ray{i: 0{n}d}.h5')
-        else:
-            ray_list.append(f'{ray_path}/ray{i}.h5')
-    
-    # CK: Taking a hint from SALSA on how to divvy up the ray list across procs
-    ray_arr = np.array(ray_list)
-    ray_files_split = np.array_split(ray_arr, comm.size)
-    my_rays = ray_files_split[ comm.rank ]
-    
-    ion_list = ['C II', 'C IV', 'O VI']
-    new_ion_list = ['C_II', 'C_IV', 'O_VI']
-    
-    # if 'use_SolAb' == False:
-    if 'file_path' in dic_args:
-    	abun = pd.read_csv(args.file_path, delim_whitespace=True)
-    	nrows = len(abun)
-    	saved = generate_names(nrows)
-    	for row_num in range(nrows):
-    		for i in ion_list:
-    			abundances = abun.iloc[row_num].to_dict()
-    			abs_ext = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, velocity_res =20, abundance_table = abundances, calc_missing=True)
-    			df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=units_dict).drop(columns='index')
-    			df.to_csv(f'{dat_path}/{saved[row_num]}_{i.replace(" ", "_")}.txt', sep = ' ')
-    			print("Go look at your data!")
-    
+# load halo data
+ds = yt.load(f'{args.halo_dir}/halo_00{halo}/nref11c_nref9f/RD00{rshift}/RD00{rshift}')
+print(type(ds))
+# defining analysis parameters
+# Note: these dictionaries are temporary and should most likely be included in the arguments at some point
+center = ds.arr(center_dat[halo][rshift]['pos'], 'kpc')
+gal_vel = ds.arr(center_dat[halo][rshift]['vel'], 'km/s')
+other_fields=['density', 'temperature', 'metallicity', ('index', 'radius')]
+max_impact=15 #kpc
+units_dict = dict(density='g/cm**3', metallicity='Zsun')
+
+ray_num=f'{0:0{len(str(args.nrays))}d}'
+ray_file=f'{ray_path}/ray{ray_num}.h5'
+
+np.random.seed(13)
+
+#get those rays babyyyy
+# CK: Check that rays already exist, and that the have the additional fields contained
+# in the third argument (empty for now; might become a user parameter)
+check = check_rays(ray_path, args.nrays, [])
+if not check:
+    print("WARNING: rays not found. Generating new ones.")
+    salsa.generate_lrays(ds, center.to('code_length'), args.nrays, max_impact, length=600, field_parameters={'bulk_velocity':gal_vel}, ion_list=['H I'], fields=other_fields, out_dir=ray_path)
+
+ray_list=[]
+for i in range(args.nrays):
+    if len(str(i)) != len(str(args.nrays)):
+        n = len(str(args.nrays)) - 1
+        
+        ray_list.append(f'{ray_path}/ray{i: 0{n}d}.h5')
     else:
-    	nrows = 0
-    	saved = generate_names(nrows)
-    	for i in ion_list:
-    		abs_ext = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, abundance_table = None, calc_missing=True)
-    		df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=units_dict)
-    		df.to_csv(f'{dat_path}/data_SolAb_{i.replace(" ", "_")}.txt', sep = ' ').drop(columns='index')
-    		print("Go look at your data!")
-                
-    for ion in new_ion_list:
-        ##categorize clumps##
-        datanum = len(pd.read_csv(args.file_path, delim_whitespace=True)) ##number of rows on the abundance table
-        ndigits= len(str(datanum))
-        raynum = args.nrays ##number of rays used, modify as needed
+        ray_list.append(f'{ray_path}/ray{i}.h5')
 
-        for r in range(raynum):
-            rowlist = []
-            for i in range(datanum):
-                m = i+1
-                n_len = len(str(m))
-                n_zeros = ndigits - n_len
-                k = "0" * n_zeros + str(m)
-                row_data = pd.read_csv(dat_path+f"/data_AbundanceRow{k}_{ion}.txt", delim_whitespace=True) ##read in data files
-                row_work = row_data[row_data["lightray_index"]==r] ##filter to only ray1
-                df = row_work.reset_index().drop(columns="index") ##make indexing work
-                rowlist.append(df)
+# CK: Taking a hint from SALSA on how to divvy up the ray list across procs
+ray_arr = np.array(ray_list)
+ray_files_split = np.array_split(ray_arr, comm.size)
+my_rays = ray_files_split[ comm.rank ]
 
-            mx= -np.inf  ##find how long each array should be
-            for ds in rowlist: #find the cell index of the furthest clump
+ion_list = ['C II', 'C IV', 'O VI']
+new_ion_list = ['C_II', 'C_IV', 'O_VI']
+
+# if 'use_SolAb' == False:
+if 'file_path' in dic_args:
+	abun = pd.read_csv(args.file_path, delim_whitespace=True)
+	nrows = len(abun)
+	saved = generate_names(nrows)
+	for row_num in range(nrows):
+		for i in ion_list:
+			abundances = abun.iloc[row_num].to_dict()
+			abs_ext = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, velocity_res =20, abundance_table = abundances, calc_missing=True)
+			df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=units_dict).drop(columns='index')
+			df.to_csv(f'{dat_path}/{saved[row_num]}_{i.replace(" ", "_")}.txt', sep = ' ')
+			print("Go look at your data!")
+
+else:
+	nrows = 0
+	saved = generate_names(nrows)
+	for i in ion_list:
+		abs_ext = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, abundance_table = None, calc_missing=True)
+		df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=units_dict)
+		df.to_csv(f'{dat_path}/data_SolAb_{i.replace(" ", "_")}.txt', sep = ' ').drop(columns='index')
+		print("Go look at your data!")
+            
+            
+for ion in new_ion_list:
+    ##categorize clumps##
+    datanum = len(pd.read_csv(args.file_path, delim_whitespace=True)) ##number of rows on the abundance table
+    ndigits= len(str(datanum))
+    raynum = args.nrays ##number of rays used, modify as needed
+
+    for r in range(raynum):
+        rowlist = []
+        for i in range(datanum):
+            m = i+1
+            n_len = len(str(m))
+            n_zeros = ndigits - n_len
+            k = "0" * n_zeros + str(m)
+            row_data = pd.read_csv(dat_path+f"/data_AbundanceRow{k}_{ion}.txt", delim_whitespace=True) ##read in data files
+            row_work = row_data[row_data["lightray_index"]==r] ##filter to only ray1
+            df = row_work.reset_index().drop(columns="index") ##make indexing work
+            rowlist.append(df)
+
+        mx= 0  ##find how long each array should be
+        for ds in rowlist: #find the cell index of the furthest clump
+            if len(ds['interval_end']) == 0: ##handles if there are no clumps in a row
+                break
+            else:
                 row_mx = max(ds["interval_end"])
                 if row_mx>mx:
                     mx=row_mx
-            super_clumps = np.zeros(int(mx))
-            clmaps = []
+        
+    
+        super_clumps = np.zeros(int(mx))
+        clmaps = []
 
-            problems = []
-            hassles = {}
+        problems = []
+        hassles = {}
 
-            row_tracker = 0
-            for ds in rowlist: ##make masks for each row and form super_clumps
-                ds_clump_loc = np.zeros(int(mx))
-                row_tracker +=1
-                hassles_ind = []
-                for j in range(ds.shape[0]):
-                    ds_clump_loc[int(ds["interval_start"][j]):int(ds["interval_end"][j])] = 1
-                        #print(f"Row Start: {int(ds['interval_start'][j])}, Row End: {int(ds['interval_end'][j])}")
+        row_tracker = 0
+        for ds in rowlist: ##make masks for each row and form super_clumps
+            ds_clump_loc = np.zeros(int(mx))
+            row_tracker +=1
+            hassles_ind = []
+            for j in range(ds.shape[0]):
+                ds_clump_loc[int(ds["interval_start"][j]):int(ds["interval_end"][j])] = 1
+                    #print(f"Row Start: {int(ds['interval_start'][j])}, Row End: {int(ds['interval_end'][j])}")
 
-                    if j-1 == -1:
-                        super_clumps[int(ds["interval_start"][j]):int(ds["interval_end"][j])] = 1
+                if j-1 == -1:
+                    super_clumps[int(ds["interval_start"][j]):int(ds["interval_end"][j])] = 1
 
-                    elif int(ds["interval_end"][j-1]) == int(ds["interval_start"][j]):
+                elif int(ds["interval_end"][j-1]) == int(ds["interval_start"][j]):
 
-                            #check for wether or not two clumps are within thier standard deviations
-                        if not (float(ds["delta_v"][j-1]) - 1.5 * (float(ds["vel_dispersion"][j-1]))) <= float(ds["delta_v"][j]) <= 1.5 * (float(ds["delta_v"][j-1]) + (float(ds["vel_dispersion"][j-1]))):
-                            ds_clump_loc[int(ds["interval_start"][j])] = 2
-                        #edge case handling
-                            if int(ds["interval_end"][j-1]) not in problems:
-                                problems.append(int(ds["interval_end"][j-1])) 
-                                 #to make sure the bigger clumps stays in superclumps:
-                            if (super_clumps[int(ds["interval_end"][j-1])] == 0) or (super_clumps[int(ds["interval_end"][j-1])] == 2):
-                                super_clumps[int(ds["interval_start"][j]):int(ds["interval_end"][j])] = 1
-                                super_clumps[int(ds["interval_start"][j])] = 2
-                        else:
-                            hassles_ind.append([int(ds["interval_start"][j-1]), int(ds["interval_end"][j-1])])
-                            hassles_ind.append([int(ds["interval_start"][j]), int(ds["interval_end"][j])])                
+                        #check for wether or not two clumps are within thier standard deviations
+                    if not (float(ds["delta_v"][j-1]) - 1.5 * (float(ds["vel_dispersion"][j-1]))) <= float(ds["delta_v"][j]) <= 1.5 * (float(ds["delta_v"][j-1]) + (float(ds["vel_dispersion"][j-1]))):
+                        ds_clump_loc[int(ds["interval_start"][j])] = 2
+                    #edge case handling
+                        if int(ds["interval_end"][j-1]) not in problems:
+                            problems.append(int(ds["interval_end"][j-1])) 
+                             #to make sure the bigger clumps stays in superclumps:
+                        if (super_clumps[int(ds["interval_end"][j-1])] == 0) or (super_clumps[int(ds["interval_end"][j-1])] == 2):
                             super_clumps[int(ds["interval_start"][j]):int(ds["interval_end"][j])] = 1
-                            print(f"Hassles: {row_tracker, hassles_ind}")
-
+                            super_clumps[int(ds["interval_start"][j])] = 2
                     else:
-                        super_clumps[int(ds["interval_start"][j]):int(ds["interval_end"][j])] = 1  
+                        hassles_ind.append([int(ds["interval_start"][j-1]), int(ds["interval_end"][j-1])])
+                        hassles_ind.append([int(ds["interval_start"][j]), int(ds["interval_end"][j])])                
+                        super_clumps[int(ds["interval_start"][j]):int(ds["interval_end"][j])] = 1
+                        print(f"Hassles: {row_tracker, hassles_ind}")
 
-                hassles[row_tracker]=hassles_ind
-                clmaps.append(ds_clump_loc)
+                else:
+                    super_clumps[int(ds["interval_start"][j]):int(ds["interval_end"][j])] = 1  
 
-                for index in problems:
-                    for row in clmaps:
-                        if index in row:
-                            if ((row[index-1] == 0 and row[index+1] != 0) or (row[index+1] == 0 and row[index-1] != 0)) and (row[index] != 0): ##edge case handling
-                                super_clumps[index] = 2
+            hassles[row_tracker]=hassles_ind
+            clmaps.append(ds_clump_loc)
 
-            super_clumps=np.append(0, super_clumps)  ##make indexing work  
-            super_clumps=np.append(super_clumps, 0)
-            np.save(f'super_clumps_array_{ion}_ray{r}', super_clumps) ##save super_clumps for future reference
-            match = {} ##create dictionaries to store indexes of clumps in the row that correspond to one another, keys will be row numbers and values will be indecies except for the lonlies
-            short = {}
-            split = {}
-            lonely = {}
-            maybe_lonely = {}
-            rownum = 0
+            for index in problems:
+                for row in clmaps:
+                    if index in row:
+                        if ((row[index-1] == 0 and row[index+1] != 0) or (row[index+1] == 0 and row[index-1] != 0)) and (row[index] != 0): ##edge case handling
+                            super_clumps[index] = 2
 
-            for row in clmaps:  ##start by iterating over a whole row
-                row = np.append(0,row) # adding an extra element to prevent booleans from failing
-                row = np.append(row,0)
-                rownum += 1 ##define which row we're working on
-                ##make all the variables and lists necessary
-                row_st_cnt = 0 ##count how many starts of row clumps there have been within a super clump
-                row_st_ind = []  ##keep track of start location(s) of a row clump
+        super_clumps=np.append(0, super_clumps)  ##make indexing work  
+        super_clumps=np.append(super_clumps, 0)
+        np.save(f'super_clumps_array_{ion}_ray{r}', super_clumps) ##save super_clumps for future reference
+        match = {} ##create dictionaries to store indexes of clumps in the row that correspond to one another, keys will be row numbers and values will be indecies except for the lonlies
+        short = {}
+        split = {}
+        lonely = {}
+        maybe_lonely = {}
+        rownum = 0
 
-                row_en_cnt = 0 ##how many ends of row clumps there have been within a super clump
-                row_en_ind = [] ##keep track of end location(s) of a row clump
-                row_match = []
-                row_short = []
-                row_split = []
-                sup_st_true =[]
-                weird_index = 0
+        for row in clmaps:  ##start by iterating over a whole row
+            row = np.append(0,row) # adding an extra element to prevent booleans from failing
+            row = np.append(row,0)
+            rownum += 1 ##define which row we're working on
+            ##make all the variables and lists necessary
+            row_st_cnt = 0 ##count how many starts of row clumps there have been within a super clump
+            row_st_ind = []  ##keep track of start location(s) of a row clump
 
-                for i in range(len(row)):
+            row_en_cnt = 0 ##how many ends of row clumps there have been within a super clump
+            row_en_ind = [] ##keep track of end location(s) of a row clump
+            row_match = []
+            row_short = []
+            row_split = []
+            sup_st_true =[]
+            weird_index = 0
 
-                    if super_clumps[i-1]<super_clumps[i]: ##start of a super clump
-                        sup_st = i-1 ##keep track of start location of a super clump
-                        sup_st_true.append(sup_st)
+            for i in range(len(row)):
 
-                    if row[i-1]<row[i] and (len(row_st_ind) == 0 or len(row_st_ind) ==1):##start of a clump in the row
-                        print(i-2, i-1, i)
-                        if super_clumps[i-1] == 2: ##if oops is printed, there is another edge case, debugging must begin again
-                            print("oops")
-                        elif super_clumps[i] != 2 or len(row_st_ind)!=0: ##normal clumps look like this
-                            row_st_ind.append(i-1)
-                            row_st_cnt += 1
-                            print(row_st_ind, rownum)
-                        else: ##edge case handling ##FIXME
-                            weird_index = i-1
+                if super_clumps[i-1]<super_clumps[i]: ##start of a super clump
+                    sup_st = i-1 ##keep track of start location of a super clump
+                    sup_st_true.append(sup_st)
 
-                    elif row[i-1]>row[i]: ##end of a clump in row
-                        row_en_cnt += 1
-                        if row[i-1]==2: ## edge case handling
-                            row_en_ind.append(i-2)
+                if row[i-1]<row[i] and (len(row_st_ind) == 0 or len(row_st_ind) ==1):##start of a clump in the row
+                    if super_clumps[i-1] == 2: ##if oops is printed, there is another edge case, debugging must begin again
+                        print("oops")
+                    elif super_clumps[i] != 2 or len(row_st_ind)!=0: ##normal clumps look like this
+                        row_st_ind.append(i-1)
+                        row_st_cnt += 1
+                        print(row_st_ind, rownum)
+                    else: ##edge case handling ##FIXME
+                        weird_index = i-1
+
+                elif row[i-1]>row[i]: ##end of a clump in row
+                    row_en_cnt += 1
+                    if row[i-1]==2: ## edge case handling
+                        row_en_ind.append(i-2)
+                    else:
+                        row_en_ind.append(i-1)
+
+                if super_clumps[i-1]>super_clumps[i]: ##end of a super clump
+                    if super_clumps[i-1]==2:
+                        sup_en = i-2
+                        sup_st = sup_st_true[0] ##edge case handling
+
+                    if super_clumps[i-1] == 0 or super_clumps[i-1] == 1:
+                        sup_en = i-1 ##keep track of the location of the end of a super clump
+
+
+
+                    if (row_st_cnt == 1) or (row_en_cnt == 1): ##check for if there is only one row clump in the super clump
+                        if weird_index != 0: ##edge case handling
+                            row_st_ind.append(weird_index)
+
+                        if (len(row_en_ind) == 0 and len(row_st_ind) != 0) or (len(row_st_ind) == 0 and len(row_en_ind) != 0):
+
+                            break
+
+                        hassle_st = []
+                        hassle_en = []
+
+                        if rownum in hassles.keys(): ##even more edge case handling
+                            for value in hassles.values():
+                                for t in value:
+                                    hassle_st.append(t[0])
+                                    hassle_en.append(t[1])
+
+                            if row_st_ind[0] in hassle_st:
+                                for j in range(len(hassle_st)):
+                                    if [hassle_st[j], hassle_en[j]] not in row_split:
+                                        row_split.append([hassle_st[j], hassle_en[j]])
+                            elif row_en_ind[0] in hassle_en:
+
+                                continue
+
+                        if (row_st_ind[0] == sup_st) and (row_en_ind[0] == sup_en) and (row_st_ind[0] not in hassle_st) and (row_en_ind[0] not in hassle_en): ##if the starts and ends match, the clumps are identical
+
+                            row_match.append([row_st_ind[0],row_en_ind[0]]) ##thus, start and end indecies appended to a list of them
+
+                        elif (row_st_ind[0] not in hassle_st) and (row_en_ind[0] not in hassle_en):
+                            row_short.append([row_st_ind[0],row_en_ind[0]]) ##if not, then the row clump must be shorter and the start and end indecies are appended to the appropraite list
+
+                    elif (row_st_cnt == 0) and (row_en_cnt == 0): ##check if there is nothing in the row that matches the super clump
+
+                        if str([sup_st,sup_en]) in maybe_lonely.keys(): ##check if we have already seen this superclump, if not make the entry in the dictionary
+                            maybe_lonely[str([sup_st,sup_en])] += 1
                         else:
-                            row_en_ind.append(i-1)
+                            maybe_lonely[str([sup_st,sup_en])] = 1
 
-                    if super_clumps[i-1]>super_clumps[i]: ##end of a super clump
-                        if super_clumps[i-1]==2:
-                            sup_en = i-2
-                            sup_st = sup_st_true[0] ##edge case handling
-
-                        if super_clumps[i-1] == 0 or super_clumps[i-1] == 1:
-                            sup_en = i-1 ##keep track of the location of the end of a super clump
+                    else: ##only other senario is there there was a split
+                        for j in range(min([len(row_en_ind), len(row_st_ind)])): ##organize the indecies to make the list in order
+                            row_split.append([row_st_ind[j],row_en_ind[j]]) 
 
 
+                    if super_clumps[i-1]==2:
+                        sup_st=sup_st_true[1]
 
-                        if (row_st_cnt == 1) or (row_en_cnt == 1): ##check for if there is only one row clump in the super clump
-                            if weird_index != 0: ##edge case handling
-                                row_st_ind.append(weird_index)
+                    ##reset variables      
+                    row_st_cnt = 0
+                    row_st_ind = []
+                    row_en_cnt = 0
+                    row_en_ind = []
+                    sup_st_true = []
+                    match[rownum] = row_match
+                    short[rownum] = row_short
+                    split[rownum] = row_split
 
-                            if (len(row_en_ind) == 0 and len(row_st_ind) != 0) or (len(row_st_ind) == 0 and len(row_en_ind) != 0):
+                    if super_clumps[i-1] == 2:
+                        sup_st = i-2
+                        if row[i-1]>row[i]:
+                            row_st_ind.append(i-2)
+                            row_st_cnt += 1
 
-                                break
+    #for clump in maybe_lonely: ##later must set a limits on the minimumm number of times something has to appear in maybe lonely for it to actually be considered lonely
 
-                            hassle_st = []
-                            hassle_en = []
+        pickling_match = open(f"Match_{ion}_Ray{r}.pickle","wb") ##saves the dictonaries so that they can be accesssed later
+        pickle.dump(match, pickling_match, protocol=3)	
+        pickling_match.close()
 
-                            if rownum in hassles.keys(): ##even more edge case handling
-                                for value in hassles.values():
-                                    for t in value:
-                                        hassle_st.append(t[0])
-                                        hassle_en.append(t[1])
+        pickling_split = open(f"Split_{ion}_Ray{r}.pickle","wb")
+        pickle.dump(split, pickling_split, protocol=3)
+        pickling_split.close() 
 
-                                if row_st_ind[0] in hassle_st:
-                                    for j in range(len(hassle_st)):
-                                        if [hassle_st[j], hassle_en[j]] not in row_split:
-                                            row_split.append([hassle_st[j], hassle_en[j]])
-                                elif row_en_ind[0] in hassle_en:
+        pickling_short = open(f"Short_{ion}_Ray{r}.pickle","wb")
+        pickle.dump(short, pickling_short, protocol=3)
+        pickling_short.close()
 
-                                    continue
+        pickling_maybe_lonely = open(f"MaybeLonely_{ion}_Ray{r}.pickle","wb")
+        pickle.dump(maybe_lonely, pickling_maybe_lonely, protocol=3)
+        pickling_maybe_lonely.close()
+    
+    ####make stats files for each super_clump#####
+    
+    ray_nums = [] ##define lists that will eventually go into pandas sets
+    super_cl_nums = []
+    med_col_dens = []
+    mad_for_med = []
+    distances = []
+    central_v = []
+    vel_dispersions =[]
+    densities = []
+    temperatures = []
+    num_clumps = []
+    rows_of_rep_clumps = []
 
-                            if (row_st_ind[0] == sup_st) and (row_en_ind[0] == sup_en) and (row_st_ind[0] not in hassle_st) and (row_en_ind[0] not in hassle_en): ##if the starts and ends match, the clumps are identical
-
-                                row_match.append([row_st_ind[0],row_en_ind[0]]) ##thus, start and end indecies appended to a list of them
-
-                            elif (row_st_ind[0] not in hassle_st) and (row_en_ind[0] not in hassle_en):
-                                row_short.append([row_st_ind[0],row_en_ind[0]]) ##if not, then the row clump must be shorter and the start and end indecies are appended to the appropraite list
-
-                        elif (row_st_cnt == 0) and (row_en_cnt == 0): ##check if there is nothing in the row that matches the super clump
-
-                            if str([sup_st,sup_en]) in maybe_lonely.keys(): ##check if we have already seen this superclump, if not make the entry in the dictionary
-                                maybe_lonely[str([sup_st,sup_en])] += 1
-                            else:
-                                maybe_lonely[str([sup_st,sup_en])] = 1
-
-                        else: ##only other senario is there there was a split
-                            for j in range(min([len(row_en_ind), len(row_st_ind)])): ##organize the indecies to make the list in order
-                                row_split.append([row_st_ind[j],row_en_ind[j]]) 
-
-
-                        if super_clumps[i-1]==2:
-                            sup_st=sup_st_true[1]
-
-                        ##reset variables      
-                        row_st_cnt = 0
-                        row_st_ind = []
-                        row_en_cnt = 0
-                        row_en_ind = []
-                        sup_st_true = []
-                        match[rownum] = row_match
-                        short[rownum] = row_short
-                        split[rownum] = row_split
-
-                        if super_clumps[i-1] == 2:
-                            sup_st = i-2
-                            if row[i-1]>row[i]:
-                                row_st_ind.append(i-2)
-                                row_st_cnt += 1
-
-        #for clump in maybe_lonely: ##later must set a limits on the minimumm number of times something has to appear in maybe lonely for it to actually be considered lonely
-
-            pickling_match = open(f"Match_{ion}_Ray{r}.pickle","wb") ##saves the dictonaries so that they can be accesssed later
-            pickle.dump(match, pickling_match, protocol=3)	
-            pickling_match.close()
-
-            pickling_split = open(f"Split_{ion}_Ray{r}.pickle","wb")
-            pickle.dump(split, pickling_split, protocol=3)
-            pickling_split.close() 
-
-            pickling_short = open(f"Short_{ion}_Ray{r}.pickle","wb")
-            pickle.dump(short, pickling_short, protocol=3)
-            pickling_short.close()
-
-            pickling_maybe_lonely = open(f"MaybeLonely_{ion}_Ray{r}.pickle","wb")
-            pickle.dump(maybe_lonely, pickling_maybe_lonely, protocol=3)
-            pickling_maybe_lonely.close()
-        
-        ####make stats files for each super_clump#####
-        
-        ray_nums = [] ##define lists that will eventually go into pandas sets
-        super_cl_nums = []
-        med_col_dens = []
-        mad_for_med = []
-        distances = []
-        central_v = []
-        vel_dispersions =[]
-        densities = []
-        temperatures = []
-        num_clumps = []
-        rows_of_rep_clumps = []
-
-        
-        for r in range(raynum):
+    
+    for r in range(raynum):
+        if os.path.exists(f'/mnt/scratch/f0104093/cgm_abundance_variance/Match_{ion}_Ray{r}.pickle'):
             pickle_match_off = open(f"Match_{ion}_Ray{r}.pickle", 'rb') ##get previously made data
             match = pickle.load(pickle_match_off)
-
+    
             pickle_split_off = open(f"Split_{ion}_Ray{r}.pickle", 'rb')
             split = pickle.load(pickle_split_off)
-
+    
             pickle_short_off = open(f"Short_{ion}_Ray{r}.pickle", 'rb')
             short = pickle.load(pickle_short_off)
-
+    
             super_clumps = np.load(f'super_clumps_array_{ion}_ray{r}.npy')
-
+    
             var_rows = []
             
             for i in range(datanum):
@@ -456,7 +460,7 @@ for rshift in args.rs:
                 row_work = row_data[row_data["lightray_index"]==r] ##filter to only one ray
                 df = row_work.reset_index().drop(columns="index") ##make indexing work
                 var_rows.append(df)
-
+    
             sup_st = [] ##get indexes of superclumps
             sup_en = []
             for i in range(1, len(super_clumps)):
@@ -471,7 +475,7 @@ for rshift in args.rs:
                         sup_en.append(n-1)
                     else:
                         sup_en.append(n)
-
+    
             for k in range(len(sup_st)): ##depending on which category each clump belongs to in super_clumps
                 col_density_match = [] ##lists for col_density
                 col_density_split = []
@@ -479,17 +483,17 @@ for rshift in args.rs:
                 match_done = [] ##keep track of which super clumps already have a representative
                 short_done = []
                 split_done = []
-
+    
                 for row, index in match.items(): ##first, see what matches the super clump
-
+    
                     for j in range(len(index)):
-
+    
                         if (index[j][0]>=sup_st[k]) and (index[j][1]<=sup_en[k]):
-
+    
                             ds = var_rows[row-1]
                             indexq = np.where((index[j][0]) == (ds["interval_start"]))
                             col_density_match.append(ds["col_dens"][int(indexq[0])]) ##get column density
-
+    
                             if sup_st[k] not in match_done: ##if this is the first one done for a super clump, get all the other data and make this clump a "representative" of the super clump
                                 print('Match:', row, index[j][0], sup_st[k])
                                 distances.append(ds["radius"][int(indexq[0])])
@@ -499,17 +503,17 @@ for rshift in args.rs:
                                 temperatures.append(ds["temperature"][int(indexq[0])])
                                 rows_of_rep_clumps.append(row)
                                 match_done.append(sup_st[k])
-
-
+    
+    
                 for rows, indexs in short.items(): ##exactly the same method as match, but do it second bc if there is a match, we want to use that as our representataive
-
+    
                     for j in range(len(indexs)):
-
+    
                         if (indexs[j][0]>=sup_st[k]) and (indexs[j][1]<=sup_en[k]):
                             ds = var_rows[rows-1]
                             indexq = np.where((indexs[j][0]) == (var_rows[rows-1]["interval_start"]))
                             col_density_short.append(ds["col_dens"][int(indexq[0])])
-
+    
                             if (len(match_done) == 0) and (sup_st[k] not in short_done):
                                 print('Short:', row, indexs[j][0], sup_st[k])
                                 distances.append(ds["radius"][int(indexq[0])])
@@ -519,7 +523,7 @@ for rshift in args.rs:
                                 temperatures.append(ds["temperature"][int(indexq[0])])
                                 rows_of_rep_clumps.append(row)
                                 short_done.append(sup_st[k])
-
+    
                 for rowm, indexm in split.items(): ##split is a bit weird bc there are multiple in a single super clump
                     temp_col_dens =[] ##create temporary lists 
                     temp_delta_v = []
@@ -528,13 +532,13 @@ for rshift in args.rs:
                     temp_temp = []
                     temp_rad = []
                     col_dens_for_weights = []
-
+    
                     for j in range(len(indexm)):
-
+    
                         if (indexm[j][0]>=sup_st[k]) and (indexm[j][1]<=sup_en[k]):
                             ds = var_rows[rowm-1]
                             indexq = np.where((indexm[j][0]) == (var_rows[rowm-1]["interval_start"]))
-
+    
                             if len(list(indexq[0])) > 0:
                                 temp_col_dens.append(10 ** ds["col_dens"][int(indexq[0])]) ##col_dens is on a log scale, so to add it all togeher must make it the exponent of 10
                                 col_dens_for_weights.append(ds["col_dens"][int(indexq[0])]) 
@@ -543,10 +547,10 @@ for rshift in args.rs:
                                 temp_dens.append(ds["density"][int(indexq[0])])
                                 temp_temp.append(ds["temperature"][int(indexq[0])])
                                 temp_rad.append(ds["radius"][int(indexq[0])])
-
-
+    
+    
                                 if (len(match_done) == 0) and (len(short_done) == 0) and (sup_st[k] not in split_done):
-                                    print('Split:', row, indexs[j][0], sup_st[k])
+                                    print('Split:', row, indexm[j][0], sup_st[k])
                                     distances.append(weighted_av(temp_rad, col_dens_for_weights)) ##use the col_dens as a weight for each value so we get a weight average if a split is chosen as a "represenatative"
                                     central_v.append(weighted_av(temp_delta_v, col_dens_for_weights))
                                     vel_dispersions.append(weighted_av(temp_vel_dis, col_dens_for_weights))
@@ -554,25 +558,25 @@ for rshift in args.rs:
                                     temperatures.append(weighted_av(temp_temp, col_dens_for_weights))
                                     rows_of_rep_clumps.append(row)
                                     split_done.append(sup_st[k])
-
-
+    
+    
                     if len(temp_col_dens) != 0: ##finally, get one value for the col_dens of the whole thing
                         log_sum_dens = np.log10(sum(temp_col_dens))
                         col_density_split.append(log_sum_dens)
-
+    
               ##make lists to put into dictionaries
                 ray_nums.append(r)
                 super_cl_nums.append(k)
-
+    
                 full_col_density = []
                 make_full_list(col_density_match, full_col_density)
                 make_full_list(col_density_split, full_col_density)
                 make_full_list(col_density_short, full_col_density)
                 med_col_dens.append(np.median(full_col_density))
                 mad_for_med.append(stats.median_abs_deviation(full_col_density))
-
+    
                 num_clumps.append(len(full_col_density))
-
+    
         ##make and fill the dictorary that will be convered into a csv file
         clump_stats = {}
         clump_stats["ray_num"] = ray_nums
@@ -586,12 +590,13 @@ for rshift in args.rs:
         clump_stats["temperature"] = temperatures
         clump_stats["num_of_clumps"] = num_clumps
         clump_stats["rep_clumps_row"] = rows_of_rep_clumps
-
+    
         print(len(ray_nums), len(super_cl_nums), len(med_col_dens), len(mad_for_med), len(central_v), len(vel_dispersions))
-
+    
         df = pd.DataFrame.from_dict(clump_stats)
-        df.to_csv(f"{stat-path}/{halo}_z{true_rs}_{ion}_abun_all-model-families_all-clumps.csv" ,sep = ' ') ##save the files to scratch
+        df.to_csv(f"{stat_path}/{halo}_z{true_rs}_{ion}_abun_all-model-families_all-clumps.csv" ,sep = ' ') ##save the files to scratch
         ##as we're done with each file, delete it so we don't get residual data we don't need
+   
         os.remove(f"Match_{ion}_Ray{r}.pickle")
         os.remove(f"Short_{ion}_Ray{r}.pickle")
         os.remove(f"Split_{ion}_Ray{r}.pickle")
