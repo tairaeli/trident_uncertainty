@@ -13,11 +13,36 @@ from astropy.cosmology import FlatLambdaCDM # not sure what cosmology to use
 parser = argparse.ArgumentParser(description = "Pipeline variables and constants for running FSPS")
 parser.add_argument('--ds', nargs='?', action='store', required=True, dest='path', help='Path where  output data will be stored')
 parser.add_argument('--om', nargs='?',action='store', required=True, dest='om_dat', help='Path to Omega+ output data')
+parser.add_argument('--eb', nargs='?',action='store', required=True, dest='nbins', help='Path to array of desired energy bins')
 parser.add_argument('--rs', action='store', dest='rs_list', default=[2,2.5,3], type=list, help='List of redshifts')
 parser.add_argument('--d', action='store', dest='d_list', default=[20,50,100,150,200], type=list, help='List of distances from galactic center')
 
 args =parser.parse_args()
 dic_args = vars(args)
+
+with open(args.nbins) as f:
+    nbins = np.asarray(pickle.load(f))
+
+def rebin(wave,spec):
+    
+    lum = spec*(3e8/(wave*1e-10))
+    
+    nlum = np.zeros(len(nbins))
+    
+    # converting wave data into energy
+    Ryd = 2.1798723611035e-18 * u.J
+    wave = wave * u.Angstrom
+    E = wave.to("J", equivalence="spectral") / Ryd
+    
+    for i in range(len(nbins)):
+        if i == 0:
+            nlum[i] = sum(spec[np.where((E<=nbins[i]))])
+        else:
+            nlum[i] = sum(spec[np.where((E<=nbins[i])&(E>=nbins[i-1]))])
+    
+    nspec = nlum*((wave.to_value()*1e-10)/3e8)
+    
+    return nspec
 
 sp = fsps.StellarPopulation(zcontinuous=3, imf_type=1, add_agb_dust_model=True,
                         add_dust_emission=True, sfh=3, dust_type=4)
@@ -40,9 +65,6 @@ Z[Z<=0] = nZmin
 
 # prepping sp object to extract spectrum data
 sp.set_tabular_sfh(ages, sfr_in, Z)
-
-# setting age of universe in Gyr
-univ_age = 13.8 
 
 # preparing value to be included in Cloud input data
 lJ_pad = -50
@@ -68,10 +90,7 @@ for d in args.d_list:
         # generating luminosity at each wavelength
         wave,spec = sp.get_spectrum(tage = age)
         
-        # converting wave data into Angstroms
-        Ryd = 2.1798723611035e-18 * u.J
-        wave = wave * u.Angstrom
-        nu = wave.to("J", equivalence="spectral") / Ryd
+        nu, spec = rebin(wave,spec)
         
         # converting spectral luminosities into intensity
         spec = np.log(spec/d**2)
