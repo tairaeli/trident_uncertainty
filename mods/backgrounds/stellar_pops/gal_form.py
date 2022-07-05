@@ -20,7 +20,7 @@ parser.add_argument('--d', action='store', dest='d_list', default=[20,50,100,150
 args =parser.parse_args()
 dic_args = vars(args)
 
-with open(args.nbins) as f:
+with open(args.nbins, "rb") as f:
     nbins = np.asarray(pickle.load(f))
 
 def rebin(wave,spec):
@@ -34,7 +34,7 @@ def rebin(wave,spec):
     wave = wave * u.Angstrom
     E = wave.to("J", equivalence="spectral") / Ryd
     
-    for i in range(len(nbins)):
+    for i in range(nbins.size-1, -1, -1):
         if i == 0:
             nlum[i] = sum(spec[np.where((E<=nbins[i]))])
         else:
@@ -50,7 +50,7 @@ sp = fsps.StellarPopulation(zcontinuous=3, imf_type=1, add_agb_dust_model=True,
 om_dat = pd.read_csv(args.om_dat)
 
 # not sure if these parameters are correct. May need to adjust later
-fl = FlatLambdaCDM(H0=70, Om0=0.3)
+fl = FlatLambdaCDM(H0=69.5, Om0=0.285, Ob0=0.0461)
 
 # need Omega+ to run
 ages = np.asarray(om_dat["age"])
@@ -60,8 +60,8 @@ Z = np.asarray(om_dat["metal"]) # may need to set floor so fsps doesn't complain
 
 # seems like there are multiple negative Z values here.... why?
 # removing all z vals less than 0
-nZmin = np.min(Z[Z>0])
-Z[Z<=0] = nZmin
+nZmin = np.min(np.log(sp.zlegend))
+Z[Z<=nZmin] = nZmin
 
 # prepping sp object to extract spectrum data
 sp.set_tabular_sfh(ages, sfr_in, Z)
@@ -77,7 +77,7 @@ for d in args.d_list:
         os.mkdir(args.path+f"/{d}_kpc_dat")
     
     # do we need a source? either way... I'm just gonna leave this here...
-    source = "Taira"
+    source = "REDACTED"
     
     # initializing list to store redshift data
     conv_rs = []
@@ -85,7 +85,7 @@ for d in args.d_list:
     for rs in args.rs_list:
         conv_rs.append(f"{rs:.4e}")
         # conversion of redshift to age (may need more precise value for universe age)
-        age = univ_age - fl.lookback_time(rs).to_value()
+        age = fl.age(rs).to_value()
         
         # generating luminosity at each wavelength
         wave,spec = sp.get_spectrum(tage = age)
