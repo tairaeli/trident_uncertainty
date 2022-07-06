@@ -27,7 +27,7 @@ with open(args.nbins, "rb") as f:
 def rebin(wave,spec):
     
     # convert spectral data into luminosities
-    lum = spec*(3e8/(wave*1e-10))
+    lum = spec*((wave*1e-10)/3e8)
     
     nlum = np.zeros(len(nbins))
     
@@ -46,12 +46,12 @@ def rebin(wave,spec):
     
     # creating wave array for luminosity conversion
     nE = list(nbins) * u.J
-    nwave = nE.to("m", equivalence="spectral") * Ryd
+    nwave = nE.to("Angstrom", equivalence="spectral") * Ryd
     
     # converting luminosities back into intensity
-    nspec = nlum*((nwave.to_value())/3e8)
+    nspec = nlum*(3e8/(nwave.to_value()*1e-10))
     
-    return nu, nspec
+    return nbins, nspec
 
 # generating stellar population object
 sp = fsps.StellarPopulation(zcontinuous=3, imf_type=1, add_agb_dust_model=True,
@@ -101,8 +101,11 @@ for d in args.d_list:
         # rebining data to match desired Cloudy input
         nu, spec = rebin(wave,spec)
         
+        # converting distance into meters
+        d_m = d*3.086e19
+        
         # converting spectral luminosities into intensity
-        spec = np.log(spec/d**2)
+        spec = np.log(spec/d_m**2)
         
         # generate interpolation function
         interp = interp1d(nu, spec, fill_value = "extrapolate")
@@ -118,7 +121,7 @@ for d in args.d_list:
             f.write(f"continue ({nu[-1]*0.99:.10f}) ({lJ_pad:.10f})\n")
             
             # loop backwards through wavelengths so that lowest energy is first
-            for i in range(nu.size-1, -1, -1):
+            for i in range(nbins.size-1, -1, -1):
                 f.write(f"continue ({nu[i]:.10f}) ({spec[i]:.10f})\n")
                 
             f.write(f"continue ({nu[0]*1.01:.10f}) ({lJ_pad:.10f})\n")
