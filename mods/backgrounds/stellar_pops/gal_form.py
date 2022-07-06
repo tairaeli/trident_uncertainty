@@ -20,11 +20,14 @@ parser.add_argument('--d', action='store', dest='d_list', default=[20,50,100,150
 args =parser.parse_args()
 dic_args = vars(args)
 
+# loading in array for desired energy bins
 with open(args.nbins, "rb") as f:
     nbins = np.asarray(pickle.load(f))
 
+# rebins spectral data to better match Cloudy's desired input
 def rebin(wave,spec):
     
+    # convert spectral data into luminosities
     lum = spec*(3e8/(wave*1e-10))
     
     nlum = np.zeros(len(nbins))
@@ -34,32 +37,33 @@ def rebin(wave,spec):
     wave = wave * u.Angstrom
     E = wave.to("J", equivalence="spectral") / Ryd
     
+    # compare converted energy data to desired binning to rebin spec data
     for i in range(nbins.size-1, -1, -1):
+        # accounting for indexing issues in first bin
         if i == 0:
-            nlum[i] = sum(spec[np.where((E<=nbins[i]))])
+            nlum[i] = sum(lum[np.where((E<=nbins[i]))])
         else:
-            nlum[i] = sum(spec[np.where((E<=nbins[i])&(E>=nbins[i-1]))])
+            nlum[i] = sum(lum[np.where((E<=nbins[i])&(E>=nbins[i-1]))])
     
+    # converting luminosities back into intensity
     nspec = nlum*((wave.to_value()*1e-10)/3e8)
     
     return nspec
 
+# generating stellar population object
 sp = fsps.StellarPopulation(zcontinuous=3, imf_type=1, add_agb_dust_model=True,
                         add_dust_emission=True, sfh=3, dust_type=4)
 
-om_dat = pd.read_csv(args.om_dat)
-
-# not sure if these parameters are correct. May need to adjust later
+# generating astropy.cosmology object
 fl = FlatLambdaCDM(H0=69.5, Om0=0.285, Ob0=0.0461)
 
-# need Omega+ to run
+# loading in omega+ data and assigning data to variables
+om_dat = pd.read_csv(args.om_dat)
 ages = np.asarray(om_dat["age"])
 sfr_in = np.asarray(om_dat["sfr_in"])
+Z = np.asarray(om_dat["metal"])
 
-Z = np.asarray(om_dat["metal"]) # may need to set floor so fsps doesn't complain
-
-# seems like there are multiple negative Z values here.... why?
-# removing all z vals less than 0
+# setting new floor metalicity based on minimum of stellar population object
 nZmin = np.min(np.log(sp.zlegend))
 Z[Z<=nZmin] = nZmin
 
@@ -82,6 +86,7 @@ for d in args.d_list:
     # initializing list to store redshift data
     conv_rs = []
     
+    # iterating through each redshift
     for rs in args.rs_list:
         conv_rs.append(f"{rs:.4e}")
         # conversion of redshift to age (may need more precise value for universe age)
@@ -90,6 +95,7 @@ for d in args.d_list:
         # generating luminosity at each wavelength
         wave,spec = sp.get_spectrum(tage = age)
         
+        # rebining data to match desired Cloudy input
         nu, spec = rebin(wave,spec)
         
         # converting spectral luminosities into intensity
@@ -118,6 +124,7 @@ for d in args.d_list:
             x = 10**interp(1)
             f.write(f"f(nu) = {np.log10(x * 4 * np.pi):.10f} at {1:.10f} Ryd\n")
     
+    # outputting list of redshifts to another file
     with open(args.path+f'd_{d}_kpc_rs.pkl','wb') as f:
         pickle.dump(conv_rs,f)
 
