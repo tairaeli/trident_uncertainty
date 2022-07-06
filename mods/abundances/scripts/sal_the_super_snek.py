@@ -33,6 +33,13 @@ def get_true_rs(val): ##define how to get actual rshift numbers
         true_rs = '2.5'
     return true_rs
 
+halo_names_dict = {'2392'  :  'Hurricane' ,'2878'  :  'Cyclone' , '4123'  :  'Blizzard' , '5016'  :  'Squall' ,'5036'  :  'Maelstrom' , '8508'  :  'Tempest'}
+
+def get_halo_names(num):
+    if str(num) in halo_names_dict.keys():
+        halo_name = halo_names_dict[str(num)]
+    return halo_name
+
 def generate_names(length, add=''):
         
         	"""
