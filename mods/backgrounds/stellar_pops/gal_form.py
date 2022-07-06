@@ -6,8 +6,7 @@ import os
 import argparse
 import pickle
 import fsps
-from astropy.cosmology import FlatLambdaCDM # not sure what cosmology to use
-                           # so I just picked the one in the example for astropy
+from astropy.cosmology import FlatLambdaCDM
 
 
 parser = argparse.ArgumentParser(description = "Pipeline variables and constants for running FSPS")
@@ -23,7 +22,7 @@ dic_args = vars(args)
 # loading in array for desired energy bins
 with open(args.nbins, "rb") as f:
     nbins = np.asarray(pickle.load(f))
-
+    
 # rebins spectral data to better match Cloudy's desired input
 def rebin(wave,spec):
     
@@ -45,10 +44,14 @@ def rebin(wave,spec):
         else:
             nlum[i] = sum(lum[np.where((E<=nbins[i])&(E>=nbins[i-1]))])
     
-    # converting luminosities back into intensity
-    nspec = nlum*((wave.to_value()*1e-10)/3e8)
+    # creating wave array for luminosity conversion
+    nE = list(nbins) * u.J
+    nwave = nE.to("m", equivalence="spectral") * Ryd
     
-    return nspec
+    # converting luminosities back into intensity
+    nspec = nlum*((nwave.to_value())/3e8)
+    
+    return nu, nspec
 
 # generating stellar population object
 sp = fsps.StellarPopulation(zcontinuous=3, imf_type=1, add_agb_dust_model=True,
