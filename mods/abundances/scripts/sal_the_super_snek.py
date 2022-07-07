@@ -82,7 +82,8 @@ foggie_dir = "/mnt/home/f0104093/foggie/foggie/halo_infos"
 
 # set desired halo pattern
 halo = args.pattern
-
+rs = args.rs
+true_rs = get_true_rs(rs) ##gets the true rs needed
 
 # takes in the foggie halo info directory
 # outputs a dictionary of galactic center locations/velocities for all redshifts in each halo pattern
@@ -98,7 +99,6 @@ def foggie_defunker(foggie_dir):
     # making some fixes specific to these files
     cen_dat = cen_dat.drop(0)
     cen_dat = cen_dat.drop(columns = ['null','null2'])
-    rs = args.rs
     # creating branch for each redshift in each halo 
     center_dat[halo][rs] = {}
     # isolating data to a specific redshift 
@@ -117,7 +117,7 @@ path = os.path.expandvars(os.path.expanduser(args.path))
 
 #  creating variable names for data bin locations
 halo_path = path+'/halo'+f'{halo}'
-rs_path = halo_path + '/redshift'+f'{rshift}'
+rs_path = halo_path + '/redshift'+f'{true_rs}'
 ray_path = rs_path +'/rays'
 dat_path = rs_path +'/data'
 vis_path = rs_path +'/visuals'
@@ -133,12 +133,12 @@ if os.path.exists(rs_path) == "False":
     
 
 # load halo data
-ds = yt.load(f'{args.halo_dir}/halo_00{halo}/nref11c_nref9f/RD00{rshift}/RD00{rshift}')
+ds = yt.load(f'{args.halo_dir}/halo_00{halo}/nref11c_nref9f/RD00{rs}/RD00{rs}')
 print(type(ds))
 # defining analysis parameters
 # Note: these dictionaries are temporary and should most likely be included in the arguments at some point
-center = ds.arr(center_dat[halo][rshift]['pos'], 'kpc')
-gal_vel = ds.arr(center_dat[halo][rshift]['vel'], 'km/s')
+center = ds.arr(center_dat[halo][rs]['pos'], 'kpc')
+gal_vel = ds.arr(center_dat[halo][rs]['vel'], 'km/s')
 other_fields=['density', 'temperature', 'metallicity', ('index', 'radius')]
 max_impact=15 #kpc
 units_dict = dict(density='g/cm**3', metallicity='Zsun')
@@ -483,10 +483,10 @@ for ion in new_ion_list:
     
                             ds = var_rows[row-1]
                             indexq = np.where((index[j][0]) == (ds["interval_start"]))
-		            if row != 1: ##exclude solar abundance
-				col_density_match.append(ds["col_dens"][int(indexq[0])]) ##get column density
+                            if row != 1: ##exclude solar abundance
+                                col_density_match.append(ds["col_dens"][int(indexq[0])]) ##get column density
                             else: ##keep frack of what the solar abundance is 
-				sol_ab_col_dens = ds["col_dens"][int(indexq[0])]
+                                sol_ab_col_dens = ds["col_dens"][int(indexq[0])]
                             if sup_st[k] not in match_done: ##if this is the first one done for a super clump, get all the other data and make this clump a "representative" of the super clump
                                 print('Match:', row, index[j][0], sup_st[k])
                                 distances.append(ds["radius"][int(indexq[0])])
@@ -506,9 +506,9 @@ for ion in new_ion_list:
                             ds = var_rows[rows-1]
                             indexq = np.where((indexs[j][0]) == (var_rows[rows-1]["interval_start"]))
                             if rows != 1:
-				col_density_short.append(ds["col_dens"][int(indexq[0])]) ##get column density
+                                col_density_short.append(ds["col_dens"][int(indexq[0])]) ##get column density
                             else:
-				sol_ab_col_dens = ds["col_dens"][int(indexq[0])]
+                                sol_ab_col_dens = ds["col_dens"][int(indexq[0])]
     
                             if (len(match_done) == 0) and (sup_st[k] not in short_done):
                                 print('Short:', row, indexs[j][0], sup_st[k])
@@ -534,10 +534,9 @@ for ion in new_ion_list:
                         if (indexm[j][0]>=sup_st[k]) and (indexm[j][1]<=sup_en[k]):
                             ds = var_rows[rowm-1]
                             indexq = np.where((indexm[j][0]) == (var_rows[rowm-1]["interval_start"]))
-				
-			    if rowm == 1:
-				print("oh no") ##if this happens, I have to do a bunch of weird stuff to make it work, so I hope it doesn't happen
-    
+                            if rowm == 1:
+                                print("oh no") ##if this happens, I have to do a bunch of weird stuff to make it work, so I hope it doesn't happen
+                                
                             elif len(list(indexq[0])) > 0 and rowm != 1:
                                 temp_col_dens.append(10 ** ds["col_dens"][int(indexq[0])]) ##col_dens is on a log scale, so to add it all togeher must make it the exponent of 10
                                 col_dens_for_weights.append(ds["col_dens"][int(indexq[0])]) 
@@ -546,7 +545,6 @@ for ion in new_ion_list:
                                 temp_dens.append(ds["density"][int(indexq[0])])
                                 temp_temp.append(ds["temperature"][int(indexq[0])])
                                 temp_rad.append(ds["radius"][int(indexq[0])])
-    
     
                                 if (len(match_done) == 0) and (len(short_done) == 0) and (sup_st[k] not in split_done):
                                     print('Split:', row, indexm[j][0], sup_st[k])
@@ -573,7 +571,7 @@ for ion in new_ion_list:
                 make_full_list(col_density_short, full_col_density)
                 med_col_dens.append(np.median(full_col_density))
                 mad_for_med.append(stats.median_abs_deviation(full_col_density))
-		diff_from_sol.append(sol_ab_col_dens - np.median(full_col_density))
+                diff_from_sol.append(sol_ab_col_dens - np.median(full_col_density))
     
                 num_clumps.append(len(full_col_density))
     
@@ -583,7 +581,7 @@ for ion in new_ion_list:
         clump_stats["super_clump_number"] = super_cl_nums 
         clump_stats["median_col_desnity"] = med_col_dens 
         clump_stats["mad_for_col_desnity"] = mad_for_med
-	clump_stats["diff_from_solar_abun"] = diff_from_sol
+        clump_stats["diff_from_solar_abun"] = diff_from_sol
         clump_stats["distance_from_galaxy"] = distances 
         clump_stats["central_velocity"] = central_v 
         clump_stats["vel_dispersion"] = vel_dispersions 
@@ -593,7 +591,7 @@ for ion in new_ion_list:
         clump_stats["rep_clumps_row"] = rows_of_rep_clumps
     
         print(len(ray_nums), len(super_cl_nums), len(med_col_dens), len(mad_for_med), len(central_v), len(vel_dispersions))
-    
+        
         df = pd.DataFrame.from_dict(clump_stats)
         df.to_csv(f"{stat_path}/{halo}_z{true_rs}_{ion}_abun_all-model-families_all-clumps.csv" ,sep = ' ') ##save the files to scratch
         ##as we're done with each file, delete it so we don't get residual data we don't need
