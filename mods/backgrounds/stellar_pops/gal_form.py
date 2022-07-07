@@ -12,46 +12,42 @@ from astropy.cosmology import FlatLambdaCDM
 parser = argparse.ArgumentParser(description = "Pipeline variables and constants for running FSPS")
 parser.add_argument('--ds', nargs='?', action='store', required=True, dest='path', help='Path where  output data will be stored')
 parser.add_argument('--om', nargs='?',action='store', required=True, dest='om_dat', help='Path to Omega+ output data')
-parser.add_argument('--eb', nargs='?',action='store', required=True, dest='nbins', help='Path to array of desired energy bins')
-parser.add_argument('--rs', action='store', dest='rs_list', default=[2,2.5,3], type=list, help='List of redshifts')
+parser.add_argument('--ptw', nargs='?',action='store', required=True, dest='ptw_file', help='Path to Putwein et.al. data')
+# parser.add_argument('--rs', action='store', dest='rs_list', default=[2,2.5,3], type=list, help='List of redshifts')
 parser.add_argument('--d', action='store', dest='d_list', default=[20,50,100,150,200], type=list, help='List of distances from galactic center')
 
 args =parser.parse_args()
 dic_args = vars(args)
 
 # loading in array for desired energy bins
-with open(args.nbins, "rb") as f:
-    nbins = np.asarray(pickle.load(f))
+
+ptw_rs = np.genfromtxt(args.ptw_file, max_rows = 1)
+ptw_data = np.genfromtxt(args.ptw_file, skip_header=11)
+
+ptw_wave = ptw_data[:,0]
     
 # rebins spectral data to better match Cloudy's desired input
-def rebin(wave,spec):
+def rebin(wave,spec,ptw_spec):
     
     # convert spectral data into luminosities
     lum = spec*((wave*1e-10)/3e8)
     
-    nlum = np.zeros(len(nbins))
+    nlum = np.zeros(len(ptw_wave))
     
-    # converting wave data into energy
-    Ryd = 2.1798723611035e-18 * u.J
-    wave = wave * u.Angstrom
-    E = wave.to("J", equivalence="spectral") / Ryd
-    
-    # compare converted energy data to desired binning to rebin spec data
-    for i in range(nbins.size-1, -1, -1):
+    # compare wave data from FSPS to desired wave binning to rebin spec data
+    for i in range(ptw_wave.size-1):
         # accounting for indexing issues in first bin
         if i == 0:
-            nlum[i] = sum(lum[np.where((E<=nbins[i]))])
+            nlum[i] = sum(lum[np.where((wave<=ptw_wave[i]))])
         else:
-            nlum[i] = sum(lum[np.where((E<=nbins[i])&(E>=nbins[i-1]))])
-    
-    # creating wave array for luminosity conversion
-    nE = list(nbins) * u.J
-    nwave = nE.to("Angstrom", equivalence="spectral") * Ryd
+            nlum[i] = sum(lum[np.where((wave<=ptw_wave[i])&(wave>ptw_wave[i-1]))])
     
     # converting luminosities back into intensity
-    nspec = nlum*(3e8/(nwave.to_value()*1e-10))
+    nspec = nlum*(3e8/(ptw_wave*1e-10))
     
-    return nbins, nspec
+    nspec += ptw_spec
+    
+    return nspec
 
 # generating stellar population object
 sp = fsps.StellarPopulation(zcontinuous=3, imf_type=1, add_agb_dust_model=True,
@@ -71,9 +67,9 @@ nZmin = np.min(np.log(sp.zlegend))
 Z[Z<=nZmin] = nZmin
 
 # prepping sp object to extract spectrum data
-sp.set_tabular_sfh(ages, sfr_in, Z)
+sp.set_tabular_sfh(ages, sfr_in, np.exp(Z))
 
-# preparing value to be included in Cloud input data
+# setting lowest alloted intensity
 lJ_pad = -50
 
 # iterates through each distance and each redshift to create the 
@@ -90,7 +86,7 @@ for d in args.d_list:
     conv_rs = []
     
     # iterating through each redshift
-    for rs in args.rs_list:
+    for irs, rs in enumerate(ptw_rs):
         conv_rs.append(f"{rs:.4e}")
         # conversion of redshift to age (may need more precise value for universe age)
         age = fl.age(rs).to_value()
@@ -98,8 +94,14 @@ for d in args.d_list:
         # generating luminosity at each wavelength
         wave,spec = sp.get_spectrum(tage = age)
         
+        ptw_spec = ptw_data[:,irs]
+        
         # rebining data to match desired Cloudy input
-        nu, spec = rebin(wave,spec)
+        spec = rebin(wave,spec,ptw_spec)
+        
+        Ryd = 2.1798723611035e-18 * u.J
+        ptw_wave = ptw_wave * u.Angstrom
+        nu = ptw_wave.to("J", equivalence="spectral") / Ryd
         
         # converting distance into meters
         d_m = d*3.086e19
@@ -118,19 +120,19 @@ for d in args.d_list:
             f.write("# E [Ryd] log (J_nu)\n")
             
             f.write(f"interpolate ({1e-8:.10f}) ({lJ_pad:.10f})\n")
-            f.write(f"continue ({nu[-1]*0.99:.10f}) ({lJ_pad:.10f})\n")
+            f.write(f"continue ({nu[0]*0.99:.10f}) ({lJ_pad:.10f})\n")
             
             # loop backwards through wavelengths so that lowest energy is first
-            for i in range(nbins.size-1, -1, -1):
+            for i in range(ptw_wave.size-1):
                 f.write(f"continue ({nu[i]:.10f}) ({spec[i]:.10f})\n")
                 
-            f.write(f"continue ({nu[0]*1.01:.10f}) ({lJ_pad:.10f})\n")
+            f.write(f"continue ({nu[i]*1.01:.10f}) ({lJ_pad:.10f})\n")
             f.write(f"continue ({7.354e6:.10f}) ({lJ_pad:.10f})\n")
             
             x = 10**interp(1)
             f.write(f"f(nu) = {np.log10(x * 4 * np.pi):.10f} at {1:.10f} Ryd\n")
     
     # outputting list of redshifts to another file
-    with open(args.path+f'd_{d}_kpc_rs.pkl','wb') as f:
-        pickle.dump(conv_rs,f)
+    # with open(args.path+f'd_{d}_kpc_rs.pkl','wb') as f:
+    #     pickle.dump(conv_rs,f)
 
