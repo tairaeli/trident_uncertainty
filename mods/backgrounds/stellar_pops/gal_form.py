@@ -28,10 +28,11 @@ ptw_wave = ptw_data[:,0]
     
 # rebins spectral data to better match Cloudy's desired input
 def rebin(wave,spec,ptw_spec):
-    
+
     # convert spectral data into luminosities
     lum = spec*((wave*1e-10)/3e8)
     
+    # initializing array to store new luminosities
     nlum = np.zeros(len(ptw_wave))
     
     # compare wave data from FSPS to desired wave binning to rebin spec data
@@ -45,6 +46,11 @@ def rebin(wave,spec,ptw_spec):
     # converting luminosities back into intensity
     nspec = nlum*(3e8/(ptw_wave*1e-10))
     
+    if type(nspec) != type(ptw_spec):
+        print(type(nspec))
+        nspec = nspec.to_value()
+    
+    # adding the Putwein et.al. intensities to the intensity from FSPS
     nspec += ptw_spec
     
     return nspec
@@ -72,9 +78,14 @@ sp.set_tabular_sfh(ages, sfr_in, np.exp(Z))
 # setting lowest alloted intensity
 lJ_pad = -50
 
+sp_dat = {}
+
 # iterates through each distance and each redshift to create the 
 # input data for cloudy for each distance
 for d in args.d_list:
+    
+    sp_dat[d] = {}
+    
     # making a separate directory for each distance
     if not os.path.isdir(args.path+f"/{d}_kpc_dat"):
         os.mkdir(args.path+f"/{d}_kpc_dat")
@@ -86,7 +97,12 @@ for d in args.d_list:
     conv_rs = []
     
     # iterating through each redshift
-    for irs, rs in enumerate(ptw_rs):
+    for irs in range(len(ptw_rs)):
+        
+        rs = ptw_rs[irs]
+        
+        sp_dat[d][rs] = {}
+        
         conv_rs.append(f"{rs:.4e}")
         # conversion of redshift to age (may need more precise value for universe age)
         age = fl.age(rs).to_value()
@@ -94,20 +110,24 @@ for d in args.d_list:
         # generating luminosity at each wavelength
         wave,spec = sp.get_spectrum(tage = age)
         
+        sp_dat[d][rs]["wave"] = wave
+        sp_dat[d][rs]["spec"] = spec
+        
+        # converting distance into centimeters?????
+        # d_m = d*3.086e21
+        
+        # converting spectral luminosities into intensity
+        spec = spec/(16*np.pi**2*d**2)        
+        
         ptw_spec = ptw_data[:,irs]
         
         # rebining data to match desired Cloudy input
-        spec = rebin(wave,spec,ptw_spec)
+        spec = np.log(rebin(wave,spec,ptw_spec))
         
         Ryd = 2.1798723611035e-18 * u.J
         ptw_wave = ptw_wave * u.Angstrom
+        print(type(ptw_wave))
         nu = ptw_wave.to("J", equivalence="spectral") / Ryd
-        
-        # converting distance into meters
-        d_m = d*3.086e19
-        
-        # converting spectral luminosities into intensity
-        spec = np.log(spec/d_m**2)
         
         # generate interpolation function
         interp = interp1d(nu, spec, fill_value = "extrapolate")
@@ -131,8 +151,16 @@ for d in args.d_list:
             
             x = 10**interp(1)
             f.write(f"f(nu) = {np.log10(x * 4 * np.pi):.10f} at {1:.10f} Ryd\n")
-    
+        
+        
+        
     # outputting list of redshifts to another file
     # with open(args.path+f'd_{d}_kpc_rs.pkl','wb') as f:
     #     pickle.dump(conv_rs,f)
+
+with open("./spec_dat.pickle","wb") as f:
+    pickle.dump(sp_dat,f)
+
+
+
 
