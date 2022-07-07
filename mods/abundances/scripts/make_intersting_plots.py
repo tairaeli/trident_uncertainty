@@ -16,15 +16,17 @@ for rs in rs_lis:
   for halo in halo_marker_dict.keys():
     name = get_halo_names(halo)
     for ion in ion_dict.keys():
-      ds = pd.read_csv(f'/mnt/scratch/f0104093/cgm_abundance_variance/halo{halo}/redshift{rs}/stats/{halo}_z{rs}_{ion}_abun_all-model-families_all-clumps.csv)
-      med_col_dens = ds["median_col_density"]
-      col_dens_spread = ds["mad_for_col_density"]
+      ds = pd.read_csv(f'/mnt/scratch/f0104093/cgm_abundance_variance/halo{halo}/redshift{rs}/stats/{halo}_z{rs}_{ion}_abun_all-model-families_all-clumps.csv', delim_whitespace = True)
+      
+      med_col_dens = ds["median_col_desnity"]
+      col_dens_spread = ds["mad_for_col_desnity"]
       plt.scatter(med_col_dens, col_dens_spread, c = ion_dict[ion], marker = halo_marker_dict[halo], label = f"{ion} in {name}")
   plt.title(f"MAD of Column Density vs Column Density, Redshift {rs}")
   plt.legend()
   plt.xlabel("Median log(Column Density)")
   plt.ylabel("MAD of log(Column Density)")
   plt.savefig(f'/mnt/scratch/f0104093/cgm_abundance_variance/graphs/mad_vs_med_z{rs}.png')
+  plt.close()
                        
                        
                        
