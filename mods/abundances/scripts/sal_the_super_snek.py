@@ -120,7 +120,7 @@ halo_path = path+'/halo'+f'{halo}'
 rs_path = halo_path + '/redshift'+f'{true_rs}'
 ray_path = rs_path +'/rays'
 dat_path = rs_path +'/data'
-vis_path = rs_path +'/visuals'
+stat_path = rs_path +'/stats'
 
 # creating dictionaries to store all of our data (if they don't already exist)
 if os.path.exists(halo_path) == "False":
@@ -129,7 +129,7 @@ if os.path.exists(halo_path) == "False":
 if os.path.exists(rs_path) == "False":
     os.mkdir(ray_path) 
     os.mkdir(dat_path)
-    os.mkdir(vis_path)
+    os.mkdir(stat_path)
     
 
 # load halo data
@@ -424,7 +424,9 @@ for ion in new_ion_list:
     temperatures = []
     num_clumps = []
     rows_of_rep_clumps = []
+    cat_rep_clump = []
     diff_from_sol = []
+    sol_ab_col_dens = 0
 
     
     for r in range(raynum):
@@ -485,7 +487,7 @@ for ion in new_ion_list:
                             indexq = np.where((index[j][0]) == (ds["interval_start"]))
                             if row != 1: ##exclude solar abundance
                                 col_density_match.append(ds["col_dens"][int(indexq[0])]) ##get column density
-                            else: ##keep frack of what the solar abundance is 
+                            elif row == 1: ##keep frack of what the solar abundance is 
                                 sol_ab_col_dens = ds["col_dens"][int(indexq[0])]
                             if sup_st[k] not in match_done: ##if this is the first one done for a super clump, get all the other data and make this clump a "representative" of the super clump
                                 print('Match:', row, index[j][0], sup_st[k])
@@ -495,6 +497,7 @@ for ion in new_ion_list:
                                 densities.append(ds["density"][int(indexq[0])])
                                 temperatures.append(ds["temperature"][int(indexq[0])])
                                 rows_of_rep_clumps.append(row)
+                                cat_rep_clump.append('match')
                                 match_done.append(sup_st[k])
     
     
@@ -507,7 +510,7 @@ for ion in new_ion_list:
                             indexq = np.where((indexs[j][0]) == (var_rows[rows-1]["interval_start"]))
                             if rows != 1:
                                 col_density_short.append(ds["col_dens"][int(indexq[0])]) ##get column density
-                            else:
+                            elif rows == 1:
                                 sol_ab_col_dens = ds["col_dens"][int(indexq[0])]
     
                             if (len(match_done) == 0) and (sup_st[k] not in short_done):
@@ -518,6 +521,7 @@ for ion in new_ion_list:
                                 densities.append(ds["density"][int(indexq[0])])
                                 temperatures.append(ds["temperature"][int(indexq[0])])
                                 rows_of_rep_clumps.append(row)
+                                cat_rep_clump.append('short')
                                 short_done.append(sup_st[k])
     
                 for rowm, indexm in split.items(): ##split is a bit weird bc there are multiple in a single super clump
@@ -534,10 +538,8 @@ for ion in new_ion_list:
                         if (indexm[j][0]>=sup_st[k]) and (indexm[j][1]<=sup_en[k]):
                             ds = var_rows[rowm-1]
                             indexq = np.where((indexm[j][0]) == (var_rows[rowm-1]["interval_start"]))
-                            if rowm == 1:
-                                print("oh no") ##if this happens, I have to do a bunch of weird stuff to make it work, so I hope it doesn't happen
                                 
-                            elif len(list(indexq[0])) > 0 and rowm != 1:
+                            if len(list(indexq[0])) > 0:
                                 temp_col_dens.append(10 ** ds["col_dens"][int(indexq[0])]) ##col_dens is on a log scale, so to add it all togeher must make it the exponent of 10
                                 col_dens_for_weights.append(ds["col_dens"][int(indexq[0])]) 
                                 temp_delta_v.append(ds["delta_v"][int(indexq[0])])## append the other dictionaries with the temporary values
@@ -555,11 +557,14 @@ for ion in new_ion_list:
                                     temperatures.append(weighted_av(temp_temp, col_dens_for_weights))
                                     rows_of_rep_clumps.append(row)
                                     split_done.append(sup_st[k])
+                                    cat_rep_clump.append('split')
     
     
                     if len(temp_col_dens) != 0 and rowm != 1: ##finally, get one value for the col_dens of the whole thing
                         log_sum_dens = np.log10(sum(temp_col_dens))
                         col_density_split.append(log_sum_dens)
+                    elif len(temp_col_dens) != 0 and rowm == 1:
+                        sol_ab_col_dens = np.log10(sum(temp_col_dens))
     
               ##make lists to put into dictionaries
                 ray_nums.append(r)
@@ -571,9 +576,15 @@ for ion in new_ion_list:
                 make_full_list(col_density_short, full_col_density)
                 med_col_dens.append(np.median(full_col_density))
                 mad_for_med.append(stats.median_abs_deviation(full_col_density))
-                diff_from_sol.append(sol_ab_col_dens - np.median(full_col_density))
-    
+                
                 num_clumps.append(len(full_col_density))
+                
+                if sol_ab_col_dens != 0: ##handle the case where there is no col_density for the solar abundance
+                    diff_from_sol.append(np.log10((10 ** sol_ab_col_dens) -(10 ** np.median(full_col_density))))
+                else:
+                    diff_from_sol.append('NaN')
+    
+                
     
         ##make and fill the dictionary that will be convered into a csv file
         clump_stats = {}
@@ -588,7 +599,8 @@ for ion in new_ion_list:
         clump_stats["density"] = densities 
         clump_stats["temperature"] = temperatures
         clump_stats["num_of_clumps"] = num_clumps
-        clump_stats["rep_clumps_row"] = rows_of_rep_clumps
+        clump_stats["rep_clump_row"] = rows_of_rep_clumps
+        clump_stats["category_rep_clump"] = cat_rep_clump
     
         print(len(ray_nums), len(super_cl_nums), len(med_col_dens), len(mad_for_med), len(central_v), len(vel_dispersions))
         
