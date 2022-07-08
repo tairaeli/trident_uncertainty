@@ -173,7 +173,7 @@ my_rays = ray_files_split[ comm.rank ]
 ion_list = ['C II', 'C IV', 'O VI']
 new_ion_list = ['C_II', 'C_IV', 'O_VI']
 
-# if 'use_SolAb' == False:
+if 'use_SolAb' == False:
 if 'file_path' in dic_args:
 	abun = pd.read_csv(args.file_path, delim_whitespace=True)
 	nrows = len(abun)
@@ -582,7 +582,7 @@ for ion in new_ion_list:
                 if sol_ab_col_dens != 0: ##handle the case where there is no col_density for the solar abundance
                     diff_from_sol.append(np.log10((10 ** sol_ab_col_dens) -(10 ** np.median(full_col_density))))
                 else:
-                    diff_from_sol.append('NaN')
+                    diff_from_sol.append(np.NaN)
     
                 
     
@@ -605,7 +605,7 @@ for ion in new_ion_list:
         print(len(ray_nums), len(super_cl_nums), len(med_col_dens), len(mad_for_med), len(central_v), len(vel_dispersions))
         
         df = pd.DataFrame.from_dict(clump_stats)
-        df.to_csv(f"{stat_path}/{halo}_z{true_rs}_{ion}_abun_all-model-families_all-clumps.csv" ,sep = ' ') ##save the files to scratch
+        df.to_csv(f"{stat_path}/{halo}_z{true_rs}_{ion}_abun_all-model-families_all-clumps.csv" ,sep = ' ', na_rep = 'NaN') ##save the files to scratch
         ##as we're done with each file, delete it so we don't get residual data we don't need
    
         os.remove(f"Match_{ion}_Ray{r}.pickle")
