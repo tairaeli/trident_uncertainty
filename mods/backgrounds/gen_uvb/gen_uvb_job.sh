@@ -2,10 +2,10 @@
 
 # A template SLURM script for running CIAOLoop jobs in parallel
 
-#SBATCH -N 2
+#SBATCH -N 3
 #SBATCH --ntasks-per-node 100
 #SBATCH --mem=100G
-#SBATCH -t 04:00:00
+#SBATCH -t 10:00:00
 #SBATCH --mail-user=tairaeli@msu.edu
 #SBATCH --mail-type=ALL
 

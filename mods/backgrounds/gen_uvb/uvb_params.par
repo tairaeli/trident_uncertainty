@@ -66,4 +66,4 @@ command iterate to convergence
 
 loop [hden] (-9;4;0.125)
 
-loop [init "/mnt/gs21/scratch/tairaeli/20_kpc_dat/z_*.out"] 2.0000e+00, 2.5000e+00, 3.0000e+00
+loop [init "/mnt/gs21/scratch/tairaeli/20_kpc_dat/z_*.out"] 1.2590e+00 1.3700e+00 1.4870e+00 1.6090e+00 1.7370e+00 1.8710e+00 2.0130e+00 2.1600e+00 2.3160e+00 2.4790e+00 2.6490e+00
