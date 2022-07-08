@@ -5,8 +5,11 @@ NOTE: Inputs may vary depending on the location of one's files
 
 for ION in C_II C_IV O_VI
 do
-    ls ../sal_test/data/*${ION}.txt > ./temp_filelist.txt
-    python plot_clumps.py --ds ../sal_test/ --fn ./temp_filelist.txt
-    cat /dev/null > ./temp_filelist.txt
-    echo "Created plots for ${ION}" 
+
+    ls /mnt/scratch/f0104093/condensed_pipeline_tests/data/*${ION}.txt > temp_filelist.txt
+    python plot_clumps.py --ds /mnt/scratch/f0104093/condensed_pipeline_tests/visuals/ --fn temp_filelist.txt
+    cat /dev/null > temp_filelist.txt
 done
+
+echo "All done :)"
+
