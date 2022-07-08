@@ -13,18 +13,30 @@ parser = argparse.ArgumentParser(description = "Pipeline variables and constants
 parser.add_argument('--ds', nargs='?', action='store', required=True, dest='path', help='Path where  output data will be stored')
 parser.add_argument('--om', nargs='?',action='store', required=True, dest='om_dat', help='Path to Omega+ output data')
 parser.add_argument('--ptw', nargs='?',action='store', required=True, dest='ptw_file', help='Path to Putwein et.al. data')
-# parser.add_argument('--rs', action='store', dest='rs_list', default=[2,2.5,3], type=list, help='List of redshifts')
+parser.add_argument('--rs', action='store', dest='rs_range', default=[2,3], type=list, help='Range of redshifts to analyze. Input is a list of 2 values from the lower to upper bound')
 parser.add_argument('--d', action='store', dest='d_list', default=[20,50,100,150,200], type=list, help='List of distances from galactic center')
 
 args =parser.parse_args()
 dic_args = vars(args)
 
 # loading in array for desired energy bins
-
 ptw_rs = np.genfromtxt(args.ptw_file, max_rows = 1)
+
+# masking putwein redhsifts with desired analysis range
+ptw_rs = ptw_rs[np.all([ptw_rs>=args.rs_range[0],ptw_rs<=args.rs_range[1]],axis = 0)]
+
+# reading in actual data
 ptw_data = np.genfromtxt(args.ptw_file, skip_header=11)
 
+# assigning wave range to variable
 ptw_wave = ptw_data[:,0]
+
+# converting wavelengths to energy
+Ryd = 2.1798723611035e-18 * u.J
+nptw_wave = ptw_wave * u.Angstrom
+nu = nptw_wave.to("J", equivalence="spectral") / Ryd
+nu = nu.to_value()
+
     
 # rebins spectral data to better match Cloudy's desired input
 def rebin(wave,spec,ptw_spec):
@@ -46,15 +58,15 @@ def rebin(wave,spec,ptw_spec):
     # converting luminosities back into intensity
     nspec = nlum*(3e8/(ptw_wave*1e-10))
     
-    if type(nspec) != type(ptw_spec):
-        print(type(nspec))
-        nspec = nspec.to_value()
+    # if type(nspec) != type(ptw_spec):
+    #     print(type(nspec))
+    #     nspec = nspec.to_value()
     
     # adding the Putwein et.al. intensities to the intensity from FSPS
     nspec += ptw_spec
     
     return nspec
-
+    
 # generating stellar population object
 sp = fsps.StellarPopulation(zcontinuous=3, imf_type=1, add_agb_dust_model=True,
                         add_dust_emission=True, sfh=3, dust_type=4)
@@ -124,11 +136,7 @@ for d in args.d_list:
         # rebining data to match desired Cloudy input
         spec = np.log(rebin(wave,spec,ptw_spec))
         
-        Ryd = 2.1798723611035e-18 * u.J
-        ptw_wave = ptw_wave * u.Angstrom
-        print(type(ptw_wave))
-        nu = ptw_wave.to("J", equivalence="spectral") / Ryd
-        
+        print(np.max(nu))
         # generate interpolation function
         interp = interp1d(nu, spec, fill_value = "extrapolate")
         
@@ -143,7 +151,7 @@ for d in args.d_list:
             f.write(f"continue ({nu[0]*0.99:.10f}) ({lJ_pad:.10f})\n")
             
             # loop backwards through wavelengths so that lowest energy is first
-            for i in range(ptw_wave.size-1):
+            for i in range(nu.size-1,-1,-1):
                 f.write(f"continue ({nu[i]:.10f}) ({spec[i]:.10f})\n")
                 
             f.write(f"continue ({nu[i]*1.01:.10f}) ({lJ_pad:.10f})\n")
@@ -152,11 +160,9 @@ for d in args.d_list:
             x = 10**interp(1)
             f.write(f"f(nu) = {np.log10(x * 4 * np.pi):.10f} at {1:.10f} Ryd\n")
         
-        
-        
     # outputting list of redshifts to another file
-    # with open(args.path+f'd_{d}_kpc_rs.pkl','wb') as f:
-    #     pickle.dump(conv_rs,f)
+    with open('./'+f'd_{d}_kpc_rs.pkl','wb') as f:
+        pickle.dump(conv_rs,f)
 
 with open("./spec_dat.pickle","wb") as f:
     pickle.dump(sp_dat,f)
