@@ -128,9 +128,11 @@ for d in args.d_list:
         # converting distance into centimeters?????
         # d_m = d*3.086e21
         
-        # converting spectral luminosities into intensity
-        spec = spec/(16*np.pi**2*d**2)        
+        # converting spectral luminosities into intensity (solar lum per cm^2)
+        d_cm = d*3.086e+21
+        spec = spec/(16*np.pi**2*d_cm**2)        
         
+        # calling the putwein intensity data for the current redshift
         ptw_spec = ptw_data[:,irs]
         
         # rebining data to match desired Cloudy input
