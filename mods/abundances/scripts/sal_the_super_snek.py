@@ -173,27 +173,26 @@ my_rays = ray_files_split[ comm.rank ]
 ion_list = ['C II', 'C IV', 'O VI']
 new_ion_list = ['C_II', 'C_IV', 'O_VI']
 
-if 'use_SolAb' == False:
-if 'file_path' in dic_args:
-	abun = pd.read_csv(args.file_path, delim_whitespace=True)
-	nrows = len(abun)
-	saved = generate_names(nrows)
-	for row_num in range(nrows):
-		for i in ion_list:
-			abundances = abun.iloc[row_num].to_dict()
-			abs_ext = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, velocity_res =20, abundance_table = abundances, calc_missing=True)
-			df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=units_dict).drop(columns='index')
-			df.to_csv(f'{dat_path}/{saved[row_num]}_{i.replace(" ", "_")}.txt', sep = ' ')
-			print("Go look at your data!")
+# if 'file_path' in dic_args:
+# 	abun = pd.read_csv(args.file_path, delim_whitespace=True)
+# 	nrows = len(abun)
+# 	saved = generate_names(nrows)
+# 	for row_num in range(nrows):
+# 		for i in ion_list:
+# 			abundances = abun.iloc[row_num].to_dict()
+# 			abs_ext = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, velocity_res =20, abundance_table = abundances, calc_missing=True)
+# 			df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=units_dict).drop(columns='index')
+# 			df.to_csv(f'{dat_path}/{saved[row_num]}_{i.replace(" ", "_")}.txt', sep = ' ')
+# 			print("Go look at your data!")
 
-else:
-	nrows = 0
-	saved = generate_names(nrows)
-	for i in ion_list:
-		abs_ext = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, abundance_table = None, calc_missing=True)
-		df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=units_dict)
-		df.to_csv(f'{dat_path}/data_SolAb_{i.replace(" ", "_")}.txt', sep = ' ').drop(columns='index')
-		print("Go look at your data!")
+# else:
+# 	nrows = 0
+# 	saved = generate_names(nrows)
+# 	for i in ion_list:
+# 		abs_ext = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, abundance_table = None, calc_missing=True)
+# 		df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=units_dict)
+# 		df.to_csv(f'{dat_path}/data_SolAb_{i.replace(" ", "_")}.txt', sep = ' ').drop(columns='index')
+# 		print("Go look at your data!")
             
             
 for ion in new_ion_list:
@@ -539,7 +538,6 @@ for ion in new_ion_list:
                     for j in range(len(indexm)):
     
                         if (indexm[j][0]>=sup_st[k]) and (indexm[j][1]<=sup_en[k]):
-                            num_spl_sho +=1
                             ds = var_rows[rowm-1]
                             indexq = np.where((indexm[j][0]) == (var_rows[rowm-1]["interval_start"]))
                                 
@@ -565,9 +563,11 @@ for ion in new_ion_list:
     
     
                     if len(temp_col_dens) != 0 and rowm != 1: ##finally, get one value for the col_dens of the whole thing
+                        num_spl_sho +=1
                         log_sum_dens = np.log10(sum(temp_col_dens))
                         col_density_split.append(log_sum_dens)
                     elif len(temp_col_dens) != 0 and rowm == 1:
+                        num_spl_sho +=1
                         sol_ab_col_dens = np.log10(sum(temp_col_dens))
     
               ##make lists to put into dictionaries
@@ -583,6 +583,7 @@ for ion in new_ion_list:
                 
                 num_clumps.append(len(full_col_density))
                 freq_split_short.append(num_spl_sho)
+                num_spl_sho = 0
                 
                 if sol_ab_col_dens != 0: ##handle the case where there is no col_density for the solar abundance
                     diff_from_sol.append(np.log10((10 ** sol_ab_col_dens) -(10 ** np.median(full_col_density))))
