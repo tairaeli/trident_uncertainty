@@ -148,13 +148,13 @@ for d in args.d_list:
             f.write("# E [Ryd] log (J_nu)\n")
             
             f.write(f"interpolate ({1e-8:.10f}) ({lJ_pad:.10f})\n")
-            f.write(f"continue ({nu[0]*0.99:.10f}) ({lJ_pad:.10f})\n")
+            f.write(f"continue ({nu[-1]*0.99:.10f}) ({lJ_pad:.10f})\n")
             
             # loop backwards through wavelengths so that lowest energy is first
             for i in range(nu.size-1,-1,-1):
                 f.write(f"continue ({nu[i]:.10f}) ({spec[i]:.10f})\n")
                 
-            f.write(f"continue ({nu[i]*1.01:.10f}) ({lJ_pad:.10f})\n")
+            f.write(f"continue ({nu[0]*1.01:.10f}) ({lJ_pad:.10f})\n")
             f.write(f"continue ({7.354e6:.10f}) ({lJ_pad:.10f})\n")
             
             x = 10**interp(1)
@@ -166,7 +166,3 @@ for d in args.d_list:
 
 with open("./spec_dat.pickle","wb") as f:
     pickle.dump(sp_dat,f)
-
-
-
-
