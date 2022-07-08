@@ -423,6 +423,7 @@ for ion in new_ion_list:
     densities = []
     temperatures = []
     num_clumps = []
+    freq_split_short = []
     rows_of_rep_clumps = []
     cat_rep_clump = []
     diff_from_sol = []
@@ -468,6 +469,7 @@ for ion in new_ion_list:
                         sup_en.append(n-1)
                     else:
                         sup_en.append(n)
+            num_spl_sho = 0
     
             for k in range(len(sup_st)): ##depending on which category each clump belongs to in super_clumps
                 col_density_match = [] ##lists for col_density
@@ -506,6 +508,7 @@ for ion in new_ion_list:
                     for j in range(len(indexs)):
     
                         if (indexs[j][0]>=sup_st[k]) and (indexs[j][1]<=sup_en[k]):
+                            num_spl_sho += 1
                             ds = var_rows[rows-1]
                             indexq = np.where((indexs[j][0]) == (var_rows[rows-1]["interval_start"]))
                             if rows != 1:
@@ -536,6 +539,7 @@ for ion in new_ion_list:
                     for j in range(len(indexm)):
     
                         if (indexm[j][0]>=sup_st[k]) and (indexm[j][1]<=sup_en[k]):
+                            num_spl_sho +=1
                             ds = var_rows[rowm-1]
                             indexq = np.where((indexm[j][0]) == (var_rows[rowm-1]["interval_start"]))
                                 
@@ -578,6 +582,7 @@ for ion in new_ion_list:
                 mad_for_med.append(stats.median_abs_deviation(full_col_density))
                 
                 num_clumps.append(len(full_col_density))
+                freq_split_short.append(num_spl_sho)
                 
                 if sol_ab_col_dens != 0: ##handle the case where there is no col_density for the solar abundance
                     diff_from_sol.append(np.log10((10 ** sol_ab_col_dens) -(10 ** np.median(full_col_density))))
@@ -598,6 +603,7 @@ for ion in new_ion_list:
         clump_stats["vel_dispersion"] = vel_dispersions 
         clump_stats["density"] = densities 
         clump_stats["temperature"] = temperatures
+        clump_stats["num_split_or_short"] = freq_split_short
         clump_stats["num_of_clumps"] = num_clumps
         clump_stats["rep_clump_row"] = rows_of_rep_clumps
         clump_stats["category_rep_clump"] = cat_rep_clump
