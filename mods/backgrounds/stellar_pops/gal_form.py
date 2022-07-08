@@ -13,7 +13,7 @@ parser = argparse.ArgumentParser(description = "Pipeline variables and constants
 parser.add_argument('--ds', nargs='?', action='store', required=True, dest='path', help='Path where  output data will be stored')
 parser.add_argument('--om', nargs='?',action='store', required=True, dest='om_dat', help='Path to Omega+ output data')
 parser.add_argument('--ptw', nargs='?',action='store', required=True, dest='ptw_file', help='Path to Putwein et.al. data')
-parser.add_argument('--rs', action='store', dest='rs_range', default=[2,3], type=list, help='Range of redshifts to analyze. Input is a list of 2 values from the lower to upper bound')
+parser.add_argument('--rs', action='store', dest='rs_range', default=[1.2,2.7], type=list, help='Range of redshifts to analyze. Input is a list of 2 values from the lower to upper bound')
 parser.add_argument('--d', action='store', dest='d_list', default=[20,50,100,150,200], type=list, help='List of distances from galactic center')
 
 args =parser.parse_args()
@@ -42,7 +42,7 @@ nu = nu.to_value()
 def rebin(wave,spec,ptw_spec):
 
     # convert spectral data into luminosities
-    lum = spec*((wave*1e-10)/3e8)
+    lum = spec*(3e8/(wave*1e-10))
     
     # initializing array to store new luminosities
     nlum = np.zeros(len(ptw_wave))
@@ -56,7 +56,7 @@ def rebin(wave,spec,ptw_spec):
             nlum[i] = sum(lum[np.where((wave<=ptw_wave[i])&(wave>ptw_wave[i-1]))])
     
     # converting luminosities back into intensity
-    nspec = nlum*(3e8/(ptw_wave*1e-10))
+    nspec = nlum*((ptw_wave*1e-10)/3e8)
     
     # if type(nspec) != type(ptw_spec):
     #     print(type(nspec))
@@ -81,15 +81,16 @@ sfr_in = np.asarray(om_dat["sfr_in"])
 Z = np.asarray(om_dat["metal"])
 
 # setting new floor metalicity based on minimum of stellar population object
-nZmin = np.min(np.log(sp.zlegend))
+nZmin = np.min(sp.zlegend)
 Z[Z<=nZmin] = nZmin
 
 # prepping sp object to extract spectrum data
-sp.set_tabular_sfh(ages, sfr_in, np.exp(Z))
+sp.set_tabular_sfh(ages, sfr_in, Z)
 
 # setting lowest alloted intensity
 lJ_pad = -50
 
+# TEMPORARY
 sp_dat = {}
 
 # iterates through each distance and each redshift to create the 
@@ -111,8 +112,12 @@ for d in args.d_list:
     # iterating through each redshift
     for irs in range(len(ptw_rs)):
         
+        # setting the current redshift
         rs = ptw_rs[irs]
         
+        print("Running redshift",str(rs),"at d = "+str(d)+" kpc")
+        
+        # TEMPORARY
         sp_dat[d][rs] = {}
         
         conv_rs.append(f"{rs:.4e}")
@@ -122,6 +127,7 @@ for d in args.d_list:
         # generating luminosity at each wavelength
         wave,spec = sp.get_spectrum(tage = age)
         
+        # TEMPORARY
         sp_dat[d][rs]["wave"] = wave
         sp_dat[d][rs]["spec"] = spec
         
