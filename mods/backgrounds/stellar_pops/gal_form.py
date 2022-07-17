@@ -12,7 +12,7 @@ from astropy.cosmology import FlatLambdaCDM
 parser = argparse.ArgumentParser(description = "Pipeline variables and constants for running FSPS")
 parser.add_argument('--ds', nargs='?', action='store', required=True, dest='path', help='Path where  output data will be stored')
 parser.add_argument('--om', nargs='?',action='store', required=True, dest='om_dat', help='Path to Omega+ output data')
-parser.add_argument('--ptw', nargs='?',action='store', required=True, dest='ptw_file', help='Path to Putwein et.al. data')
+parser.add_argument('--pcw', nargs='?',action='store', required=True, dest='pcw_file', help='Path to Putwein et.al. data')
 parser.add_argument('--rs', action='store', dest='rs_range', default=[1.2,2.7], type=list, help='Range of redshifts to analyze. Input is a list of 2 values from the lower to upper bound')
 parser.add_argument('--d', action='store', dest='d_list', default=[20,50,100,150,200], type=list, help='List of distances from galactic center')
 
@@ -20,50 +20,67 @@ args =parser.parse_args()
 dic_args = vars(args)
 
 # loading in array for desired energy bins
-ptw_rs = np.genfromtxt(args.ptw_file, max_rows = 1)
+pcw_rs = np.genfromtxt(args.pcw_file, max_rows = 1)
+
+# creating a mask to isolate desired redshift data
+rs_mask = np.where((pcw_rs>=args.rs_range[0]) & (pcw_rs<=args.rs_range[1]))
 
 # masking putwein redhsifts with desired analysis range
-ptw_rs = ptw_rs[np.all([ptw_rs>=args.rs_range[0],ptw_rs<=args.rs_range[1]],axis = 0)]
+pcw_rs = pcw_rs[rs_mask]
 
 # reading in actual data
-ptw_data = np.genfromtxt(args.ptw_file, skip_header=11)
+pcw_data = np.genfromtxt(args.pcw_file, skip_header=11)
 
 # assigning wave range to variable
-ptw_wave = ptw_data[:,0]
+pcw_wave = pcw_data[:,0]
+
+pcw_data = pcw_data[:,rs_mask]
 
 # converting wavelengths to energy
 Ryd = 2.1798723611035e-18 * u.J
-nptw_wave = ptw_wave * u.Angstrom
-nu = nptw_wave.to("J", equivalence="spectral") / Ryd
+npcw_wave = pcw_wave * u.Angstrom
+
+unq_wv, freq = np.unique(npcw_wave, return_counts=True)
+pairs = [(npcw_wave == val).nonzero()[0] for val in unq_wv[freq>1]] # list of arrays w/ indicies
+
+for pair in pairs:
+    assert pair.size==2, "More than two duplicates found"
+    assert pair[0] < pair[1]
+
+    # adjust wavelenghts by 0.01%
+    npcw_wave[pair[0]] -= 0.0001 * npcw_wave[pair[0]]
+    npcw_wave[pair[1]] += 0.0001 * npcw_wave[pair[1]]
+
+nu = npcw_wave.to("J", equivalence="spectral") / Ryd
 nu = nu.to_value()
 
     
 # rebins spectral data to better match Cloudy's desired input
-def rebin(wave,spec,ptw_spec):
+def rebin(wave,spec,pcw_spec):
 
     # convert spectral data into luminosities
     lum = spec*(3e8/(wave*1e-10))
     
     # initializing array to store new luminosities
-    nlum = np.zeros(len(ptw_wave))
+    nlum = np.zeros(len(pcw_wave))
     
     # compare wave data from FSPS to desired wave binning to rebin spec data
-    for i in range(ptw_wave.size-1):
+    for i in range(pcw_wave.size):
         # accounting for indexing issues in first bin
         if i == 0:
-            nlum[i] = sum(lum[np.where((wave<=ptw_wave[i]))])
+            nlum[i] = sum(lum[np.where((wave<=pcw_wave[i]))])
         else:
-            nlum[i] = sum(lum[np.where((wave<=ptw_wave[i])&(wave>ptw_wave[i-1]))])
+            nlum[i] = sum(lum[np.where((wave<=pcw_wave[i])&(wave>pcw_wave[i-1]))])
     
     # converting luminosities back into intensity
-    nspec = nlum*((ptw_wave*1e-10)/3e8)
+    nspec = nlum*((pcw_wave*1e-10)/3e8)
     
-    # if type(nspec) != type(ptw_spec):
+    # if type(nspec) != type(pcw_spec):
     #     print(type(nspec))
     #     nspec = nspec.to_value()
     
     # adding the Putwein et.al. intensities to the intensity from FSPS
-    nspec += ptw_spec
+    nspec += pcw_spec
     
     return nspec
     
@@ -110,10 +127,10 @@ for d in args.d_list:
     conv_rs = []
     
     # iterating through each redshift
-    for irs in range(len(ptw_rs)):
+    for irs in range(len(pcw_rs)):
         
         # setting the current redshift
-        rs = ptw_rs[irs]
+        rs = pcw_rs[irs]
         
         print("Running redshift",str(rs),"at d = "+str(d)+" kpc")
         
@@ -139,12 +156,11 @@ for d in args.d_list:
         spec = spec/(16*np.pi**2*d_cm**2)        
         
         # calling the putwein intensity data for the current redshift
-        ptw_spec = ptw_data[:,irs]
+        pcw_spec = pcw_data[:,0,irs]
         
         # rebining data to match desired Cloudy input
-        spec = np.log(rebin(wave,spec,ptw_spec))
+        spec = np.log10(rebin(wave,spec,pcw_spec))
         
-        print(np.max(nu))
         # generate interpolation function
         interp = interp1d(nu, spec, fill_value = "extrapolate")
         
