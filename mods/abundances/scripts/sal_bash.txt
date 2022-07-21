@@ -1,1 +1,1 @@
-python sal_the_snek.py --ds ~/pipeline_tests/hist_test --nrays 4 --abun /mnt/home/fuhrmane/abundances/new_cgm_abundances.txt
+python sal_the_super_snek.py --ds /mnt/gs21/scratch/tairaeli --abun /mnt/home/tairaeli/trident_uncertainty/mods/abundances/scripts/abun_table.txt
