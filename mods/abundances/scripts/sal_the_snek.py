@@ -26,6 +26,20 @@ parser.add_argument('--it', nargs='?', action='store', dest='itable', default = 
 args = parser.parse_args()
 dic_args = vars(args)
 
+def get_true_rs(val): ##define how to get actual rshift numbers
+    if val == 20:
+        true_rs = '2.0'
+    elif val == 18:
+        true_rs = '2.5'
+    return true_rs
+
+halo_names_dict = {'2392'  :  'Hurricane' ,'2878'  :  'Cyclone' , '4123'  :  'Blizzard' , '5016'  :  'Squall' ,'5036'  :  'Maelstrom' , '8508'  :  'Tempest'}
+
+def get_halo_names(num):
+    if str(num) in halo_names_dict.keys():
+        halo_name = halo_names_dict[str(num)]
+    return halo_name
+
 def generate_names(length, add=''):
         
         	"""
@@ -59,7 +73,7 @@ halo = args.pattern
 
 # set redshift info
 rshift = args.rs
-
+true_rs = get_true_rs(rshift)
 # takes in the foggie halo info directory
 # outputs a dictionary of galactic center locations/velocities for all redshifts in each halo pattern
 # NOTE: this function is temporary and has some hard-coded variables that will need to be changed
@@ -91,16 +105,16 @@ path = os.path.expandvars(os.path.expanduser(args.path))
 
 # creating variable names for data bin locations
 halo_path = path+'/halo'+f'{halo}'
-rs_path = halo_path + '/redshift'+f'{rshift}'
+rs_path = halo_path + '/redshift'+f'{true_rs}'
 ray_path = rs_path +'/rays'
 dat_path = rs_path +'/data'
 vis_path = rs_path +'/visuals'
 
 # creating dictionaries to store all of our data (if they don't already exist)
-if os.path.exists(halo_path) == "False":
+if os.path.exists(halo_path) == False:
     os.mkdir(path+'/halo'+f'{halo}')
     
-if os.path.exists(rs_path) == "False":
+if os.path.exists(rs_path) == False:
     os.mkdir(ray_path) 
     os.mkdir(dat_path)
     os.mkdir(vis_path)
@@ -110,7 +124,7 @@ ds = yt.load(f'{args.halo_dir}/halo_00{halo}/nref11c_nref9f/RD00{rshift}/RD00{rs
 
 ion_list = ['C II', 'C IV', 'O VI']
 
-# trident.ion_balance.add_ion_fields(ds, ions = ion_list, ionization_table = args.itable)
+trident.ion_balance.add_ion_fields(ds, ions = ion_list, ionization_table = args.itable)
 # defining analysis parameters
 # Note: these dictionaries are temporary and should most likely be included in the arguments at some point
 center = ds.arr(center_dat['pos'], 'kpc')
