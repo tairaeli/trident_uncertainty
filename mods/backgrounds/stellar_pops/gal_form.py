@@ -12,7 +12,7 @@ from astropy.cosmology import FlatLambdaCDM
 parser = argparse.ArgumentParser(description = "Pipeline variables and constants for running FSPS")
 parser.add_argument('--ds', nargs='?', action='store', required=True, dest='path', help='Path where  output data will be stored')
 parser.add_argument('--om', nargs='?',action='store', required=True, dest='om_dat', help='Path to Omega+ output data')
-parser.add_argument('--pcw', nargs='?',action='store', required=True, dest='pcw_file', help='Path to Putwein et.al. data')
+parser.add_argument('--pcw', nargs='?',action='store', required=True, dest='pcw_file', help='Path to Puchwein et al data')
 parser.add_argument('--rs', action='store', dest='rs_range', default=[1.2,2.7], type=list, help='Range of redshifts to analyze. Input is a list of 2 values from the lower to upper bound')
 parser.add_argument('--d', action='store', dest='d_list', default=[20,50,100,150,200], type=list, help='List of distances from galactic center')
 
@@ -74,11 +74,7 @@ def rebin(wave,spec,pcw_spec):
     
     # converting luminosities back into intensity
     nspec = nlum*((pcw_wave*1e-10)/3e8)
-    
-    # if type(nspec) != type(pcw_spec):
-    #     print(type(nspec))
-    #     nspec = nspec.to_value()
-    
+    print(f"min nspec at {d} is {np.min(nspec)}")
     # adding the Putwein et.al. intensities to the intensity from FSPS
     nspec += pcw_spec
     
@@ -148,18 +144,17 @@ for d in args.d_list:
         sp_dat[d][rs]["wave"] = wave
         sp_dat[d][rs]["spec"] = spec
         
-        # converting distance into centimeters?????
-        # d_m = d*3.086e21
-        
         # converting spectral luminosities into intensity (solar lum per cm^2)
         d_cm = d*3.086e+21
         spec = spec/(16*np.pi**2*d_cm**2)        
         
-        # calling the putwein intensity data for the current redshift
+        # calling the puchwein intensity data for the current redshift
         pcw_spec = pcw_data[:,0,irs]
         
         # rebining data to match desired Cloudy input
         spec = np.log10(rebin(wave,spec,pcw_spec))
+        
+        sp_dat[d][rs]["rebin_spec"] = spec
         
         # generate interpolation function
         interp = interp1d(nu, spec, fill_value = "extrapolate")
