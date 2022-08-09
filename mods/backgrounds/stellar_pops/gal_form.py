@@ -12,7 +12,7 @@ from astropy.cosmology import FlatLambdaCDM
 parser = argparse.ArgumentParser(description = "Pipeline variables and constants for running FSPS")
 parser.add_argument('--ds', nargs='?', action='store', required=True, dest='path', help='Path where  output data will be stored')
 parser.add_argument('--om', nargs='?',action='store', required=True, dest='om_dat', help='Path to Omega+ output data')
-parser.add_argument('--pcw', nargs='?',action='store', required=True, dest='pcw_file', help='Path to Puchwein et al data')
+parser.add_argument('--uvb', nargs='?',action='store', required=True, dest='uvb_file', help='Path to UV ackground data')
 parser.add_argument('--rs', action='store', dest='rs_range', default=[1.2,2.7], type=list, help='Range of redshifts to analyze. Input is a list of 2 values from the lower to upper bound')
 parser.add_argument('--d', action='store', dest='d_list', default=[20,50,100,150,200], type=list, help='List of distances from galactic center')
 
@@ -20,63 +20,66 @@ args =parser.parse_args()
 dic_args = vars(args)
 
 # loading in array for desired energy bins
-pcw_rs = np.genfromtxt(args.pcw_file, max_rows = 1)
+uvb_rs = np.genfromtxt(args.uvb_file, max_rows = 1)
 
 # creating a mask to isolate desired redshift data
-rs_mask = np.where((pcw_rs>=args.rs_range[0]) & (pcw_rs<=args.rs_range[1]))
+rs_mask = np.where((uvb_rs>=args.rs_range[0]) & (uvb_rs<=args.rs_range[1]))
 
-# masking putwein redhsifts with desired analysis range
-pcw_rs = pcw_rs[rs_mask]
+# masking redhsifts with desired analysis range using previously generated mask
+uvb_rs = uvb_rs[rs_mask]
 
 # reading in actual data
-pcw_data = np.genfromtxt(args.pcw_file, skip_header=11)
+uvb_data = np.genfromtxt(args.uvb_file, skip_header=11)
 
 # assigning wave range to variable
-pcw_wave = pcw_data[:,0]
+uvb_wave = uvb_data[:,0]
 
-pcw_data = pcw_data[:,rs_mask]
+# masking out uvb data with redshift mask
+uvb_data = uvb_data[:,rs_mask]
 
-# converting wavelengths to energy
-Ryd = 2.1798723611035e-18 * u.J
-npcw_wave = pcw_wave * u.Angstrom
+# labeling wave data (Angstroms)
+nuvb_wave = uvb_wave * u.Angstrom
 
-unq_wv, freq = np.unique(npcw_wave, return_counts=True)
-pairs = [(npcw_wave == val).nonzero()[0] for val in unq_wv[freq>1]] # list of arrays w/ indicies
+# locating pairs of data within wave data that are duplicates
+unq_wv, freq = np.unique(nuvb_wave, return_counts=True)
+pairs = [(nuvb_wave == val).nonzero()[0] for val in unq_wv[freq>1]] # list of arrays w/ indicies
 
+# goes through each of the pairs of duplicated data and adjusts the wavelengths very slightly
 for pair in pairs:
     assert pair.size==2, "More than two duplicates found"
     assert pair[0] < pair[1]
 
     # adjust wavelenghts by 0.01%
-    npcw_wave[pair[0]] -= 0.0001 * npcw_wave[pair[0]]
-    npcw_wave[pair[1]] += 0.0001 * npcw_wave[pair[1]]
+    nuvb_wave[pair[0]] -= 0.0001 * nuvb_wave[pair[0]]
+    nuvb_wave[pair[1]] += 0.0001 * nuvb_wave[pair[1]]
 
-nu = npcw_wave.to("J", equivalence="spectral") / Ryd
+# converting wavelengths to energy
+Ryd = 2.1798723611035e-18 * u.J
+nu = nuvb_wave.to("J", equivalence="spectral") / Ryd
 nu = nu.to_value()
 
-    
 # rebins spectral data to better match Cloudy's desired input
-def rebin(wave,spec,pcw_spec):
+def rebin(wave,ipf,uvb_spec):
 
     # convert spectral data into luminosities
-    lum = spec*(3e8/(wave*1e-10))
+    lum = ipf*(3e8/(wave*1e-10))
     
     # initializing array to store new luminosities
-    nlum = np.zeros(len(pcw_wave))
+    nlum = np.zeros(len(uvb_wave))
     
     # compare wave data from FSPS to desired wave binning to rebin spec data
-    for i in range(pcw_wave.size):
+    for i in range(uvb_wave.size):
         # accounting for indexing issues in first bin
         if i == 0:
-            nlum[i] = sum(lum[np.where((wave<=pcw_wave[i]))])
+            nlum[i] = sum(lum[np.where((wave<=uvb_wave[i]))])
         else:
-            nlum[i] = sum(lum[np.where((wave<=pcw_wave[i])&(wave>pcw_wave[i-1]))])
+            nlum[i] = sum(lum[np.where((wave<=uvb_wave[i])&(wave>uvb_wave[i-1]))])
     
     # converting luminosities back into intensity
-    nspec = nlum*((pcw_wave*1e-10)/3e8)
+    nspec = nlum*((uvb_wave*1e-10)/3e8)
     print(f"min nspec at {d} is {np.min(nspec)}")
     # adding the Putwein et.al. intensities to the intensity from FSPS
-    nspec += pcw_spec
+    nspec += uvb_spec
     
     return nspec
     
@@ -109,7 +112,7 @@ sp_dat = {}
 # iterates through each distance and each redshift to create the 
 # input data for cloudy for each distance
 for d in args.d_list:
-    
+    # TEMPORARY
     sp_dat[d] = {}
     
     # making a separate directory for each distance
@@ -123,10 +126,10 @@ for d in args.d_list:
     conv_rs = []
     
     # iterating through each redshift
-    for irs in range(len(pcw_rs)):
+    for irs in range(len(uvb_rs)):
         
         # setting the current redshift
-        rs = pcw_rs[irs]
+        rs = uvb_rs[irs]
         
         print("Running redshift",str(rs),"at d = "+str(d)+" kpc")
         
@@ -137,22 +140,23 @@ for d in args.d_list:
         # conversion of redshift to age (may need more precise value for universe age)
         age = fl.age(rs).to_value()
         
-        # generating luminosity at each wavelength
+        # generating solar luminosities per Hz at each wavelength
         wave,spec = sp.get_spectrum(tage = age)
         
         # TEMPORARY
         sp_dat[d][rs]["wave"] = wave
         sp_dat[d][rs]["spec"] = spec
         
-        # converting spectral luminosities into intensity (solar lum per cm^2)
+        # converting spectral luminosities into intensity (solar lum/cm^2)
         d_cm = d*3.086e+21
-        spec = spec/(16*np.pi**2*d_cm**2)        
+        # represents the intensity per frequency (solar lum/cm^2/Hz)
+        ipf = spec/((4*np.pi)**2*d_cm**2)        
         
-        # calling the puchwein intensity data for the current redshift
-        pcw_spec = pcw_data[:,0,irs]
+        # calling the uvb intensity data for the current redshift
+        uvb_spec = uvb_data[:,0,irs]
         
         # rebining data to match desired Cloudy input
-        spec = np.log10(rebin(wave,spec,pcw_spec))
+        spec = np.log10(rebin(wave,ipf,uvb_spec))
         
         sp_dat[d][rs]["rebin_spec"] = spec
         
