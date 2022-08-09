@@ -11,6 +11,7 @@ from mpi4py import MPI
 import pickle
 from scipy import stats
 import trident
+
 comm = MPI.COMM_WORLD
 
 print(f"Let's do some math, kids")
@@ -23,6 +24,7 @@ parser.add_argument('--halo_dir', action='store', dest='halo_dir', default='/mnt
 parser.add_argument('--pat', action='store', dest='pattern', default=2392, type=int, help='Desired halo pattern file ID')
 parser.add_argument('--rshift', action='store', dest='rs', default=20, type=int, help='Redshift file IDs')
 parser.add_argument('--it', nargs='?', action='store', dest='itable', default = None, help='Path to custom ionization table. If left blank, trident defaults to whatever ionization table it is currently using' )
+
 
 args = parser.parse_args()
 dic_args = vars(args)
@@ -135,9 +137,10 @@ if os.path.exists(rs_path) == False:
 # load halo data
 ds = yt.load(f'{args.halo_dir}/halo_00{halo}/nref11c_nref9f/RD00{rs}/RD00{rs}')
 
-
+# define desired ions analyzed
 ion_list = ['C II', 'C IV', 'O VI']
 
+# impliments the ionization table
 trident.ion_balance.add_ion_fields(ds, ions = ion_list, ionization_table = args.itable)
 
 # defining analysis parameters
@@ -279,6 +282,7 @@ for ion in new_ion_list:
         super_clumps=np.append(0, super_clumps)  ##make indexing work  
         super_clumps=np.append(super_clumps, 0)
         np.save(f'{stat_path}/super_clumps_array_{ion}_ray{r}', super_clumps) ##save super_clumps for future reference
+
         match = {} ##create dictionaries to store indexes of clumps in the row that correspond to one another, keys will be row numbers and values will be indecies except for the lonlies
         short = {}
         split = {}
@@ -596,7 +600,7 @@ for ion in new_ion_list:
                     diff_from_sol.append(np.log10((10 ** sol_ab_col_dens) -(10 ** np.median(full_col_density))))
                 else:
                     diff_from_sol.append(np.NaN)
-                    
+
         ##make and fill the dictionary that will be convered into a csv file
         clump_stats = {}
         clump_stats["ray_num"] = ray_nums
@@ -618,7 +622,7 @@ for ion in new_ion_list:
         
         df = pd.DataFrame.from_dict(clump_stats)
         df.to_csv(f"{stat_path}/{halo}_z{true_rs}_{ion}_abun_all-model-families_all-clumps.csv" ,sep = ' ', na_rep = 'NaN') ##save the files to scratch
-   
+
         ##as we're done with each file, delete it so we don't get residual data we don't need
         os.remove(f"{stat_path}/Match_{ion}_Ray{r}.pickle")
         os.remove(f"{stat_path}/Short_{ion}_Ray{r}.pickle")
