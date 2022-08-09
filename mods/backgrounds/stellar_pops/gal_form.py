@@ -8,7 +8,6 @@ import pickle
 import fsps
 from astropy.cosmology import FlatLambdaCDM
 
-
 parser = argparse.ArgumentParser(description = "Pipeline variables and constants for running FSPS")
 parser.add_argument('--ds', nargs='?', action='store', required=True, dest='path', help='Path where  output data will be stored')
 parser.add_argument('--om', nargs='?',action='store', required=True, dest='om_dat', help='Path to Omega+ output data')
