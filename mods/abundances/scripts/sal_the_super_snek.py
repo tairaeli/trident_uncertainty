@@ -78,7 +78,6 @@ def make_full_list(list_in, list_out):
     return list_out
 
 # EDIT THIS LINE TO LOCAL FOGGIE LOCATION
-
 foggie_dir = "/mnt/home/tairaeli/astro_libs/foggie/foggie/halo_infos"
 
 # set desired halo pattern
@@ -133,9 +132,9 @@ if os.path.exists(rs_path) == False:
     os.mkdir(dat_path)
     os.mkdir(stat_path)
     
-
 # load halo data
 ds = yt.load(f'{args.halo_dir}/halo_00{halo}/nref11c_nref9f/RD00{rs}/RD00{rs}')
+
 
 ion_list = ['C II', 'C IV', 'O VI']
 
@@ -597,10 +596,7 @@ for ion in new_ion_list:
                     diff_from_sol.append(np.log10((10 ** sol_ab_col_dens) -(10 ** np.median(full_col_density))))
                 else:
                     diff_from_sol.append(np.NaN)
-    
-                
-        
-        
+                    
         ##make and fill the dictionary that will be convered into a csv file
         clump_stats = {}
         clump_stats["ray_num"] = ray_nums
@@ -622,8 +618,8 @@ for ion in new_ion_list:
         
         df = pd.DataFrame.from_dict(clump_stats)
         df.to_csv(f"{stat_path}/{halo}_z{true_rs}_{ion}_abun_all-model-families_all-clumps.csv" ,sep = ' ', na_rep = 'NaN') ##save the files to scratch
-        ##as we're done with each file, delete it so we don't get residual data we don't need
    
+        ##as we're done with each file, delete it so we don't get residual data we don't need
         os.remove(f"{stat_path}/Match_{ion}_Ray{r}.pickle")
         os.remove(f"{stat_path}/Short_{ion}_Ray{r}.pickle")
         os.remove(f"{stat_path}/Split_{ion}_Ray{r}.pickle")
