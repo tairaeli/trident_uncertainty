@@ -178,29 +178,23 @@ ray_arr = np.array(ray_list)
 ray_files_split = np.array_split(ray_arr, comm.size)
 my_rays = ray_files_split[ comm.rank ]
 
-ion_list = ['C II', 'C IV', 'O VI']
 new_ion_list = ['C_II', 'C_IV', 'O_VI']
 
-# if 'file_path' in dic_args:
-# 	abun = pd.read_csv(args.file_path, delim_whitespace=True)
-# 	nrows = len(abun)
-# 	saved = generate_names(nrows)
-# 	for row_num in range(nrows):
-# 		for i in ion_list:
-# 			abundances = abun.iloc[row_num].to_dict()
-# 			abs_ext = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, velocity_res =20, abundance_table = abundances, calc_missing=True)
-# 			df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=units_dict).drop(columns='index')
-# 			df.to_csv(f'{dat_path}/{saved[row_num]}_{i.replace(" ", "_")}.txt', sep = ' ')
-# 			print("Go look at your data!")
-
-# else:
-# 	nrows = 0
-# 	saved = generate_names(nrows)
-# 	for i in ion_list:
-# 		abs_ext = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, abundance_table = None, calc_missing=True)
-# 		df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=units_dict)
-# 		df.to_csv(f'{dat_path}/data_SolAb_{i.replace(" ", "_")}.txt', sep = ' ').drop(columns='index')
-# 		print("Go look at your data!")
+if 'file_path' in dic_args:
+    abun = pd.read_csv(args.file_path, delim_whitespace=True)
+    nrows = len(abun)
+    saved = generate_names(nrows)
+    for row_num in range(nrows):
+        for i in ion_list:
+            try:
+                abundances = abun.iloc[row_num].to_dict()
+                abs_ext = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, velocity_res =20, abundance_table = abundances, calc_missing=True)
+                df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=units_dict).drop(columns='index')
+                df.to_csv(f'{dat_path}/{saved[row_num]}_{i.replace(" ", "_")}.txt', sep = ' ')
+                print("Go look at your data!")
+            except AttributeError: ##handles if there are no clumps in a halo
+                df = pd.DataFrame(columns =['name', 'wave', 'redshift', 'col_dens', 'delta_v', 'vel_dispersion', 'interval_start', 'interval_end', 'density', 'temperature', 'metallicity', 'radius', 'lightray_index'], index = ['0'] )
+                df.to_csv(f'{dat_path}/{saved[row_num]}_{i.replace(" ", "_")}_null.txt')
             
             
 for ion in new_ion_list:
