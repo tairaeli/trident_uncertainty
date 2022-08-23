@@ -13,7 +13,7 @@ parser.add_argument('--ds', nargs='?', action='store', required=True, dest='path
 parser.add_argument('--om', nargs='?',action='store', required=True, dest='om_dat', help='Path to Omega+ output data')
 parser.add_argument('--uvb', nargs='?',action='store', required=True, dest='uvb_file', help='Path to UV ackground data')
 parser.add_argument('--rs', action='store', dest='rs_range', default=[1.2,2.7], type=list, help='Range of redshifts to analyze. Input is a list of 2 values from the lower to upper bound')
-parser.add_argument('--d', action='store', dest='d_list', default=[20,50,100,150,200], type=list, help='List of distances from galactic center')
+parser.add_argument('--d', action='store', dest='d_list', default=[20,50,100,150,200], type=list, help='List of distances from galactic center in kpc')
 
 args =parser.parse_args()
 dic_args = vars(args)
@@ -58,29 +58,26 @@ nu = nuvb_wave.to("J", equivalence="spectral") / Ryd
 nu = nu.to_value()
 
 # rebins spectral data to better match Cloudy's desired input
-def rebin(wave,ipf,uvb_spec):
-
-    # convert spectral data into luminosities
-    lum = ipf*(3e8/(wave*1e-10))
+def rebin(wave,erg,uvb_spec):
     
     # initializing array to store new luminosities
-    nlum = np.zeros(len(uvb_wave))
+    nerg = np.zeros(len(uvb_wave))
     
     # compare wave data from FSPS to desired wave binning to rebin spec data
     for i in range(uvb_wave.size):
         # accounting for indexing issues in first bin
         if i == 0:
-            nlum[i] = sum(lum[np.where((wave<=uvb_wave[i]))])
+            nerg[i] = sum(erg[np.where((wave<=uvb_wave[i]))])
         else:
-            nlum[i] = sum(lum[np.where((wave<=uvb_wave[i])&(wave>uvb_wave[i-1]))])
+            nerg[i] = sum(erg[np.where((wave<=uvb_wave[i])&(wave>uvb_wave[i-1]))])
     
-    # converting luminosities back into intensity
-    nspec = nlum*((uvb_wave*1e-10)/3e8)
-    print(f"min nspec at {d} is {np.min(nspec)}")
+    #*((uvb_wave*1e-10)/3e8)
+    print(f"min nerg at {d} is {np.min(nerg)}")
+    
     # adding the Putwein et.al. intensities to the intensity from FSPS
-    nspec += uvb_spec
+    nerg += uvb_spec
     
-    return nspec
+    return nerg
     
 # generating stellar population object
 sp = fsps.StellarPopulation(zcontinuous=3, imf_type=1, add_agb_dust_model=True,
@@ -146,17 +143,22 @@ for d in args.d_list:
         sp_dat[d][rs]["wave"] = wave
         sp_dat[d][rs]["spec"] = spec
         
-        # converting spectral luminosities into intensity (solar lum/cm^2)
-        d_cm = d*3.086e+21
-        # represents the intensity per frequency (solar lum/cm^2/Hz)
-        ipf = spec/((4*np.pi)**2*d_cm**2)        
+        # adding units to spectral data
+        spec = spec*u.lsun/u.Hz
+        
+        # converting distance from galactic center into centimeters
+        d_cm = (d*u.kpc).to("cm")
+        
+        # converting FSPS spectra to units of erg/cm^2
+        erg = spec.to("erg")/((4*np.pi)**2*d_cm**2)
         
         # calling the uvb intensity data for the current redshift
         uvb_spec = uvb_data[:,0,irs]
         
         # rebining data to match desired Cloudy input
-        spec = np.log10(rebin(wave,ipf,uvb_spec))
+        spec = np.log10(rebin(wave,erg,uvb_spec))
         
+        # TEMPORARY
         sp_dat[d][rs]["rebin_spec"] = spec
         
         # generate interpolation function
@@ -186,5 +188,6 @@ for d in args.d_list:
     with open('./'+f'd_{d}_kpc_rs.pkl','wb') as f:
         pickle.dump(conv_rs,f)
 
+# TEMPORARY
 with open("./spec_dat.pickle","wb") as f:
     pickle.dump(sp_dat,f)
