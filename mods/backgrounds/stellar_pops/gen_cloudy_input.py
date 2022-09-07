@@ -58,25 +58,36 @@ nu = nuvb_wave.to("J", equivalence="spectral") / Ryd
 nu = nu.to_value()
 
 # rebins spectral data to better match Cloudy's desired input
-def rebin(wave,erg,uvb_spec):
+def rebin(Egal,erg,uvb_spec):
     
     # initializing array to store new luminosities
-    nerg = np.zeros(len(uvb_wave))*u.erg/u.cm**2
+    nerg = np.zeros(len(nu))*u.erg/u.cm**2
+    
+    erg = np.flip(erg)
     
     # compare wave data from FSPS to desired wave binning to rebin spec data
-    for i in range(uvb_wave.size):
+    iuvb = 0
+    for i in range(wave.size):
+        
         # accounting for indexing issues in first bin
-        if i == 0:
-            nerg[i] = sum(erg[np.where((wave<=uvb_wave[i]))])
+        if Egal[i]<nu[0]:
+            nerg[iuvb] += erg[i]
         else:
-            nerg[i] = sum(erg[np.where((wave<=uvb_wave[i])&(wave>uvb_wave[i-1]))])
-    
-    #*((uvb_wave*1e-10)/3e8)
+            if iuvb <= len(nerg)-2:
+                if nu[iuvb+1] <= Egal[i]:
+                    iuvb += 1
+            
+                dist = nu[iuvb+1] - nu[iuvb]
+                E_dist = Egal[i] - nu[iuvb]
+                norm_E_dist = E_dist/dist
+                nerg[iuvb] += erg[i]*(1-norm_E_dist)
+                nerg[iuvb+1] += erg[i]*norm_E_dist
+            else:
+                nerg[iuvb] += erg[i]
     print(f"min nerg at {d} is {np.min(nerg)}")
-    
     # adding the Putwein et.al. intensities to the intensity from FSPS
     nerg += uvb_spec
-    
+#     print(uvb_spec[minmask])
     return nerg
 
 # generating stellar population object
@@ -144,6 +155,11 @@ for d in args.d_list:
         sp_dat[d][rs]["wave"] = wave
         sp_dat[d][rs]["spec"] = spec
         
+        gal_wave = wave*u.Angstrom
+        
+        nu_gal = gal_wave.to("J", equivalence="spectral") / Ryd
+        nu_gal = np.flip(nu_gal.to_value())
+        
         # adding units to spectral data
         spec = spec*u.lsun/u.Hz
         
@@ -157,7 +173,7 @@ for d in args.d_list:
         uvb_spec = uvb_data[:,0,irs]*u.erg/u.cm**2
         
         # rebining data to match desired Cloudy input
-        spec = rebin(wave,erg,uvb_spec)
+        spec = rebin(nu_gal,erg,uvb_spec)
         
         assert str(spec.units) == "erg/cm**2", f"""UV Intensities are in incorrect 
                                    units. Got {spec.units} when should have 
