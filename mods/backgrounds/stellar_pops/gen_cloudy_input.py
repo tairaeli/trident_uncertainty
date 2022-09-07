@@ -61,7 +61,7 @@ nu = nu.to_value()
 def rebin(wave,erg,uvb_spec):
     
     # initializing array to store new luminosities
-    nerg = np.zeros(len(uvb_wave))
+    nerg = np.zeros(len(uvb_wave))*u.erg/u.cm**2
     
     # compare wave data from FSPS to desired wave binning to rebin spec data
     for i in range(uvb_wave.size):
@@ -78,7 +78,7 @@ def rebin(wave,erg,uvb_spec):
     nerg += uvb_spec
     
     return nerg
-    
+
 # generating stellar population object
 sp = fsps.StellarPopulation(zcontinuous=3, imf_type=1, add_agb_dust_model=True,
                         add_dust_emission=True, sfh=3, dust_type=4)
@@ -133,6 +133,7 @@ for d in args.d_list:
         sp_dat[d][rs] = {}
         
         conv_rs.append(f"{rs:.4e}")
+        
         # conversion of redshift to age (may need more precise value for universe age)
         age = fl.age(rs).to_value()
         
@@ -153,11 +154,16 @@ for d in args.d_list:
         erg = spec.to("erg")/((4*np.pi)**2*d_cm**2)
         
         # calling the uvb intensity data for the current redshift
-        uvb_spec = uvb_data[:,0,irs]
+        uvb_spec = uvb_data[:,0,irs]*u.erg/u.cm**2
         
         # rebining data to match desired Cloudy input
-        spec = np.log10(rebin(wave,erg,uvb_spec))
+        spec = rebin(wave,erg,uvb_spec)
         
+        assert str(spec.units) == "erg/cm**2", f"""UV Intensities are in incorrect 
+                                   units. Got {spec.units} when should have 
+                                   gotten erg/cm**2"""
+        
+        spec = np.log10(spec)
         # TEMPORARY
         sp_dat[d][rs]["rebin_spec"] = spec
         
@@ -188,6 +194,6 @@ for d in args.d_list:
     with open('./'+f'd_{d}_kpc_rs.pkl','wb') as f:
         pickle.dump(conv_rs,f)
 
-# TEMPORARY
+# TEMPORARY: outputing fsps data to error check stuffs
 with open("./spec_dat.pickle","wb") as f:
     pickle.dump(sp_dat,f)
