@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-from . import *
 
 
 def find_max_length(uvb_list):
@@ -9,7 +8,7 @@ def find_max_length(uvb_list):
         if len(ds['interval_end']) == 0: ##handles if there are no clumps in a row
             break
         else:
-            uvb_mx = max(ds["interval_end"])
+            uvb_mx = len(ds["interval_end"])
             if uvb_mx>mx:
                 mx=uvb_mx
     
@@ -67,7 +66,7 @@ def pairwize_compare(salsa_out, ion_list, nrays):
                 
                 uvb_dat = ion_dat[uvb_name]
                 
-                ray_dat = uvb_dat[uvb_dat["lightray_index"]==ray]
+                ray_dat = uvb_dat[uvb_dat["lightray_index"]==ray].reset_index()
                 
                 uvb_list.append(ray_dat)
                 
@@ -81,15 +80,15 @@ def pairwize_compare(salsa_out, ion_list, nrays):
             longer = {}
             split = {}
             merge = {}
-            1_is_lonely = []
-            2_is_lonely = []
+            lonely_1 = []
+            lonely_2 = []
             
             id1 = 0
             id2 = 0
             
             mx = find_max_length(uvb_list)
             
-            while ((id1 <= mx) and (id2 <= mx)):
+            while ((id1 < mx) and (id2 < mx)):
                 
                 start_1 = uvb1["interval_start"][id1]
                 start_2 = uvb2["interval_start"][id2]
@@ -98,7 +97,7 @@ def pairwize_compare(salsa_out, ion_list, nrays):
                 end_2 = uvb2["interval_end"][id2]
                 
                 # checks to see if clumps are the same
-                if (start_1 == start2) and (end_1 == end_2):
+                if (start_1 == start_2) and (end_1 == end_2):
                     match[id1] = id2
                     id1+=1
                     id2+=1
@@ -129,7 +128,7 @@ def pairwize_compare(salsa_out, ion_list, nrays):
                             
                             # accounting for current clump and all clumps that are
                             # within clump 1
-                            id2+= (1 + clumps within)
+                            id2+= (1 + clumps_within)
                             
                             
                         else:
@@ -150,7 +149,7 @@ def pairwize_compare(salsa_out, ion_list, nrays):
                             # contained within clump 1 bounds into split dict
                             for clump in range(clumps_within+1):
                                 
-                                merge[id2.append(id1+clump)
+                                merge[id2].append(id1+clump)
                             
                             # accounting for current clump and all clumps that are
                             # within clump 1
@@ -167,28 +166,17 @@ def pairwize_compare(salsa_out, ion_list, nrays):
                     
                     if (start_1 - end_2) > 0 :
                         
-                        1_is_lonely.append(id1)
+                        lonely_1.append(id1)
                         
                     else:
                         
-                        2_is_lonely.append(id1)
+                        lonely_2.append(id1)
 
     
-        #for clump in maybe_lonely: ##later must set a limits on the minimumm number of times something has to appear in maybe lonely for it to actually be considered lonely
+    return match, shorter, longer, split, merge, lonely_1, lonely_2
     
-            pickling_match = open(f"{stat_path}/Match_{ion}_Ray{r}.pickle","wb") ##saves the dictonaries so that they can be accesssed later
-            pickle.dump(match, pickling_match, protocol=3)	
-            pickling_match.close()
     
-            pickling_split = open(f"{stat_path}/Split_{ion}_Ray{r}.pickle","wb")
-            pickle.dump(split, pickling_split, protocol=3)
-            pickling_split.close() 
     
-            pickling_short = open(f"{stat_path}/Short_{ion}_Ray{r}.pickle","wb")
-            pickle.dump(short, pickling_short, protocol=3)
-            pickling_short.close()
     
-            pickling_maybe_lonely = open(f"{stat_path}/MaybeLonely_{ion}_Ray{r}.pickle","wb")
-            pickle.dump(maybe_lonely, pickling_maybe_lonely, protocol=3)
-            pickling_maybe_lonely.close()    
-        
+    
+    
