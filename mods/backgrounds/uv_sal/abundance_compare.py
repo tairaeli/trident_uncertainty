@@ -75,6 +75,53 @@ def generate_super_clumps(row_list, mx, clmaps, problems, hassles):
 
         return super_clumps
 
+def check_for_clump_change(row, super_clumps, i, row_st_cnt, weird_index, row_st_ind, row_en_ind, rownum):
+    '''
+    Checks for the beginning of a clump in a given row.
+    Also checks for any potential bugs that may occur.
+    '''
+    if row[i-1]<row[i] and (len(row_st_ind) == 0 or len(row_st_ind) ==1):##start of a clump in the row
+        if super_clumps[i-1] == 2: ##if oops is printed, there is another edge case, debugging must begin again
+            print("oops")
+        elif super_clumps[i] != 2 or len(row_st_ind)!=0: ##normal clumps look like this
+            row_st_ind.append(i-1)
+            row_st_cnt += 1
+            print(row_st_ind, rownum)
+        else: ##edge case handling ##FIXME
+            weird_index = i-1
+
+    elif row[i-1]>row[i]: ##end of a clump in row
+            row_en_cnt += 1
+            if row[i-1]==2: ## edge case handling
+                row_en_ind.append(i-2)
+            else:
+                row_en_ind.append(i-1)
+
+def hassle_handler(weird_index, row_st_ind, row_en_ind, hassles, row_split, rownum):
+    '''
+    Handles several strange edge cases that occur throughout the comparison
+    '''
+    if weird_index != 0: ##edge case handling
+        row_st_ind.append(weird_index)
+
+    hassle_st = []
+    hassle_en = []
+
+    if rownum in hassles.keys(): ##even more edge case handling
+        for value in hassles.values():
+            for t in value:
+                hassle_st.append(t[0])
+                hassle_en.append(t[1])
+
+        if row_st_ind[0] in hassle_st:
+            for j in range(len(hassle_st)):
+                if [hassle_st[j], hassle_en[j]] not in row_split:
+                    row_split.append([hassle_st[j], hassle_en[j]])
+        elif row_en_ind[0] in hassle_en:
+            return True
+    
+    return False
+
 def row_compare(row, super_clumps, maybe_lonely, hassles):
     '''
     Looks through each row and compares it to the previously generated 'super_clumps' array
@@ -101,24 +148,10 @@ def row_compare(row, super_clumps, maybe_lonely, hassles):
             sup_st = i-1 ##keep track of start location of a super clump
             sup_st_true.append(sup_st)
 
-        if row[i-1]<row[i] and (len(row_st_ind) == 0 or len(row_st_ind) ==1):##start of a clump in the row
-            if super_clumps[i-1] == 2: ##if oops is printed, there is another edge case, debugging must begin again
-                print("oops")
-            elif super_clumps[i] != 2 or len(row_st_ind)!=0: ##normal clumps look like this
-                row_st_ind.append(i-1)
-                row_st_cnt += 1
-                print(row_st_ind, rownum)
-            else: ##edge case handling ##FIXME
-                weird_index = i-1
-
-        elif row[i-1]>row[i]: ##end of a clump in row
-            row_en_cnt += 1
-            if row[i-1]==2: ## edge case handling
-                row_en_ind.append(i-2)
-            else:
-                row_en_ind.append(i-1)
+        check_for_clump_change(row, super_clumps, i, row_st_cnt, weird_index, row_st_ind, row_en_ind, rownum)
 
         if super_clumps[i-1]>super_clumps[i]: ##end of a super clump
+
             if super_clumps[i-1]==2:
                 sup_en = i-2
                 sup_st = sup_st_true[0] ##edge case handling
@@ -126,33 +159,19 @@ def row_compare(row, super_clumps, maybe_lonely, hassles):
             if super_clumps[i-1] == 0 or super_clumps[i-1] == 1:
                 sup_en = i-1 ##keep track of the location of the end of a super clump
 
-
-
             if (row_st_cnt == 1) or (row_en_cnt == 1): ##check for if there is only one row clump in the super clump
-                if weird_index != 0: ##edge case handling
-                    row_st_ind.append(weird_index)
 
                 if (len(row_en_ind) == 0 and len(row_st_ind) != 0) or (len(row_st_ind) == 0 and len(row_en_ind) != 0):
-
                     break
-
+                
                 hassle_st = []
                 hassle_en = []
 
-                if rownum in hassles.keys(): ##even more edge case handling
-                    for value in hassles.values():
-                        for t in value:
-                            hassle_st.append(t[0])
-                            hassle_en.append(t[1])
-
-                    if row_st_ind[0] in hassle_st:
-                        for j in range(len(hassle_st)):
-                            if [hassle_st[j], hassle_en[j]] not in row_split:
-                                row_split.append([hassle_st[j], hassle_en[j]])
-                    elif row_en_ind[0] in hassle_en:
-
-                        continue
-
+                # handling weird errors
+                # if specific edge case is found, move onto next loop
+                if (hassle_handler(weird_index, row_st_ind, row_en_ind, hassles, hassle_st, hassle_en, row_split, rownum)):
+                    continue
+                
                 if (row_st_ind[0] == sup_st) and (row_en_ind[0] == sup_en) and (row_st_ind[0] not in hassle_st) and (row_en_ind[0] not in hassle_en): ##if the starts and ends match, the clumps are identical
 
                     row_match.append([row_st_ind[0],row_en_ind[0]]) ##thus, start and end indecies appended to a list of them
@@ -209,7 +228,12 @@ def abundance_compare(row_list):
 
     for row in clmaps:  ##start by iterating over a whole row
         
-        row_compare
+        row_match, row_short, row_split = row_compare(row, super_clumps, maybe_lonely, hassles)
+        
+        match[row] = row_match
+        short[row] = row_short
+        split[row] = row_split
+        
                         
     return match, short, split, lonely, maybe_lonely
 
