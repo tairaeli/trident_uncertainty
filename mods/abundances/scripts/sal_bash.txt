@@ -1,1 +1,0 @@
-python sal_the_super_snek.py --ds /mnt/gs21/scratch/tairaeli --abun /mnt/home/tairaeli/trident_uncertainty/mods/abundances/scripts/abun_table.txt --it /mnt/home/tairaeli/trident_uncertainty/mods/abundances/data_bin/hm2012_ss_hr.h5
