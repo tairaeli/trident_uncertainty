@@ -240,7 +240,10 @@ abun_file = sal_args["base_settings"]["abundance_file"]
 abun = pd.read_csv(abun_file, delim_whitespace=True)
 nrows = len(abun)
 saved = generate_names(nrows)
-    
+
+# setting a seed to make consistent ray data
+np.random.seed(11)
+
 for ion in alt_ion_list:
     
     salsa_out_dict[ion] = {}
