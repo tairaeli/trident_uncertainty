@@ -3,7 +3,26 @@ import pandas as pd
 
 
 def get_row_data(salsa_out_dict, ion, ray):
+    """
+    For a given ion and ray, generates list containing the data from each abundance
+    pattern within the table
     
+    args:
+        
+        salsa_out_dict: dictionary containing all information output by SALSA run
+        
+        ion: One of the ions analyzed by SALSA. Must also be formatted with an 
+             underscore between the ion's element and its excitation state 
+             (Ex: "C_IV")
+             
+        ray: One of the rays analyzed by SALSA, must be an integer less than or
+             equal to the number of rays
+        
+    returns:
+    
+        row_list: list containing data for all abundance patterns for a given ion
+                  and ray with each "row" is defined as a specific abundance pattern
+    """
     row_list = []
     
     ion_dat = salsa_out_dict[ion]
@@ -16,9 +35,22 @@ def get_row_data(salsa_out_dict, ion, ray):
     
     return row_list
 
-def find_max_length(rowlist):
+def find_max_length(row_list):
+    """
+    Looks through each entry in a given row_list and determines the value of the
+    largest index
+    
+    args:
+    
+        row_list: list containing data for all abundance patterns for a given ion
+                  and ray with each "row" is defined as a specific abundance pattern
+  
+    returns:
+    
+        mx: length of the longest row found from row_list
+    """
     mx= 0  ##find how long each array should be
-    for ds in rowlist: #find the cell index of the furthest clump
+    for ds in row_list: #find the cell index of the furthest clump
         if len(ds['interval_end']) == 0: ##handles if there are no clumps in a row
             break
         else:
@@ -33,6 +65,29 @@ def generate_super_clumps(row_list, mx, clmaps, problems, hassles):
         Generates the 'super_clumps array' which essentially takes all of the 
         SALSA output for all of the different abundances in the dataset, then
         combines them into one large array
+        
+        args:
+            
+            row_list: list containing data for all abundance patterns for a given ion
+                      and ray
+            
+            mx: length of the longest row found from row_list
+            
+            clmaps: each entry in list is an array indicating where SALSA detected 
+                    a clump of gas. 1 array per row (abundance pattern)
+            
+            problems: list to store indecies of clumps that result in erronious
+                      readings. Likely edge cases that have yet to be handled
+            
+            hassles: dictionary to store the indicies of edge cases that must
+                     be handled outside of the function
+        
+        returns:
+            
+            super_clumps: array of 0s, 1s, and 2s of length mx.
+                          0 - no clumps found in any of the rows
+                          1 - clump found in at least 1 row
+                          2 - start of a new "super clump"
         '''
 
         super_clumps = np.zeros(int(mx))
@@ -42,6 +97,7 @@ def generate_super_clumps(row_list, mx, clmaps, problems, hassles):
         # looking through each of the rows of SALSA clump data
         # each row represents what SALSA recognized as a clump for a different 
         # set of abudances
+        # A '1' indicates there is a clump at the index, while a '0' represents the opposite
         for ds in row_list:
             
             # ensuring ds indext starts from 0
@@ -227,7 +283,9 @@ def row_compare(row, rownum, super_clumps, maybe_lonely, hassles):
     return row_match, row_short, row_split
 
 def abundance_compare(salsa_out_dict, ion_list, nrays):
-    
+    """
+    Main function that runs the abundance pattern comparison
+    """
     compare_dict = {}
     
     for ion in ion_list:
