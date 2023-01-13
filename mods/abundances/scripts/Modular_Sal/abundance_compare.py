@@ -170,7 +170,7 @@ def check_for_clump_change(row, super_clumps, i, row_st_cnt, row_en_cnt, weird_i
         
         row_st_ind: index of the start of a clump
         
-        row_en_ind index of the end of a clump
+        row_en_ind: index of the end of a clump
         
         rownum: index of current row
         
@@ -204,25 +204,33 @@ def hassle_handler(weird_index, row_st_ind, row_en_ind, hassles, hassle_st, hass
     
     args:
 
-        row_st_cnt: integer to track whether or not a clump has started. 0 = false,  1 = true
-        
-        row_en_cnt: integer to track whether or not a clump has ended. 0 = false,  1 = true
-        
         weird_index: keeps track of indecies exhibinting strange behavior
         
         row_st_ind: index of the start of a clump
         
-        row_en_ind index of the end of a clump
+        row_en_ind: index of the end of a clump
+        
+        hassles: dictionary containing data on indecies displaying atypical behavior
+        
+        hassle_st: marks the start index of the hassle region
+        
+        hassle_en: marks the end index of the hassle region
+        
+        row_split: list of indicies where the "split" behavior is found within
+                   a given set of clumps
         
         rownum: index of current row
             
+        
+    returns:
     
+        TRUE if the row is in the hassles dictionary
+        
+        FALSE if the opposite is true
+        
     '''
     if weird_index != 0: ##edge case handling
         row_st_ind.append(weird_index)
-
-    hassle_st = []
-    hassle_en = []
 
     if rownum in hassles.keys(): ##even more edge case handling
         for value in hassles.values():
@@ -243,6 +251,27 @@ def row_compare(row, rownum, super_clumps, maybe_lonely, hassles):
     '''
     Looks through each row and compares it to the previously generated 'super_clumps' array
     and sorts the individual clumps of gas into catagories based on those comparisons
+    
+    args:
+    
+        row: current abundance pattern being analyzed
+        
+        rownum: index of current row
+        
+        super_clumps: combination of all clump patterns recognized by SALSA
+        
+        maybe_lonely: dictionary containing clumps that might exhibit the "lonely" behavior
+        
+        hassles: dictionary containing data on indecies displaying atypical behavior
+        
+    returns:
+        
+        row_match: rows that match the corresponding super clump
+        
+        row_short: rows that are shorter than the corresponding super clump
+        
+        row_split: rows that split the corresponding super clump into multiple
+                   smaller clumps
     '''
     row = np.append(0,row) # adding an extra element to prevent booleans from failing
     row = np.append(row,0)
@@ -325,7 +354,14 @@ def row_compare(row, rownum, super_clumps, maybe_lonely, hassles):
 
 def abundance_compare(salsa_out_dict, ion_list, nrays):
     """
-    Main function that runs the abundance pattern comparison
+    Main function that runs the abundance pattern comparison. Catagorizes clumps
+    of gas into several catagories:
+        
+        match
+        short
+        split
+        lonely
+        maybe_lonely
     """
     compare_dict = {}
     
