@@ -63,7 +63,7 @@ def find_max_length(row_list):
 def generate_super_clumps(row_list, mx, clmaps, problems, hassles):
         '''
         Generates the 'super_clumps array' which essentially takes all of the 
-        SALSA output for all of the different abundances in the dataset, then
+        gas clumps that SALSA recognized for each abundance pattern (row), then
         combines them into one large array
         
         args:
@@ -153,6 +153,31 @@ def check_for_clump_change(row, super_clumps, i, row_st_cnt, row_en_cnt, weird_i
     '''
     Checks for the beginning of a clump in a given row.
     Also checks for any potential bugs that may occur.
+    
+    args:
+        
+        row: current abundance pattern being analyzed
+        
+        super_clumps: combination of all clump patterns recognized by SALSA
+        
+        i: index within the current row
+        
+        row_st_cnt: integer to track whether or not a clump has started. 0 = false,  1 = true
+        
+        row_en_cnt: integer to track whether or not a clump has ended. 0 = false,  1 = true
+        
+        weird_index: keeps track of indecies exhibinting strange behavior
+        
+        row_st_ind: index of the start of a clump
+        
+        row_en_ind index of the end of a clump
+        
+        rownum: index of current row
+        
+    returns:
+    
+        row_st_cnt, row en_cnt, weird_index: updated values from input (see args for more info)
+    
     '''
     if row[i-1]<row[i] and (len(row_st_ind) == 0 or len(row_st_ind) ==1):##start of a clump in the row
         if super_clumps[i-1] == 2: ##if oops is printed, there is another edge case, debugging must begin again
@@ -176,6 +201,22 @@ def check_for_clump_change(row, super_clumps, i, row_st_cnt, row_en_cnt, weird_i
 def hassle_handler(weird_index, row_st_ind, row_en_ind, hassles, hassle_st, hassle_en, row_split, rownum):
     '''
     Handles several strange edge cases that occur throughout the comparison
+    
+    args:
+
+        row_st_cnt: integer to track whether or not a clump has started. 0 = false,  1 = true
+        
+        row_en_cnt: integer to track whether or not a clump has ended. 0 = false,  1 = true
+        
+        weird_index: keeps track of indecies exhibinting strange behavior
+        
+        row_st_ind: index of the start of a clump
+        
+        row_en_ind index of the end of a clump
+        
+        rownum: index of current row
+            
+    
     '''
     if weird_index != 0: ##edge case handling
         row_st_ind.append(weird_index)
