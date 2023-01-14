@@ -15,6 +15,18 @@ def collect_ray_dat(salsa_out_dict, ion, r):
     Puts that data into a list
     Each entry in list is a certain row containing only the info from
     the specified ray
+    
+    args:
+    
+        salsa_out_dict: dictionary containing all of the data from SALSA's analysis
+        
+        ion: ion being analyzed
+        
+        r: ray being analyzed
+    
+    returns:
+    
+        var_rows: list of data for a given row and ion
     """
     
     var_rows = []
@@ -32,6 +44,19 @@ def collect_ray_dat(salsa_out_dict, ion, r):
     return var_rows
     
 def weighted_av(values, weights): ##define functions necessary in making statistics
+    """
+    Returns the wighted average of input values
+    
+    args:
+        values: values to be avergaged
+        
+        weights: the respective weight carried by each value
+    
+    returns:
+        
+        weighted average
+    """
+
     weighted_sum = []
     for value, weight in zip(values, weights):
         weighted_sum.append(value * weight)
@@ -40,7 +65,32 @@ def weighted_av(values, weights): ##define functions necessary in making statist
 
 
 def abundance_stats(compare_dict, salsa_out_dict, ion_list, raynum, stat_path, halo, true_rs):
+    """
+    Analyzes the sorted gas clumps from 'abundance_compare' and generates a series
+    of statistical data
     
+    args:
+    
+        compare_dict: dictionary containing all of the sorted clump data
+        
+        salsa_out_dict: dictionary containing all of the data from SALSA's analysis
+        
+        ion_ist: list of ions that are being analyzed
+        
+        ranum: ray being analyzed
+        
+        stat_path: path to directory where the output is to be saved
+        
+        halo: the Foggie halo ID assigned to the system being analyzed
+        
+        true_rs: the current redshift of the system
+        
+    returns:
+    
+        stat_dict: dictionary containing all of the statistical data on the analyzed
+                   gas clumps. The same data is also saved to the location indicated
+                   by 'stat_path'
+    """
     stat_dict = {}
     
     for ion in ion_list:
@@ -72,18 +122,6 @@ def abundance_stats(compare_dict, salsa_out_dict, ion_list, raynum, stat_path, h
             super_clumps = compare_dict[ion][r]["super_clump"]
             
             var_rows = collect_ray_dat(salsa_out_dict, ion, r)
-            
-            
-            
-            # for i in range(datanum):
-            #     m = i+1
-            #     n_len = len(str(m))
-            #     n_zeros = ndigits - n_len
-            #     p = "0" * n_zeros + str(m)
-            #     row_data = pd.read_csv(dat_path+f"/data_AbundanceRow{p}_{ion}.txt", delim_whitespace=True) ##read in data files
-            #     row_work = row_data[row_data["lightray_index"]==r] ##filter to only one ray
-            #     df = row_work.reset_index().drop(columns="index") ##make indexing work
-            #     var_rows.append(df)
     
             sup_st = [] ##get indexes of superclumps
             sup_en = []
@@ -244,16 +282,16 @@ def abundance_stats(compare_dict, salsa_out_dict, ion_list, raynum, stat_path, h
         clump_stats["super_clump_number"] = super_cl_nums 
         clump_stats["median_col_desnity"] = med_col_dens 
         clump_stats["mad_for_col_desnity"] = mad_for_med
-        # clump_stats["diff_from_solar_abun"] = diff_from_sol
-        # clump_stats["distance_from_galaxy"] = distances 
-        # clump_stats["central_velocity"] = central_v 
-        # clump_stats["vel_dispersion"] = vel_dispersions 
-        # clump_stats["density"] = densities 
-        # clump_stats["temperature"] = temperatures
-        # clump_stats["num_split_or_short"] = freq_split_short
-        # clump_stats["num_of_clumps"] = num_clumps
-        # clump_stats["rep_clump_row"] = rows_of_rep_clumps
-        # clump_stats["category_rep_clump"] = cat_rep_clump
+        clump_stats["diff_from_solar_abun"] = diff_from_sol
+        clump_stats["distance_from_galaxy"] = distances 
+        clump_stats["central_velocity"] = central_v 
+        clump_stats["vel_dispersion"] = vel_dispersions 
+        clump_stats["density"] = densities 
+        clump_stats["temperature"] = temperatures
+        clump_stats["num_split_or_short"] = freq_split_short
+        clump_stats["num_of_clumps"] = num_clumps
+        clump_stats["rep_clump_row"] = rows_of_rep_clumps
+        clump_stats["category_rep_clump"] = cat_rep_clump
     
         print(len(ray_nums), len(super_cl_nums), len(med_col_dens), len(mad_for_med), len(central_v), len(vel_dispersions))
         

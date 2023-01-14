@@ -355,13 +355,30 @@ def row_compare(row, rownum, super_clumps, maybe_lonely, hassles):
 def abundance_compare(salsa_out_dict, ion_list, nrays):
     """
     Main function that runs the abundance pattern comparison. Catagorizes clumps
-    of gas into several catagories:
+    of gas into several catagories based on their relation to their corresponding
+    "super clumps", a series of gas clumps generated from the combination of all 
+    of the gas clumps from all of the abundance patterns:
         
-        match
-        short
-        split
-        lonely
-        maybe_lonely
+        match - clump matches the corresponding super clump
+        short - clump is smaller than the super clump
+        split - clump is broken up into several smaller clumps when compared to 
+                the super clump
+        lonely - clump existing apart from most other clumps in other rows
+        maybe_lonely - some post-processing is required to determine whether or
+                       these clumps exhibit the 'lonely' behavior
+    
+    args:
+    
+        salsa_out_dict: dictionary containing all of the data from SALSA's analysis
+        
+        ion_ist: list of ions that are being analyzed
+        
+        nrays: number of rays to be analyzed
+    
+    returns:
+    
+        compare_dict: dictionary containing all of the sorted clump data
+    
     """
     compare_dict = {}
     
