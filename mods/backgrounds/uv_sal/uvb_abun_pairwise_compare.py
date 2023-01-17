@@ -51,7 +51,8 @@ def check_split(end_big, uvb_small, id_small):
     
     return clumps_within
     
-    
+
+
 def pairwise_compare(salsa_out, ion_list, nrays):
     '''
     Compares two different SALSA abudnance tables to one another created from two
@@ -179,11 +180,12 @@ def pairwise_compare(salsa_out, ion_list, nrays):
                     else:
                         
                         lonely_2.append(id1)
-                        
-            compare_dict[ion][ray] = [match, shorter, longer, split, merge, lonely_1, lonely_2]
+            
+            sorted_list = [match, shorter, longer, split, merge, lonely_1, lonely_2]
+            
+            compare_dict[ion][ray] = sorted_list
+            
+            gen_pairwise_index(sorted_list, uvb_list, ion, ray, mx)
     
     return compare_dict
-    
-    
-    
     
