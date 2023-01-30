@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 
+from sal_uvb_stats import gen_pairwise_data
 
 def find_max_length(uvb_list):
     mx= 0  ##find how long each array should be
@@ -60,12 +61,16 @@ def pairwise_compare(salsa_out, ion_list, nrays):
     '''
     
     compare_dict = {}
+    col_dens_1 = {}
+    col_dens_2 = {}
     
     for ion in ion_list:
         
         ion_dat = salsa_out[ion]
         
         compare_dict[ion] = {}
+        col_dens_1[ion] = {}
+        col_dens_2[ion] = {}
         
         for ray in range(nrays):
             
@@ -96,9 +101,10 @@ def pairwise_compare(salsa_out, ion_list, nrays):
             id2 = 0
             
             mx = find_max_length(uvb_list)
-            
+            print("mx",mx)
             while ((id1 < mx) and (id2 < mx)):
-                
+                print("id1",id1)
+                print("id2",id2)
                 start_1 = uvb1["interval_start"][id1]
                 start_2 = uvb2["interval_start"][id2]
                 
@@ -114,7 +120,7 @@ def pairwise_compare(salsa_out, ion_list, nrays):
                     continue
                 
                 # checks if clump2 is either shorter or longer than the other 
-                elif (start_1 == start2) or (end_1 == end_2):
+                elif (start_1 == start_2) or (end_1 == end_2):
                     
                     short_true = is_shorter(start_1, start_2, end_1, end_2)
                     
@@ -180,12 +186,15 @@ def pairwise_compare(salsa_out, ion_list, nrays):
                     else:
                         
                         lonely_2.append(id1)
+                    
+                    id1+=1
+                    id2+=1
             
             sorted_list = [match, shorter, longer, split, merge, lonely_1, lonely_2]
             
             compare_dict[ion][ray] = sorted_list
             
-            gen_pairwise_index(sorted_list, uvb_list, ion, ray, mx)
+            col_dens_1[ion][ray], col_dens_2[ion][ray] = gen_pairwise_data(sorted_list, uvb_list, ion, ray)
     
-    return compare_dict
+    return compare_dict, col_dens_1, col_dens_2
     
