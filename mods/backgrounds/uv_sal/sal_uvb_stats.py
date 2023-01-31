@@ -1,9 +1,11 @@
 import numpy as np
 import pandas as pd
 
+
+# def combine_clump_dat:
+
 def gen_pairwise_data(sorted_list, uvb_list, ion, ray):
 
-    
     match = sorted_list[0]
     shorter = sorted_list[1]
     longer = sorted_list[2]
@@ -20,8 +22,8 @@ def gen_pairwise_data(sorted_list, uvb_list, ion, ray):
     
     uvb1_col_dens = []
     uvb2_col_dens = []
-    
-    while (id1 < len(uvb1["col_dens"]) & id2 < len(uvb2["col_dens"]))
+
+    while (id1 < len(uvb1["col_dens"])) and (id2 < len(uvb2["col_dens"])):
         
         # checking for instances where uvb2 has split clumps relative to uvb1
         if id1 in split:
@@ -32,7 +34,7 @@ def gen_pairwise_data(sorted_list, uvb_list, ion, ray):
             
             num_pieces = len(clump_piece_ids)
             
-            uvb2_col_dens_avg = sum(uvb2["col_dens"][clump_piece_ids])/num_pieces
+            uvb2_col_dens_avg = sum(uvb2["col_dens"].iloc[clump_piece_ids])/num_pieces
             
             uvb2_col_dens.append(uvb2_col_dens_avg)
             
@@ -43,7 +45,7 @@ def gen_pairwise_data(sorted_list, uvb_list, ion, ray):
             
             uvb2_col_dens.append(uvb2["col_dens"][id2])
             
-            clump_piece_ids = split[id2]
+            clump_piece_ids = merge[id2]
             
             num_pieces = len(clump_piece_ids)
             
@@ -74,3 +76,6 @@ def gen_pairwise_data(sorted_list, uvb_list, ion, ray):
             
         id1+=1
         id2+=1
+    
+    return uvb1_col_dens, uvb2_col_dens
+    
