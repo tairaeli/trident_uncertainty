@@ -15,25 +15,15 @@ def find_max_length(uvb_list):
     
     return mx
 
-def is_shorter(start_1, start_2, end_1, end_2):
+def is_shorter(start_1, start_2, end_1, end_2, clump_error):
     '''
     Function for determining whether or not a given clump in the second abundance
     data set was shorter or longer than the first abundance data set.
     '''
     shorter = False
     
-    if start_1 < start_2:
-        shorter = True
-        
-    elif start_1 > start_2:
-        shorter = False
-        
-    elif end_1 < end_2:
-        shorter = False
-    
-    # the case where end_1 > end_2
-    else: 
-        shorter = True
+    if (start_1 < start_2 - clump_error) or (end_1 > end_2 + clump_error):
+        shorter = True    
             
     return shorter
     
@@ -47,7 +37,7 @@ def check_split(end_big, uvb_small, id_small):
     
     # iterates through initial clump + number of clumps after this clump that 
     # are still within the bounds of clump 1
-    while(uvb_small["interval_end"][id_small + clumps_within] <= end_big):
+    while(id_small + clumps_within < len(uvb_small["interval_end"]) and uvb_small["interval_end"][id_small + clumps_within] <= end_big):
         clumps_within +=1
     
     return clumps_within
@@ -63,6 +53,9 @@ def pairwise_compare(salsa_out, ion_list, nrays):
     compare_dict = {}
     col_dens_1 = {}
     col_dens_2 = {}
+    
+    # should turn into argument
+    clump_error = 10
     
     for ion in ion_list:
         
@@ -103,8 +96,18 @@ def pairwise_compare(salsa_out, ion_list, nrays):
             mx = find_max_length(uvb_list)
             print("mx",mx)
             while ((id1 < mx) and (id2 < mx)):
+
+                if id1 >= len(uvb1["interval_start"])-1:
+
+                    id1 = len(uvb1["interval_start"])-1
+                
+                if id2 >= len(uvb2["interval_start"])-1:
+
+                    id2 = len(uvb2["interval_start"])-1 
+
                 print("id1",id1)
                 print("id2",id2)
+                
                 start_1 = uvb1["interval_start"][id1]
                 start_2 = uvb2["interval_start"][id2]
                 
@@ -112,7 +115,8 @@ def pairwise_compare(salsa_out, ion_list, nrays):
                 end_2 = uvb2["interval_end"][id2]
                 
                 # checks to see if clumps are the same
-                if (start_1 == start_2) and (end_1 == end_2):
+                if (((start_2-clump_error) <= start_1 <= (start_2+clump_error)) and 
+                     ((end_2 - clump_error) <= end_1 <= (end_2 + clump_error))):
                     match[id1] = id2
                     id1+=1
                     id2+=1
@@ -120,9 +124,10 @@ def pairwise_compare(salsa_out, ion_list, nrays):
                     continue
                 
                 # checks if clump2 is either shorter or longer than the other 
-                elif (start_1 == start_2) or (end_1 == end_2):
+                elif (((start_2-clump_error) <= start_1 <= (start_2+clump_error)) or 
+                     ((end_2 - clump_error) <= end_1 <= (end_2 + clump_error))):
                     
-                    short_true = is_shorter(start_1, start_2, end_1, end_2)
+                    short_true = is_shorter(start_1, start_2, end_1, end_2, clump_error)
                     
                     # if clump 2 is shorter than clump 1, check if it is just a
                     # split up version of clump 1
@@ -173,6 +178,7 @@ def pairwise_compare(salsa_out, ion_list, nrays):
                             id2+=1
                         
                         else:
+                            # clump 2 is longer than clump 1
                             longer[id1] = id2
                             id1+=1
                             id2+=1
@@ -189,7 +195,11 @@ def pairwise_compare(salsa_out, ion_list, nrays):
                     
                     id1+=1
                     id2+=1
-            
+                
+                # assert id1 <= len(uvb1["interval_start"])-1, "Comparison iterates beyond bounds of uvb1 data"
+                
+                # assert id2 <= len(uvb2["interval_start"])-1, "Comparison iterates beyond bounds of uvb2 data"
+                       
             sorted_list = [match, shorter, longer, split, merge, lonely_1, lonely_2]
             
             compare_dict[ion][ray] = sorted_list
