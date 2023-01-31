@@ -28,16 +28,17 @@ def is_shorter(start_1, start_2, end_1, end_2, clump_error):
     return shorter
     
 
-def check_split(end_big, uvb_small, id_small):
+def check_split(end_big, small_ends, id_small, clump_error):
     '''
     Checks if the next few clumps in the second abundance data set all fall within
-    the range of the first abunfance data set
+    the range of the first abundance data set
     '''
     clumps_within = 0
-    
+
     # iterates through initial clump + number of clumps after this clump that 
     # are still within the bounds of clump 1
-    while(id_small + clumps_within < len(uvb_small["interval_end"]) and uvb_small["interval_end"][id_small + clumps_within] <= end_big):
+
+    while((id_small + clumps_within < len(small_ends)) and (small_ends[id_small + clumps_within] <= end_big - clump_error)):
         clumps_within +=1
     
     return clumps_within
@@ -82,7 +83,7 @@ def pairwise_compare(salsa_out, ion_list, nrays):
             uvb1 = uvb_list[0]
             uvb2 = uvb_list[1]
             
-            match = {} ##create dictionaries to store indexes of clumps in the row that correspond to one another, keys will be row numbers and values will be indecies except for the lonlies
+            match = {} ##create dictionaries to store indexes of clumps in the row that correspond to one another, keys will be row numbers and values will be indices except for the lonlies
             shorter = {}
             longer = {}
             split = {}
@@ -133,7 +134,7 @@ def pairwise_compare(salsa_out, ion_list, nrays):
                     # split up version of clump 1
                     if short_true:
                         
-                        clumps_within = check_split(end_1, uvb2, id2)
+                        clumps_within = check_split(end_1, uvb2["interval_end"], id2, clump_error)
                         if clumps_within:
                             
                             split[id1] = []
@@ -143,7 +144,7 @@ def pairwise_compare(salsa_out, ion_list, nrays):
                             for clump in range(clumps_within+1):
                                 
                                 split[id1].append(id2+clump)
-                            
+
                             id1+=1
                             
                             # accounting for current clump and all clumps that are
@@ -160,7 +161,7 @@ def pairwise_compare(salsa_out, ion_list, nrays):
                     # just a split up version of clump 1    
                     else:
                         
-                        clumps_within = check_split(end_1, uvb2, id2)
+                        clumps_within = check_split(end_1, uvb2["interval_end"], id2, clump_error)
                         if clumps_within:
                             
                             merge[id2] = []
@@ -195,10 +196,6 @@ def pairwise_compare(salsa_out, ion_list, nrays):
                     
                     id1+=1
                     id2+=1
-                
-                # assert id1 <= len(uvb1["interval_start"])-1, "Comparison iterates beyond bounds of uvb1 data"
-                
-                # assert id2 <= len(uvb2["interval_start"])-1, "Comparison iterates beyond bounds of uvb2 data"
                        
             sorted_list = [match, shorter, longer, split, merge, lonely_1, lonely_2]
             

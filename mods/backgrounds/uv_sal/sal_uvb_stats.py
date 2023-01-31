@@ -15,7 +15,7 @@ def gen_pairwise_data(sorted_list, uvb_list, ion, ray):
     lonely_2 = sorted_list[6]
     
     uvb1 = uvb_list[0]
-    uvb2 = uvb_list[0]
+    uvb2 = uvb_list[1]
     
     id1 = 0
     id2 = 0    
@@ -27,7 +27,7 @@ def gen_pairwise_data(sorted_list, uvb_list, ion, ray):
         
         # checking for instances where uvb2 has split clumps relative to uvb1
         if id1 in split:
-            
+
             uvb1_col_dens.append(uvb1["col_dens"][id1])
             
             clump_piece_ids = split[id1]
@@ -49,7 +49,7 @@ def gen_pairwise_data(sorted_list, uvb_list, ion, ray):
             
             num_pieces = len(clump_piece_ids)
             
-            uvb1_col_dens_avg = sum(uvb1["col_dens"][clump_piece_ids])/len(clump_piece_ids)
+            uvb1_col_dens_avg = sum(uvb1["col_dens"].iloc[clump_piece_ids])/len(clump_piece_ids)
             
             uvb1_col_dens.append(uvb1_col_dens_avg)
             
