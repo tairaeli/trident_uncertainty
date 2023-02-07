@@ -1,9 +1,6 @@
 import numpy as np
 import pandas as pd
 
-
-# def combine_clump_dat:
-
 def gen_pairwise_data(sorted_list, uvb_list, ion, ray):
 
     match = sorted_list[0]
@@ -59,14 +56,15 @@ def gen_pairwise_data(sorted_list, uvb_list, ion, ray):
             
             uvb1_col_dens.append(uvb1["col_dens"][id1])
             
-            uvb2_col_dens.append(np.nan)
+            uvb2_col_dens.append(0)
     
         elif id2 in lonely_2:
             
             uvb2_col_dens.append(uvb2["col_dens"][id2])
             
-            uvb2_col_dens.append(np.nan)
+            uvb1_col_dens.append(0)
         
+        # if none of the above cases pass, then the clump indices line up
         else:
             
             uvb1_col_dens.append(uvb1["col_dens"][id1])
@@ -77,5 +75,8 @@ def gen_pairwise_data(sorted_list, uvb_list, ion, ray):
         id1+=1
         id2+=1
     
+    # If everything worked correctly, the two output arrays should be the same length
+    assert len(uvb1_col_dens) == len(uvb2_col_dens), f"column density arrays are different sizes. \n uvb1 = {len(uvb1_col_dens)} \n uvb2 = {len(uvb2_col_dens)}"
+
     return uvb1_col_dens, uvb2_col_dens
     
