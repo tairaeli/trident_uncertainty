@@ -43,7 +43,18 @@ def check_split(end_big, small_ends, id_small, clump_error):
     
     return clumps_within
     
+def actually_lonely(id_comp, id_ques, uvb_comp, uvb_ques, clump_error):
+    """
+    Checks if a specified clump is actually lonely
+    """
 
+    if uvb_comp["interval_start"][id_comp] - clump_error <= uvb_ques["interval_start"][id_ques-1] <= uvb_comp["interval_start"][id_comp] + clump_error or \
+       uvb_comp["interval_end"][id_comp] - clump_error <= uvb_ques["interval_end"][id_ques-1] <= uvb_comp["interval_end"][id_comp] + clump_error:
+        
+        return False
+    
+    else:
+        return True
 
 def pairwise_compare(salsa_out, ion_list, nrays):
     '''
@@ -98,31 +109,43 @@ def pairwise_compare(salsa_out, ion_list, nrays):
             print("mx",mx)
             while ((id1 < mx) and (id2 < mx)):
 
-                if id1 >= len(uvb1["interval_start"])-1:
+                if id1 > len(uvb1["interval_start"])-1:
 
                     id1 = len(uvb1["interval_start"])-1
                 
-                if id2 >= len(uvb2["interval_start"])-1:
+                if id2 > len(uvb2["interval_start"])-1:
 
                     id2 = len(uvb2["interval_start"])-1 
 
                 print("id1",id1)
                 print("id2",id2)
-                
+
+                if len(lonely_1) != 0 and len(lonely_2) != 0:
+                    # if a lonely clump was just added, check to see if it's actually lonely
+                    if lonely_1[-1] == id1-1 or lonely_2[-1] == id2-1:
+                        
+                        if not actually_lonely(id1,id2,uvb1,uvb2,clump_error):
+                            lonely_1.remove(id1-1)
+                            id2-=1
+
+                        elif not actually_lonely(id2,id1,uvb2,uvb1,clump_error):
+                            lonely_2.remove(id2-1)
+                            id1-=1
+
                 start_1 = uvb1["interval_start"][id1]
                 start_2 = uvb2["interval_start"][id2]
                 
                 end_1 = uvb1["interval_end"][id1]
                 end_2 = uvb2["interval_end"][id2]
                 
-                # checks to see if clumps are the same
+
+
+                # checks to see if clumps are the same size
                 if (((start_2-clump_error) <= start_1 <= (start_2+clump_error)) and 
                      ((end_2 - clump_error) <= end_1 <= (end_2 + clump_error))):
                     match[id1] = id2
                     id1+=1
                     id2+=1
-                    
-                    continue
                 
                 # checks if clump2 is either shorter or longer than the other 
                 elif (((start_2-clump_error) <= start_1 <= (start_2+clump_error)) or 
@@ -185,14 +208,10 @@ def pairwise_compare(salsa_out, ion_list, nrays):
                             id2+=1
                 
                 else:
+                        
+                    lonely_1.append(id1)
                     
-                    if (start_1 - end_2) > 0 :
-                        
-                        lonely_1.append(id1)
-                        
-                    else:
-                        
-                        lonely_2.append(id1)
+                    lonely_2.append(id2)
                     
                     id1+=1
                     id2+=1
