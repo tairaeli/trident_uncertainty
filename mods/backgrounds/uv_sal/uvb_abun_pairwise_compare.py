@@ -4,6 +4,17 @@ import pandas as pd
 from sal_uvb_stats import gen_pairwise_data
 
 def find_max_length(uvb_list):
+    """
+    Finds which uvb data has the largest number of indices (gas clumps)
+
+    args:
+
+        uvb_list (List[Dataset]) - list containing datasets of uvb data
+    
+    returns:
+
+        mx (int) - maximum number of gas clumps out of all of the elements in the uvb_list
+    """
     mx= 0  ##find how long each array should be
     for ds in uvb_list: #find the cell index of the furthest clump
         if len(ds['interval_end']) == 0: ##handles if there are no clumps in a row
@@ -19,6 +30,22 @@ def is_shorter(start_1, start_2, end_1, end_2, clump_error):
     '''
     Function for determining whether or not a given clump in the second abundance
     data set was shorter or longer than the first abundance data set.
+
+    args:
+
+        start_1 (int) - start position of the current clump 1
+
+        start_2 (int) - start position of the current clump 2
+
+        end_1 (int) - end position of current clump 1
+
+        end_2 (int) - end position of current clump 2
+
+        clump_error (int) - margin of error by which we consider corresponding clumps to be at equivalent indices
+    
+    returns:
+
+        shorter (bool) - whether clump 2 is shorter than clump 1
     '''
     shorter = False
     
@@ -32,6 +59,21 @@ def check_split(end_big, small_ends, id_small, clump_error):
     '''
     Checks if the next few clumps in the second abundance data set all fall within
     the range of the first abundance data set
+
+    args:
+
+        end_big (int) - end position of the clump that is assumed to be the larger of the two clumps
+
+        small_ends (Series[int]) - Series of end positions of a series of clumps that may fit within the
+                                   bounds of the supposed "larger" clump
+
+        id_small - index along small_ends to begin
+
+        clump_error (int) - margin of error by which we consider corresponding clumps to be at equivalent indices
+
+    returns:
+
+        clumps_within (int) - number of smaller clumps within the larger clump 
     '''
     clumps_within = 0
 
@@ -45,11 +87,29 @@ def check_split(end_big, small_ends, id_small, clump_error):
     
 def actually_lonely(id_comp, id_ques, uvb_comp, uvb_ques, clump_error):
     """
-    Checks if a specified clump is actually lonely
+    Checks if the gas clump in question actually belongs to the lonely category
+
+    args:
+
+        id_comp (int) - index of the clump being compared to the clump in question
+
+        id_ques (int) - index of the clump in question
+
+        uvb_comp (Dataset) - dataset containing data to be compared to the clump in question
+
+        uvb_ques (Dataset) - dataset containing the information on the clump in question
+
+        clump_error (int) - margin of error by which we consider corresponding clumps to be at equivalent indices
+    
+    returns:
+
+        True - if clump in question matches the comparison clump
+
+        False - if the two clumps do not match
     """
 
-    if uvb_comp["interval_start"][id_comp] - clump_error <= uvb_ques["interval_start"][id_ques-1] <= uvb_comp["interval_start"][id_comp] + clump_error or \
-       uvb_comp["interval_end"][id_comp] - clump_error <= uvb_ques["interval_end"][id_ques-1] <= uvb_comp["interval_end"][id_comp] + clump_error:
+    if uvb_comp["interval_start"][id_comp] - clump_error <= uvb_ques["interval_start"][id_ques] <= uvb_comp["interval_start"][id_comp] + clump_error or \
+       uvb_comp["interval_end"][id_comp] - clump_error <= uvb_ques["interval_end"][id_ques] <= uvb_comp["interval_end"][id_comp] + clump_error:
         
         return False
     
@@ -124,12 +184,12 @@ def pairwise_compare(salsa_out, ion_list, nrays):
                     # if a lonely clump was just added, check to see if it's actually lonely
                     if lonely_1[-1] == id1-1 or lonely_2[-1] == id2-1:
                         
-                        if not actually_lonely(id1,id2,uvb1,uvb2,clump_error):
-                            lonely_1.remove(id1-1)
+                        if not actually_lonely(id1, id2-1, uvb1, uvb2, clump_error):
+                            lonely_2.remove(id2-1)
                             id2-=1
 
-                        elif not actually_lonely(id2,id1,uvb2,uvb1,clump_error):
-                            lonely_2.remove(id2-1)
+                        elif not actually_lonely(id2, id1-1, uvb2, uvb1, clump_error):
+                            lonely_1.remove(id1-1)
                             id1-=1
 
                 start_1 = uvb1["interval_start"][id1]
