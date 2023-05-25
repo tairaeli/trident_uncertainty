@@ -1,0 +1,28 @@
+[base_settings]
+output_file = /mnt/gs21/scratch/tairaeli
+abundance_file = /mnt/home/tairaeli/trident_uncertainty/mods/abundances/scripts/abun_table.txt
+halo_directory = /mnt/research/galaxies-REU/sims/FOGGIE
+foggie_dir = /mnt/home/tairaeli/astro_libs/foggie/foggie/halo_infos
+
+[galaxy_settings]
+nrays = 4
+gal_pattern = 2392
+redshift = 20
+ions = C_II C_IV O_VI
+field_items = density temperature metallicity radius
+field_types = gas NA NA index
+field_units = g/cm**3 NA Zsun NA
+max_impact = 15
+
+[uvb_analysis]
+uvb_files = /mnt/home/tairaeli/trident_uncertainty/mods/abundances/data_bin/par_test.h5 /mnt/home/tairaeli/trident_uncertainty/mods/abundances/data_bin/hm2012_hr.h5
+uvb_names = PCW_2019 HM_2012
+
+[halo_names]
+2392 = Hurricane
+2878 = Cyclone
+4123 = Blizzard
+5016 = Squall
+5036 = Maelstrom
+8508 = Tempest
+
