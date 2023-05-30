@@ -5,7 +5,6 @@ Makes comparison between the SALSA output from 2 different Ultraviolet Backgroun
 import numpy as np
 import pandas as pd
 
-from sal_uvb_stats import gen_pairwise_data
 
 def find_max_length(uvb_list):
     """
@@ -150,8 +149,6 @@ def pairwise_compare(salsa_out, ion_list, nrays):
         ion_dat = salsa_out[ion]
         
         compare_dict[ion] = {}
-        col_dens_1[ion] = {}
-        col_dens_2[ion] = {}
         
         for ray in range(nrays):
             
@@ -295,9 +292,6 @@ def pairwise_compare(salsa_out, ion_list, nrays):
             
             # storing list into output dict
             compare_dict[ion][ray] = sorted_list
-            
-            # creating output column density data for each set of clump data
-            col_dens_1[ion][ray], col_dens_2[ion][ray] = gen_pairwise_data(sorted_list, uvb_list, ion, ray)
     
     return compare_dict, col_dens_1, col_dens_2
     

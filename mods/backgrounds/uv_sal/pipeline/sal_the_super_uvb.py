@@ -14,6 +14,8 @@ import configparser
 
 from uvb_abun_pairwise_compare import pairwise_compare
 
+from condense_clumps import condense_pairwise_data
+
 comm = MPI.COMM_WORLD
 
 print(f"Let's do some math, kids")
@@ -279,7 +281,14 @@ pickling_match = open(f'{dat_path}/salsa_out_dict.pickle',"wb") ##saves the dict
 pickle.dump(salsa_out_dict, pickling_match, protocol=3)	
 pickling_match.close()
 
-compare_dict, col_dens_1, col_dens_2 = pairwise_compare(salsa_out_dict, alt_ion_list, nrays)
+compare_dict = pairwise_compare(salsa_out_dict, alt_ion_list, nrays)
 
+col_dens_1 = {}
+col_dens_2 = {}
+for ion in ion_list:
+    col_dens_1[ion] = {}
+    col_dens_2[ion] = {}
+    for ray in range(nrays):
+        col_dens_1[ion][ray], col_dens_2[ion][ray] = condense_pairwise_data(compare_dict[ion][ray], uvb_list, ion, ray)
 
 
