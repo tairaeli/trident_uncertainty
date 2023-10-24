@@ -14,15 +14,20 @@ import argparse
 print(f"Let's do some math, kids")
 
 parser = argparse.ArgumentParser(description = "Select cutoff and UVB for analysis")
-parser.add_argument('-iter_size', action='store', default = 0.8,
+parser.add_argument('-cutoff_frac', action='store', default = 0.8,
                     required=False, dest='cutoff_frac', type=float,
                     help='Fraction of mass above which a cutoff is made. \
-                        Determines size of iterations of SPICE metod')
+                        Determines size of iterations of SPICE metod.')
 
 parser.add_argument('-min_dens', action='store', default = 13, 
                     required=False, dest='min_dens', type=float,
-                    help='Fraction of mass above which a cutoff is made. \
-                        Determines size of iterations of SPICE metod')
+                    help='Minimum density at which SALSA method stops\
+                        iterating.')
+
+parser.add_argument("-var_arg", action='store',
+                    required=True, dest="var_arg",
+                    help="argument that is varied between each iteration.\
+                        Can either be 'cutoff_frac' or 'min_dens'.")
 
 parser.add_argument('-uvb_path', action='store', 
                     required=False, dest='uvb', 
@@ -30,15 +35,34 @@ parser.add_argument('-uvb_path', action='store',
 
 parser.add_argument('-uvb_name', action='store', 
                     required=False, dest='uvb_name', 
-                    help='Label to assign to uvb')
+                    help='Label to assign to uvb.')
 
 parser.add_argument('-make_plot', action='store', default=False,
                     required=False, dest='make_plot', type=bool,
                     help='Boolean deciding whether to make a plot or not.\
-                        Should only be run if the 2 other uvbs have been run')
+                        Should only be run if the 2 other uvbs have been run.')
 
 args = parser.parse_args()
 dic_args = vars(args)
+
+# variable for determining labels of output files
+output_val = None
+
+# determining output_val based on input arguments
+if args.var_arg == "cutoff_frac":
+    # checking to see if input value is valid
+    if args.cutoff_frac > 1.0:
+        raise Exception("Invalid value of cutoff_frac. Must be value \
+                        in between 0 and 1")
+    else:
+        output_val = str(args.cutoff_frac)
+
+elif args.var_arg == "min_dens":
+    output_val = str(args.min_dens)
+
+else:
+    raise Exception("Invalid input of var_arg. Input must either be \
+                    'cutoff_frac' or 'min_dens'")
 
 # specifying which halo we are looking at and at what redshift
 halo = 2392
@@ -148,7 +172,7 @@ if not args.make_plot:
     # extracting data from ray analysis
     gas_dens = ray_dat.r[("gas",field_name)].copy()
 
-    save_dens = open(out_path+"density/"+args.uvb_name+"/"+args.uvb_name+"_dens_"+str(args.cutoff_frac)+".pickle","wb")
+    save_dens = open(out_path+"density/"+args.uvb_name+"/"+args.uvb_name+"_dens_"+args.var_arg+"_"+output_val+".pickle","wb")
     pickle.dump(gas_dens, save_dens, protocol=3)
     save_dens.close()
 
@@ -163,10 +187,6 @@ if not args.make_plot:
     ray_files_split = np.array_split(ray_arr, comm.size)
     my_rays = ray_files_split[comm.rank]
 
-    """
-    Set absorber min individually or globaly (this might not work)
-    """
-
     abs_ext = salsa.AbsorberExtractor(halo_data, 
                                     ray_filename, 
                                     ion_name = ion, 
@@ -178,16 +198,16 @@ if not args.make_plot:
 
     # mimicing how data is stored in code
     clump_dat = {ion:{args.uvb_name:None}}
-
+    
     clump_dat[ion][args.uvb_name] = salsa.get_absorbers(abs_ext, 
                                     my_rays, 
                                     method='spice', 
                                     fields=other_fields, 
                                     units_dict=field_units)
-
+    
     clump_dat[ion][args.uvb_name] = clump_dat[ion][args.uvb_name].drop(columns='index')
 
-    save_clump = open(out_path+"clump_data/"+args.uvb_name+"/"+args.uvb_name+"_clump_dat_"+str(args.cutoff_frac)+".pickle","wb")
+    save_clump = open(out_path+"clump_data/"+args.uvb_name+"/"+args.uvb_name+"_clump_dat_"+args.var_arg+"_"+output_val+".pickle","wb")
     pickle.dump(clump_dat, save_clump, protocol=3)
     save_clump.close()
 
@@ -253,4 +273,4 @@ else:
     plt.ylabel(r"Density ($cm^{-2}$)", fontsize = 25)
     # plt.ylim(1e-12, 2e-6)
     plt.title(f"UVB Number Density Comparison "+ion, fontsize = 30)
-    plt.savefig(out_path+"min_dens_plots/UVB_dens_compare_"+str(args.min_dens)+".pdf")
+    plt.savefig(out_path+args.var_arg+"_plots/UVB_dens_compare_"+args.var_arg+"_"+output_val+".pdf")
