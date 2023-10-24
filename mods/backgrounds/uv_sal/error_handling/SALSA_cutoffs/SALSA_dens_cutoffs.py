@@ -29,6 +29,14 @@ parser.add_argument("-var_arg", action='store',
                     help="argument that is varied between each iteration.\
                         Can either be 'cutoff_frac' or 'min_dens'.")
 
+parser.add_argument('-ion_list', action='store', 
+                    required=False, dest='ion_list', 
+                    help='Ions to be analyzed')
+
+parser.add_argument('-nrays', action='store', 
+                    required=False, dest='nrays', type = int,
+                    help='Number of rays to be used for analysis')
+
 parser.add_argument('-uvb_path', action='store', 
                     required=False, dest='uvb', 
                     help='Path to UVB file')
@@ -120,7 +128,7 @@ center = halo_data.arr(center_dat['pos'], 'kpc')
 gal_vel = halo_data.arr(center_dat['vel'], 'km/s')
 
 # defining characteristics of ray behavior
-nrays = 1
+nrays = args.nrays
 max_impact = 15
 
 # out_path = "/mnt/home/tairaeli/trident_uncertainty/mods/backgrounds/uv_sal/error_handling/SALSA_cutoffs/cutoff_bin/"
@@ -145,132 +153,143 @@ if not check:
                      fields=other_fields, 
                      out_dir="./")
 
-# ray name not especially important here, but useful for when there are multiple rays
-ray = 0
+# initializing ion list
+init_ion_list = args.ion_list.split(" ")
 
-# defining data about the particular ascpects of the rays we are looking at
-ion = "O VI"
-atom,istate = ion.split(" ")
-
-field_name = f"{atom}_p{trident.from_roman(istate)-1}_number_density"
-
-# defines abundance table used
-# CHANGE THESE TO LOCAL VERSIONS
-abun_table_path = "/mnt/home/tairaeli/trident_uncertainty/mods/abundances/scripts/abun_table.txt"
-abun = pd.read_csv(abun_table_path, delim_whitespace=True)
-abundances = abun.iloc[0].to_dict()
-
-ray_filename = f"ray{ray}.h5"
-
-ray_dat = yt.load(ray_filename)
-
-if not args.make_plot:
-    trident.add_ion_number_density_field(atom, trident.from_roman(istate), 
-                                        ray_dat, abundance_dict = abundances, 
-                                        ionization_table = args.uvb)
-
-    # extracting data from ray analysis
-    gas_dens = ray_dat.r[("gas",field_name)].copy()
-
-    save_dens = open(out_path+"density/"+args.uvb_name+"/"+args.uvb_name+"_dens_"+args.var_arg+"_"+output_val+".pickle","wb")
-    pickle.dump(gas_dens, save_dens, protocol=3)
-    save_dens.close()
-
-    # a bit more prep before the absorber extraction step
-    comm = MPI.COMM_WORLD
-
-    ray_list=[ray_filename]
-
-    # CK: Taking a hint from SALSA on how to divvy up the ray list across procs
-    # works under assumption we have multiple rays, but in this case we do not
-    ray_arr = np.array(ray_list)
-    ray_files_split = np.array_split(ray_arr, comm.size)
-    my_rays = ray_files_split[comm.rank]
-
-    abs_ext = salsa.AbsorberExtractor(halo_data, 
-                                    ray_filename, 
-                                    ion_name = ion, 
-                                    velocity_res =20, 
-                                    abundance_table = abundances, 
-                                    calc_missing=True,
-                                    frac = args.cutoff_frac,
-                                    absorber_min = args.min_dens)
-
-    # mimicing how data is stored in code
-    clump_dat = {ion:{args.uvb_name:None}}
+# adjusting formating of ion list
+ion_list = []
+for i, ion in enumerate(init_ion_list):
     
-    clump_dat[ion][args.uvb_name] = salsa.get_absorbers(abs_ext, 
-                                    my_rays, 
-                                    method='spice', 
-                                    fields=other_fields, 
-                                    units_dict=field_units)
+    alt_ion = ion.replace("_"," ")
+    ion_list.append(alt_ion)
+
+# iterating through each ray
+for ray in range(nrays):
     
-    clump_dat[ion][args.uvb_name] = clump_dat[ion][args.uvb_name].drop(columns='index')
-
-    save_clump = open(out_path+"clump_data/"+args.uvb_name+"/"+args.uvb_name+"_clump_dat_"+args.var_arg+"_"+output_val+".pickle","wb")
-    pickle.dump(clump_dat, save_clump, protocol=3)
-    save_clump.close()
-
-else:
-
-    with open(out_path+"density/HM_2012/HM_2012_dens_"+str(args.cutoff_frac)+".pickle", "rb") as dens_dat:
-        hm_dens = pickle.load(dens_dat)
-
-    with open(out_path+"clump_data/HM_2012/HM_2012_clump_dat_"+str(args.cutoff_frac)+".pickle", "rb") as salsa_dat:
-        hm_clump_dat = pickle.load(salsa_dat)
-
-    with open(out_path+"density/PCW_2019/PCW_2019_dens_"+str(args.cutoff_frac)+".pickle", "rb") as dens_dat:
-        pcw_dens = pickle.load(dens_dat)
-
-    with open(out_path+"clump_data/PCW_2019/PCW_2019_clump_dat_"+str(args.cutoff_frac)+".pickle", "rb") as salsa_dat:
-        pcw_clump_dat = pickle.load(salsa_dat)
-
-    colors = plt.cm.cool([0.3,0.4,0.9,1])
-
-    ray_pos = ray_dat.r[("gas","l")].to("kpc")
-
-    print("Data loaded, generating plot...")
-
-    # creating density curves for both UVB models
-    plt.figure(figsize = [15,8], dpi = 500, facecolor = "white")
-    plt.semilogy(ray_pos, hm_dens,label = "HM 2012", color = colors[3])
-    plt.semilogy(ray_pos, pcw_dens,label = "PCW 2019", color = colors[1])
-    # plt.axhline(1e-13)
-
-    hm_clumps = hm_clump_dat[ion]["HM_2012"][hm_clump_dat[ion]["HM_2012"]["lightray_index"] == str(ray)]
-    pcw_clumps = pcw_clump_dat[ion]["PCW_2019"][pcw_clump_dat[ion]["PCW_2019"]["lightray_index"] == str(ray)]
-
-    # showing where SALSA detected clumps in Haart & Madau
-    i = 0
-    for i in range(len(hm_clumps["interval_start"])):
+    # iterating through each ion
+    for ion in ion_list:
         
-        lb = hm_clumps["interval_start"][i]
-        hb = hm_clumps["interval_end"][i]
-        rng = [lb,hb]
-        
-        yb = hm_dens[slice(*rng)]
-        xb = ray_pos[lb:hb]
-        
-        plt.fill_between(xb,yb, color = colors[2], alpha = 0.3)
+        atom, istate = ion.split(" ")
 
-    # showing where SALSA detected clumps in Puchwein et al
-    for i in range(len(pcw_clumps["interval_start"])):
-        
-        lb = pcw_clumps["interval_start"][i]
-        hb = pcw_clumps["interval_end"][i]
-        
-        rng = [lb,hb]
-        yb = pcw_dens[slice(*rng)]
-        xb = ray_pos[lb:hb]
-        
-        plt.fill_between(xb,yb, color = colors[0], alpha = 0.3)    
+        field_name = f"{atom}_p{trident.from_roman(istate)-1}_number_density"
 
-    plt.grid()
-    plt.legend(fontsize = 20)
-    # plt.ylim(10**(-15),10**(-6.5))
-    # plt.xlim(500,900)
-    plt.xlabel("Position Along Ray (kpc)", fontsize = 25)
-    plt.ylabel(r"Density ($cm^{-2}$)", fontsize = 25)
-    # plt.ylim(1e-12, 2e-6)
-    plt.title(f"UVB Number Density Comparison "+ion, fontsize = 30)
-    plt.savefig(out_path+args.var_arg+"_plots/UVB_dens_compare_"+args.var_arg+"_"+output_val+".pdf")
+        # defines abundance table used
+        # CHANGE THESE TO LOCAL VERSIONS
+        abun_table_path = "/mnt/home/tairaeli/trident_uncertainty/mods/abundances/scripts/abun_table.txt"
+        abun = pd.read_csv(abun_table_path, delim_whitespace=True)
+        abundances = abun.iloc[0].to_dict()
+
+        ray_filename = f"ray{ray}.h5"
+
+        ray_dat = yt.load(ray_filename)
+
+        if not args.make_plot:
+            trident.add_ion_number_density_field(atom, trident.from_roman(istate), 
+                                                ray_dat, abundance_dict = abundances, 
+                                                ionization_table = args.uvb)
+
+            # extracting data from ray analysis
+            gas_dens = ray_dat.r[("gas",field_name)].copy()
+
+            save_dens = open(out_path+"density/"+args.uvb_name+"/"+args.uvb_name+"_dens_"+args.var_arg+"_"+output_val+".pickle","wb")
+            pickle.dump(gas_dens, save_dens, protocol=3)
+            save_dens.close()
+
+            # a bit more prep before the absorber extraction step
+            comm = MPI.COMM_WORLD
+
+            ray_list=[ray_filename]
+
+            # CK: Taking a hint from SALSA on how to divvy up the ray list across procs
+            # works under assumption we have multiple rays, but in this case we do not
+            ray_arr = np.array(ray_list)
+            ray_files_split = np.array_split(ray_arr, comm.size)
+            my_rays = ray_files_split[comm.rank]
+
+            abs_ext = salsa.AbsorberExtractor(halo_data, 
+                                            ray_filename, 
+                                            ion_name = ion, 
+                                            velocity_res =20, 
+                                            abundance_table = abundances, 
+                                            calc_missing=True,
+                                            frac = args.cutoff_frac,
+                                            absorber_min = args.min_dens)
+
+            # mimicing how data is stored in code
+            clump_dat = {ion:{args.uvb_name:None}}
+            
+            clump_dat[ion][args.uvb_name] = salsa.get_absorbers(abs_ext, 
+                                            my_rays, 
+                                            method='spice', 
+                                            fields=other_fields, 
+                                            units_dict=field_units)
+            
+            clump_dat[ion][args.uvb_name] = clump_dat[ion][args.uvb_name].drop(columns='index')
+
+            save_clump = open(out_path+"clump_data/"+args.uvb_name+"/"+args.uvb_name+"_clump_dat_"+args.var_arg+"_"+output_val+".pickle","wb")
+            pickle.dump(clump_dat, save_clump, protocol=3)
+            save_clump.close()
+
+        else:
+
+            with open(out_path+"density/HM_2012/HM_2012_dens_"+str(args.cutoff_frac)+".pickle", "rb") as dens_dat:
+                hm_dens = pickle.load(dens_dat)
+
+            with open(out_path+"clump_data/HM_2012/HM_2012_clump_dat_"+str(args.cutoff_frac)+".pickle", "rb") as salsa_dat:
+                hm_clump_dat = pickle.load(salsa_dat)
+
+            with open(out_path+"density/PCW_2019/PCW_2019_dens_"+str(args.cutoff_frac)+".pickle", "rb") as dens_dat:
+                pcw_dens = pickle.load(dens_dat)
+
+            with open(out_path+"clump_data/PCW_2019/PCW_2019_clump_dat_"+str(args.cutoff_frac)+".pickle", "rb") as salsa_dat:
+                pcw_clump_dat = pickle.load(salsa_dat)
+
+            colors = plt.cm.cool([0.3,0.4,0.9,1])
+
+            ray_pos = ray_dat.r[("gas","l")].to("kpc")
+
+            print("Data loaded, generating plot...")
+
+            # creating density curves for both UVB models
+            plt.figure(figsize = [15,8], dpi = 500, facecolor = "white")
+            plt.semilogy(ray_pos, hm_dens,label = "HM 2012", color = colors[3])
+            plt.semilogy(ray_pos, pcw_dens,label = "PCW 2019", color = colors[1])
+            # plt.axhline(1e-13)
+
+            hm_clumps = hm_clump_dat[ion]["HM_2012"][hm_clump_dat[ion]["HM_2012"]["lightray_index"] == str(ray)]
+            pcw_clumps = pcw_clump_dat[ion]["PCW_2019"][pcw_clump_dat[ion]["PCW_2019"]["lightray_index"] == str(ray)]
+
+            # showing where SALSA detected clumps in Haart & Madau
+            i = 0
+            for i in range(len(hm_clumps["interval_start"])):
+                
+                lb = hm_clumps["interval_start"][i]
+                hb = hm_clumps["interval_end"][i]
+                rng = [lb,hb]
+                
+                yb = hm_dens[slice(*rng)]
+                xb = ray_pos[lb:hb]
+                
+                plt.fill_between(xb,yb, color = colors[2], alpha = 0.3)
+
+            # showing where SALSA detected clumps in Puchwein et al
+            for i in range(len(pcw_clumps["interval_start"])):
+                
+                lb = pcw_clumps["interval_start"][i]
+                hb = pcw_clumps["interval_end"][i]
+                
+                rng = [lb,hb]
+                yb = pcw_dens[slice(*rng)]
+                xb = ray_pos[lb:hb]
+                
+                plt.fill_between(xb,yb, color = colors[0], alpha = 0.3)    
+
+            plt.grid()
+            plt.legend(fontsize = 20)
+            # plt.ylim(10**(-15),10**(-6.5))
+            # plt.xlim(500,900)
+            plt.xlabel("Position Along Ray (kpc)", fontsize = 25)
+            plt.ylabel(r"Density ($cm^{-2}$)", fontsize = 25)
+            # plt.ylim(1e-12, 2e-6)
+            plt.title(f"UVB Number Density Comparison "+ion, fontsize = 30)
+            plt.savefig(out_path+args.var_arg+"_plots/UVB_dens_compare_"+args.var_arg+"_"+output_val+".pdf")

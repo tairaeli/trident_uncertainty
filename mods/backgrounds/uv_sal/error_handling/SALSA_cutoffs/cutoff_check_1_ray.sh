@@ -14,8 +14,7 @@
 start_cutoff=11
 end_cutoff=17
 stepsize=0.5
-nrays=4
-ions="O_VI"
+
 var_arg=min_dens
 
 pcw_2019=/mnt/home/tairaeli/trident_uncertainty/mods/abundances/data_bin/par_test.h5
@@ -24,15 +23,15 @@ pcw_name=PCW_2019
 hm_2012=/mnt/home/tairaeli/trident_uncertainty/mods/abundances/data_bin/hm2012_ss_hr.h5
 hm_name=HM_2012
 
-for j in $(seq $start_cutoff $stepsize $end_cutoff);
+for i in $(seq $start_cutoff $stepsize $end_cutoff);
 do
     echo "current iteration:"
-    echo $j
+    echo $i
 
-    python SALSA_dens_cutoffs.py -$var_arg $j -var_arg $var_arg -ion_list $ions -nrays $nrays -uvb_path $pcw_2019 -uvb_name $pcw_name
+    python SALSA_dens_cutoffs.py -$var_arg $i -var_arg $var_arg -uvb_path $pcw_2019 -uvb_name $pcw_name
 
-    python SALSA_dens_cutoffs.py -$var_arg $j -var_arg $var_arg -ion_list $ions -nrays $nrays -uvb_path $hm_2012 -uvb_name $hm_name
+    python SALSA_dens_cutoffs.py -$var_arg $i -var_arg $var_arg -uvb_path $hm_2012 -uvb_name $hm_name
 
-    python SALSA_dens_cutoffs.py -$var_arg $j -var_arg $var_arg -ion_list $ions -nrays $nrays -make_plot True
+    python SALSA_dens_cutoffs.py -$var_arg $i -var_arg $var_arg -make_plot True
 
 done
