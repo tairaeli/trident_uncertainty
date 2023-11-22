@@ -6,7 +6,7 @@
 #SBATCH --ntasks-per-node 1
 #SBATCH --cpus-per-task 128
 #SBATCH --mem=200G
-#SBATCH -t 02:00:00
+#SBATCH -t 03:00:00
 #SBATCH --mail-user=tairaeli@msu.edu
 #SBATCH --mail-type=ALL
 
