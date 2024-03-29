@@ -2,7 +2,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import scipy.integrate as sp
+# import scipy.integrate as sp
 import pickle
 from mpi4py import MPI
 import yt
@@ -10,6 +10,7 @@ import trident
 import salsa
 from salsa.utils import check_rays
 import argparse
+import os
 
 print(f"Let's do some math, kids")
 
@@ -45,6 +46,15 @@ parser.add_argument('-uvb_name', action='store',
                     required=False, dest='uvb_name', 
                     help='Label to assign to uvb.')
 
+parser.add_argument('-uvb_name2', action='store', 
+                    required=False, dest='uvb_name2', 
+                    help='Only used for plotting, takes in a second name \
+                        for a UVB')
+
+parser.add_argument('-out_dir', action='store', 
+                    required=False, dest='out_dir', 
+                    help='Directory where files are output')
+
 parser.add_argument('-make_plot', action='store', default=False,
                     required=False, dest='make_plot', type=bool,
                     help='Boolean deciding whether to make a plot or not.\
@@ -63,10 +73,10 @@ if args.var_arg == "cutoff_frac":
         raise Exception("Invalid value of cutoff_frac. Must be value \
                         in between 0 and 1")
     else:
-        output_val = str(args.cutoff_frac)
+        output_val = str(np.round(args.cutoff_frac, 2))
 
 elif args.var_arg == "min_dens":
-    output_val = str(args.min_dens)
+    output_val = str(np.round(args.min_dens, 2))
 
 else:
     raise Exception("Invalid input of var_arg. Input must either be \
@@ -131,10 +141,6 @@ gal_vel = halo_data.arr(center_dat['vel'], 'km/s')
 nrays = args.nrays
 max_impact = 15
 
-# out_path = "/mnt/home/tairaeli/trident_uncertainty/mods/backgrounds/uv_sal/error_handling/SALSA_cutoffs/cutoff_bin/"
-
-out_path = "/mnt/scratch/tairaeli/cutoff_bin/"
-
 # defining random seed to allow for repitition
 np.random.seed(13)
 
@@ -149,17 +155,16 @@ if not check:
                      max_impact, 
                      length=600, 
                      field_parameters={'bulk_velocity':gal_vel}, 
-                     ion_list=['H I'], 
+                     # ion_list=['H I'], 
                      fields=other_fields, 
                      out_dir="./")
 
 # initializing ion list
-init_ion_list = args.ion_list.split(" ")
+init_ion_list = pd.read_csv(args.ion_list, sep = " ", header=0)
 
 # adjusting formating of ion list
 ion_list = []
-for i, ion in enumerate(init_ion_list):
-    
+for i, ion in enumerate(init_ion_list.keys()):
     alt_ion = ion.replace("_"," ")
     ion_list.append(alt_ion)
 
@@ -168,7 +173,9 @@ for ray in range(nrays):
     
     # iterating through each ion
     for ion in ion_list:
-        
+
+        nion = ion.replace(" ","_")
+
         atom, istate = ion.split(" ")
 
         field_name = f"{atom}_p{trident.from_roman(istate)-1}_number_density"
@@ -183,7 +190,38 @@ for ray in range(nrays):
 
         ray_dat = yt.load(ray_filename)
 
+        # defining output directory paths
+        # out_path_ray = f"/mnt/scratch/tairaeli/cutoff_bin/ray_{ray}/"
+        out_path_ray = args.out_dir+f"/ray_{ray}/"
+        out_path_ion = out_path_ray+str(nion)+"/"
+        plot_path = out_path_ion+args.var_arg+"_plots/"
+
+        if os.path.exists(out_path_ray) == False:
+            os.mkdir(out_path_ray)
+            os.mkdir(out_path_ion)
+            os.mkdir(out_path_ion+"density/")
+            os.mkdir(out_path_ion+"clump_data/")
+        
+        elif os.path.exists(out_path_ion) == False:
+            os.mkdir(out_path_ion)
+            os.mkdir(out_path_ion+"density/")
+            os.mkdir(out_path_ion+"clump_data/")
+        
+        if os.path.exists(plot_path) == False:
+            os.mkdir(plot_path)
+
         if not args.make_plot:
+
+            # defining file paths specific to each uvb
+            dens_dat_path = out_path_ion+"density/"+args.uvb_name+"/"
+            clump_dat_path = out_path_ion+"clump_data/"+args.uvb_name+"/"
+
+            # if paths do not exist, make them
+            if os.path.exists(clump_dat_path) == False:
+                os.mkdir(dens_dat_path)
+                os.mkdir(clump_dat_path)
+
+
             trident.add_ion_number_density_field(atom, trident.from_roman(istate), 
                                                 ray_dat, abundance_dict = abundances, 
                                                 ionization_table = args.uvb)
@@ -191,7 +229,7 @@ for ray in range(nrays):
             # extracting data from ray analysis
             gas_dens = ray_dat.r[("gas",field_name)].copy()
 
-            save_dens = open(out_path+"density/"+args.uvb_name+"/"+args.uvb_name+"_dens_"+args.var_arg+"_"+output_val+".pickle","wb")
+            save_dens = open(dens_dat_path+"/"+args.uvb_name+"_dens_"+args.var_arg+"_"+output_val+".pickle","wb")
             pickle.dump(gas_dens, save_dens, protocol=3)
             save_dens.close()
 
@@ -224,25 +262,37 @@ for ray in range(nrays):
                                             fields=other_fields, 
                                             units_dict=field_units)
             
-            clump_dat[ion][args.uvb_name] = clump_dat[ion][args.uvb_name].drop(columns='index')
+            if (clump_dat[ion][args.uvb_name] is None):
+                print("/n Warning: ion -",ion+", uvb - ",args.uvb_name, args.var_arg,"-",output_val,"has NO absorbers")
+                pass
+            else:
+                clump_dat[ion][args.uvb_name] = clump_dat[ion][args.uvb_name].drop(columns='index')
 
-            save_clump = open(out_path+"clump_data/"+args.uvb_name+"/"+args.uvb_name+"_clump_dat_"+args.var_arg+"_"+output_val+".pickle","wb")
+            save_clump = open(clump_dat_path+"/"+args.uvb_name+"_clump_dat_"+args.var_arg+"_"+output_val+".pickle","wb")
             pickle.dump(clump_dat, save_clump, protocol=3)
             save_clump.close()
 
         else:
 
-            with open(out_path+"density/HM_2012/HM_2012_dens_"+str(args.cutoff_frac)+".pickle", "rb") as dens_dat:
-                hm_dens = pickle.load(dens_dat)
+            name1 = args.uvb_name
+            name2 = args.uvb_name2
 
-            with open(out_path+"clump_data/HM_2012/HM_2012_clump_dat_"+str(args.cutoff_frac)+".pickle", "rb") as salsa_dat:
-                hm_clump_dat = pickle.load(salsa_dat)
+            try:
+                with open(out_path_ion+f"density/{name1}/{name1}_dens_"+args.var_arg+"_"+output_val+".pickle", "rb") as dens_dat:
+                    uvb1_dens = pickle.load(dens_dat)
 
-            with open(out_path+"density/PCW_2019/PCW_2019_dens_"+str(args.cutoff_frac)+".pickle", "rb") as dens_dat:
-                pcw_dens = pickle.load(dens_dat)
+                with open(out_path_ion+f"clump_data/{name1}/{name1}_clump_dat_"+args.var_arg+"_"+output_val+".pickle", "rb") as salsa_dat:
+                    uvb1_clump_dat = pickle.load(salsa_dat)
 
-            with open(out_path+"clump_data/PCW_2019/PCW_2019_clump_dat_"+str(args.cutoff_frac)+".pickle", "rb") as salsa_dat:
-                pcw_clump_dat = pickle.load(salsa_dat)
+                with open(out_path_ion+f"density/{name2}/{name2}_dens_"+args.var_arg+"_"+output_val+".pickle", "rb") as dens_dat:
+                    uvb2_dens = pickle.load(dens_dat)
+
+                with open(out_path_ion+f"clump_data/{name2}/{name2}_clump_dat_"+args.var_arg+"_"+output_val+".pickle", "rb") as salsa_dat:
+                    uvb2_clump_dat = pickle.load(salsa_dat)
+
+            except AttributeError:
+                print("One or more settings found no absorbers. Skipping")
+                pass
 
             colors = plt.cm.cool([0.3,0.4,0.9,1])
 
@@ -252,34 +302,34 @@ for ray in range(nrays):
 
             # creating density curves for both UVB models
             plt.figure(figsize = [15,8], dpi = 500, facecolor = "white")
-            plt.semilogy(ray_pos, hm_dens,label = "HM 2012", color = colors[3])
-            plt.semilogy(ray_pos, pcw_dens,label = "PCW 2019", color = colors[1])
+            plt.semilogy(ray_pos, uvb1_dens,label = name1, color = colors[3])
+            plt.semilogy(ray_pos, uvb2_dens,label = name2, color = colors[1])
             # plt.axhline(1e-13)
 
-            hm_clumps = hm_clump_dat[ion]["HM_2012"][hm_clump_dat[ion]["HM_2012"]["lightray_index"] == str(ray)]
-            pcw_clumps = pcw_clump_dat[ion]["PCW_2019"][pcw_clump_dat[ion]["PCW_2019"]["lightray_index"] == str(ray)]
+            uvb1_clumps = uvb1_clump_dat[ion][name1][uvb1_clump_dat[ion][name1]["lightray_index"] == str(ray)]
+            uvb2_clumps = uvb2_clump_dat[ion][name2][uvb2_clump_dat[ion][name2]["lightray_index"] == str(ray)]
 
             # showing where SALSA detected clumps in Haart & Madau
             i = 0
-            for i in range(len(hm_clumps["interval_start"])):
+            for i in range(len(uvb1_clumps["interval_start"])):
                 
-                lb = hm_clumps["interval_start"][i]
-                hb = hm_clumps["interval_end"][i]
+                lb = uvb1_clumps["interval_start"][i]
+                hb = uvb1_clumps["interval_end"][i]
                 rng = [lb,hb]
                 
-                yb = hm_dens[slice(*rng)]
+                yb = uvb1_dens[slice(*rng)]
                 xb = ray_pos[lb:hb]
                 
                 plt.fill_between(xb,yb, color = colors[2], alpha = 0.3)
 
             # showing where SALSA detected clumps in Puchwein et al
-            for i in range(len(pcw_clumps["interval_start"])):
+            for i in range(len(uvb2_clumps["interval_start"])):
                 
-                lb = pcw_clumps["interval_start"][i]
-                hb = pcw_clumps["interval_end"][i]
+                lb = uvb2_clumps["interval_start"][i]
+                hb = uvb2_clumps["interval_end"][i]
                 
                 rng = [lb,hb]
-                yb = pcw_dens[slice(*rng)]
+                yb = uvb2_dens[slice(*rng)]
                 xb = ray_pos[lb:hb]
                 
                 plt.fill_between(xb,yb, color = colors[0], alpha = 0.3)    
@@ -292,4 +342,4 @@ for ray in range(nrays):
             plt.ylabel(r"Density ($cm^{-2}$)", fontsize = 25)
             # plt.ylim(1e-12, 2e-6)
             plt.title(f"UVB Number Density Comparison "+ion, fontsize = 30)
-            plt.savefig(out_path+args.var_arg+"_plots/UVB_dens_compare_"+args.var_arg+"_"+output_val+".pdf")
+            plt.savefig(plot_path+"UVB_dens_compare_"+args.var_arg+"_"+output_val+".pdf")
