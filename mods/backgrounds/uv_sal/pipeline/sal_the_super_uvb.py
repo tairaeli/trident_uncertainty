@@ -11,17 +11,32 @@ import pickle
 from scipy import stats
 import trident
 import configparser
-
-from uvb_abun_pairwise_compare import pairwise_compare
-
-from condense_clumps import condense_pairwise_data
+import argparse
 
 comm = MPI.COMM_WORLD
 
 print(f"Let's do some math, kids")
 
+# reading in config file data
 sal_args = configparser.ConfigParser()
 sal_args.read("./sal_params.par")
+
+# reading in arguments
+parser = argparse.ArgumentParser(description = "Generate SALSA data from trident rays")
+
+parser.add_argument('-uvb_path', action='store', 
+                    required=False, dest='uvb', 
+                    help='Path to UVB file')
+
+parser.add_argument('-uvb_name', action='store', 
+                    required=False, dest='uvb_name', 
+                    help='Label to assigned to uvb.')
+
+args = parser.parse_args()
+dic_args = vars(args)
+
+uvb_name = args.uvb_name
+in_uvb_path = args.uvb
 
 def get_true_rs(val): ##define how to get actual rshift numbers
     if val == 20:
@@ -130,19 +145,29 @@ path = os.path.expandvars(os.path.expanduser(out_file))
 halo_path = path+'/halo'+f'{halo}'
 rs_path = halo_path + '/redshift'+f'{true_rs}'
 ray_path = rs_path +'/rays'
-dat_path = rs_path +'/data'
-stat_path = rs_path +'/stats'
+uvb_path = rs_path+f'/{uvb_name}'
+dat_path = uvb_path +'/data'
 
 # creating dictionaries to store all of our data (if they don't already exist)
+if os.path.exists(path) == False:
+    os.mkdir(path)
+
 if os.path.exists(halo_path) == False:
     os.mkdir(path+'/halo'+f'{halo}')
     
 if os.path.exists(rs_path) == False:
     os.mkdir(rs_path)
-    os.mkdir(ray_path) 
+
+if os.path.exists(ray_path) == False:
+    os.mkdir(ray_path)
+
+if os.path.exists(uvb_path) == False:
+    os.mkdir(uvb_path) 
     os.mkdir(dat_path)
-    os.mkdir(stat_path)
-    
+
+if os.path.exists(uvb_path+"/ray_dat") == False:
+    os.mkdir(uvb_path+"/ray_dat")
+
 # load halo data
 ds = yt.load(f'{sal_args["base_settings"]["halo_directory"]}/halo_00{halo}/nref11c_nref9f/RD00{rs}/RD00{rs}')
 
@@ -150,10 +175,10 @@ ds = yt.load(f'{sal_args["base_settings"]["halo_directory"]}/halo_00{halo}/nref1
 ion_list = sal_args["galaxy_settings"]["ions"].split(" ")
 
 # loading in list of different ionization tables for different UVBs
-uvb_list = sal_args["uvb_analysis"]["uvb_files"].split(" ")
+# uvb_list = sal_args["uvb_analysis"]["uvb_files"].split(" ")
 
 # define desired uvbs analyzed
-uvb_names = sal_args["uvb_analysis"]["uvb_names"].split(" ")
+# uvb_names = sal_args["uvb_analysis"]["uvb_names"].split(" ")
 
 # defining analysis parameters
 # Note: these dictionaries are temporary and should most likely be included in the arguments at some point
@@ -204,14 +229,22 @@ np.random.seed(13)
 check = check_rays(ray_path, nrays, [])
 if not check:
     print("WARNING: rays not found. Generating new ones.")
-    salsa.generate_lrays(ds, center.to('code_length'), nrays, max_impact, length=600, field_parameters={'bulk_velocity':gal_vel}, ion_list=['H I'], fields=other_fields, out_dir=ray_path)
+    salsa.generate_lrays(ds, 
+                         center.to('code_length'), 
+                         nrays, 
+                         max_impact, 
+                         length=600, 
+                         field_parameters={'bulk_velocity':gal_vel}, 
+                         ion_list=['H I'], 
+                         fields=other_fields, 
+                         out_dir=ray_path)
 
 ray_list=[]
+n = len(str(nrays))
 for i in range(nrays):
     if len(str(i)) != len(str(nrays)):
-        n = len(str(nrays)) - 1
         
-        ray_list.append(f'{ray_path}/ray{i: 0{n}d}.h5')
+        ray_list.append(f'{ray_path}/ray{i:0{n}d}.h5')
     else:
         ray_list.append(f'{ray_path}/ray{i}.h5')
 
@@ -240,55 +273,64 @@ row_num = 0
 
 salsa_out_dict = {}
     
+# impliments the ionization table for each different UVB model
+trident.ion_balance.add_ion_fields(ds, ions = alt_ion_list, ionization_table = in_uvb_path)
+
 for ion in alt_ion_list:
     
     salsa_out_dict[ion] = {}
-
-    for iuvb, uvb in enumerate(uvb_list):
-            
-        # impliments the ionization table for each different UVB model
-        trident.ion_balance.add_ion_fields(ds, ions = alt_ion_list, ionization_table = uvb)
-        
-        saved = generate_names(nrows,uvb_names[iuvb])
     
-        try:
-            abundances = abun.iloc[row_num].to_dict()
-            
-            abs_ext = salsa.AbsorberExtractor(ds, ray_file, ion_name = ion, velocity_res =20, abundance_table = abundances, calc_missing=True)
-            
-            df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=field_units).drop(columns='index')
-            
-            filename = f'{dat_path}/{saved[row_num]}_{ion.replace(" ", "_")}.txt'
-            
-            salsa_out_dict[ion][uvb_names[iuvb]] = df
-            
-            df.to_csv(filename, sep = ' ', index = False)
-            
-            print("Go look at your data!")
-            
-            
-        except AttributeError: ##handles if there are no clumps in a halo
+    saved = generate_names(nrows,uvb_name)
+
+    try:
+        abundances = abun.iloc[row_num].to_dict()
         
-            df = pd.DataFrame(columns =['name', 'wave', 'redshift', 'col_dens', 'delta_v', 'vel_dispersion', 'interval_start', 'interval_end', 'density', 'temperature', 'metallicity', 'radius', 'lightray_index'], index = ['0'] )
-            
-            filename = f'{dat_path}/{saved[row_num]}_{ion.replace(" ", "_")}.txt'
-            
-            salsa_out_dict[ion][uvb_names[iuvb]] = df
-            
-            df.to_csv(f'{dat_path}/{saved[row_num]}_{ion.replace(" ", "_")}_null.txt')
+        abs_ext = salsa.AbsorberExtractor(ds, ray_file, ion_name = ion, velocity_res =20, abundance_table = abundances, calc_missing=True)
+        
+        df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=field_units).drop(columns='index')
+        
+        filename = f'{dat_path}/{saved[row_num]}_{ion.replace(" ", "_")}.txt'
+        
+        salsa_out_dict[ion][uvb_name] = df
+        
+        df.to_csv(filename, sep = ' ', index = False)
+        
+        print("Go look at your data!")
+        
+        
+    except AttributeError: ##handles if there are no clumps in a halo
+    
+        df = pd.DataFrame(columns =['name', 'wave', 'redshift', 'col_dens', 'delta_v', 'vel_dispersion', 'interval_start', 'interval_end', 'density', 'temperature', 'metallicity', 'radius', 'lightray_index'], index = ['0'] )
+        
+        filename = f'{dat_path}/{saved[row_num]}_{ion.replace(" ", "_")}.txt'
+        
+        salsa_out_dict[ion][uvb_name] = df
+        
+        df.to_csv(f'{dat_path}/{saved[row_num]}_{ion.replace(" ", "_")}_null.txt')
+    
+    atom, istate = ion.split(" ")
+    field_name = f"{atom}_p{trident.from_roman(istate)-1}_number_density"
+    # extracting data from ray analysis
+    for i,ray_path in enumerate(ray_arr):
+        
+        if os.path.exists(uvb_path+"/ray_dat/"+ion.replace(" ", "_")) == False:
+            os.mkdir(uvb_path+"/ray_dat/"+ion.replace(" ", "_"))
+
+        # loading in ray data
+        ray_dat = yt.load(ray_path)
+
+        # creating number density field
+        trident.add_ion_number_density_field(atom, trident.from_roman(istate), 
+                                            ray_dat, abundance_dict = abundances)
+
+        # saving number density to an array
+        gas_dens = ray_dat.r[("gas",field_name)].copy()
+
+        # saving array to file
+        save_dens = open(uvb_path+"/ray_dat/"+ion.replace(" ", "_")+"/"+f"ray_{i:0{n}d}_dens.pickle","wb")
+        pickle.dump(gas_dens, save_dens, protocol=3)
+        save_dens.close()
             
 pickling_match = open(f'{dat_path}/salsa_out_dict.pickle',"wb") ##saves the dictonaries so that they can be accesssed later
 pickle.dump(salsa_out_dict, pickling_match, protocol=3)	
 pickling_match.close()
-
-compare_dict = pairwise_compare(salsa_out_dict, alt_ion_list, nrays)
-
-col_dens_1 = {}
-col_dens_2 = {}
-for ion in ion_list:
-    col_dens_1[ion] = {}
-    col_dens_2[ion] = {}
-    for ray in range(nrays):
-        col_dens_1[ion][ray], col_dens_2[ion][ray] = condense_pairwise_data(compare_dict[ion][ray], uvb_list, ion, ray)
-
-
