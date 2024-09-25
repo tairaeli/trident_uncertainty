@@ -9,7 +9,7 @@ import configparser
 import argparse
 import os
 
-from condense_clumps import condense_pairwise_data
+from uvb_abun_pairwise_compare import condense_pairwise_data
 
 def find_max_length(uvb_list):
     """
@@ -146,7 +146,7 @@ def check_split(end_big, small_ends, id_small, clump_error):
     # iterates through initial clump + number of clumps after this clump that 
     # are still within the bounds of clump 1
 
-    while(((id_small + clumps_within) < len(small_ends)) and (small_ends[id_small + clumps_within] <= end_big - clump_error)):
+    while(((id_small + clumps_within) < len(small_ends)) and (small_ends[id_small + clumps_within] <= end_big + clump_error)):
         clumps_within +=1
     
     return clumps_within
@@ -181,7 +181,7 @@ def actually_lonely(id_comp, id_ques, uvb_comp, uvb_ques, clump_error):
     else:
         return True
 
-def pairwise_compare(salsa_out, nrays):
+def pairwise_compare(salsa_out, nrays, max_iter = 100):
     '''
     Compares two different SALSA abudnance tables to one another created from two
     different Ultraviolet Backgrounds
@@ -208,12 +208,14 @@ def pairwise_compare(salsa_out, nrays):
     clump_error = 10
     
     for ion in salsa_out.keys():
-        
+        # ion = "S II"
         ion_dat = salsa_out[ion]
         
         compare_dict[ion] = {}
         
         for ray in range(nrays):
+            # ray = 81
+            print(ray, ion, flush=True)
             str_ray = None
             
             if len(str(ray)) != len(str(nrays)):
@@ -251,16 +253,14 @@ def pairwise_compare(salsa_out, nrays):
             id2 = 0
             
             mx = find_max_length(uvb_list)
-            # print("mx",mx)
-            while ((id1 < mx) and (id2 < mx)):
-
-                if id1 > len(uvb1["interval_start"])-1:
-
-                    id1 = len(uvb1["interval_start"])-1
+            len1 = len(uvb1["interval_start"])
+            len2 = len(uvb2["interval_start"])
+            niter = 0
+            while ((id1 < len1) or (id2 < len2)) and (niter < max_iter):
                 
-                if id2 > len(uvb2["interval_start"])-1:
-
-                    id2 = len(uvb2["interval_start"])-1 
+                niter += 1
+                at_end_1 = id1 >= len1
+                at_end_2 = id2 >= len2
 
                 # checks for instances where length of data is 0
                 if id1 < 0:
@@ -271,23 +271,49 @@ def pairwise_compare(salsa_out, nrays):
                     print(f"Something weird with ray: {ray}, ion: {ion} in uvb 2")
                     break
 
-                # print("id1",id1)
-                # print("id2",id2)
-
                 if len(lonely_1) != 0 and len(lonely_2) != 0:
+                    
+                    temp_id1 = id1
+                    temp_id2 = id2
+
+                    if at_end_1:
+                        temp_id1-=1
+                    if at_end_2:
+                        temp_id2-=1
+
                     # if a lonely clump was just added, check to see if it's actually lonely
                     if lonely_1[-1] == id1-1:
 
-                        if not actually_lonely(id2, id1-1, uvb2, uvb1, clump_error):
+                        if not actually_lonely(temp_id2, id1-1, uvb2, uvb1, clump_error):
                             lonely_1.remove(id1-1)
-                            id1-=1
-                    
+                            if at_end_1 :
+                                at_end_1 = False
+                            if at_end_2:
+                                at_end_2 = False
+                                id2 -= 1
+                            id1 -= 1
+                        
                     if lonely_2[-1] == id2-1:
                         
-                        if not actually_lonely(id1, id2-1, uvb1, uvb2, clump_error):
+                        if not actually_lonely(temp_id1, id2-1, uvb1, uvb2, clump_error):
                             lonely_2.remove(id2-1)
-                            id2-=1
-     
+                            if at_end_2:
+                                at_end_2 = False
+                            if at_end_1:
+                                at_end_1 = False
+                                id1-=1
+                            id2 -= 1
+                
+                if at_end_1:
+                    lonely_2.append(id2)
+                    id2+=1
+                    continue
+                
+                if at_end_2:
+                    lonely_1.append(id1)
+                    id1+=1
+                    continue
+
                 start_1 = uvb1["interval_start"][id1]
                 start_2 = uvb2["interval_start"][id2]
                 
@@ -305,7 +331,7 @@ def pairwise_compare(salsa_out, nrays):
                 elif is_shorter(start_1, start_2, end_1, end_2, clump_error):
                         
                     clumps_within = check_split(end_1, uvb2["interval_end"], id2, clump_error)
-                    if clumps_within:
+                    if clumps_within>1:
                         
                         split[id1] = []
                         
@@ -319,7 +345,7 @@ def pairwise_compare(salsa_out, nrays):
                         
                         # accounting for current clump and all clumps that are
                         # within clump 1
-                        id2+= (1 + clumps_within)
+                        id2+= clumps_within
                             
                     else:
                         shorter[id1] = id2
@@ -330,7 +356,7 @@ def pairwise_compare(salsa_out, nrays):
                 elif is_longer(start_1, start_2, end_1, end_2, clump_error):
                     
                     clumps_within = check_split(end_2, uvb1["interval_end"], id1, clump_error)
-                    if clumps_within:
+                    if clumps_within>1:
                         
                         merge[id2] = []
                         
@@ -342,7 +368,7 @@ def pairwise_compare(salsa_out, nrays):
                         
                         # accounting for current clump and all clumps that are
                         # within clump 1
-                        id1+= (1 + clumps_within)
+                        id1+= clumps_within
                         
                         id2+=1
                     
@@ -352,7 +378,7 @@ def pairwise_compare(salsa_out, nrays):
                         id1+=1
                         id2+=1
 
-                # checks for a rare overlapping case where a clump falls into neiter of
+                # checks for a rare overlapping case where a clump falls into neither of
                 # the above categories
                 elif is_overlap(start_1, start_2, end_1, end_2, clump_error):
                     
@@ -370,12 +396,33 @@ def pairwise_compare(salsa_out, nrays):
                     id1+=1
                     id2+=1
             
+            if niter >= max_iter:
+                raise Exception("Max number of iterations reached")
+
             # creating list of sorted catagories         
-            sorted_list = [match, shorter, longer, split, merge, lonely_1, lonely_2, overlap]
+            sorted_list = [match, shorter, longer, overlap, split, merge, lonely_1, lonely_2]
             
+            clump_sum = 0
+            for cat in sorted_list:
+                clump_sum += len(cat)
+            if len(uvb1["interval_end"]) == mx:
+                clump_sum-=len(lonely_2)
+                # clump_sum-=len(merge)
+                for key in merge:
+                    clump_sum+=len(merge[key])
+
+            elif len(uvb2["interval_end"]) == mx:
+                clump_sum-=len(lonely_1)
+                # clump_sum-=len(split)
+                for key in split:
+                    clump_sum+=len(split[key])
+
+            else:
+                print("WHAT?")
+
             # storing list into output dict
             compare_dict[ion][ray] = sorted_list
-    
+            
     return compare_dict, col_dens_1, col_dens_2
 
 def get_true_rs(val): ##define how to get actual rshift numbers
@@ -384,6 +431,95 @@ def get_true_rs(val): ##define how to get actual rshift numbers
     elif val == 18:
         true_rs = '2.5'
     return true_rs
+
+def problem_ray_removal(compare_dict, nrays):
+    """
+    Performs exhaustive search to locate any clumps are put into multiple categories
+    during the sorting process. If found, the ray is removed from the analysis
+
+    args:
+        compare_dict (dictionary) - dictionary containing classified clump comparisons
+
+    returns:
+
+        problem ray number (int) - number of rays that were labeled to be problematic
+    """
+    problem_ray_list = []
+    problem_ray_count = {}
+
+    for ion in compare_dict.keys():
+        problem_ray_count[ion] = 0
+        for ray in compare_dict[ion].keys():
+            sorted_list = compare_dict[ion][ray]
+            
+            broken_ray = False
+
+            for i, cat in enumerate(sorted_list[0:6]):
+                
+                # handling uvb1 clumps
+                for key in cat.keys():
+                    if list(cat.keys()).count(key)>1:
+                        broken_ray = True
+                        break
+                    for j in range(i+1,len(sorted_list)):
+                        
+                        # checking merge category (values)
+                        if (j==5):
+                            if key in sorted_list[j].values():
+                                broken_ray = True
+                                break
+                        
+                        # ignoring duplicate lonely clumps for now
+                        elif (j==7):
+                            continue
+                        
+                        # checks split keys already
+                        if key in sorted_list[j]:
+                            broken_ray = True
+                            break
+                
+                if (i==4) or (i==5):
+                    continue
+                # handling uvb2 clumps
+                for val in cat.values():
+                    if list(cat.values()).count(val)>1:
+                        broken_ray = True
+                        break
+                    for j in range(i+1,len(sorted_list)):
+                        
+                        # checking merge category (keys)
+                        if (j==5):
+                            if val in sorted_list[j]:
+                                broken_ray = True
+                                break
+                        
+                        # ignoring duplicate lonely clumps for now
+                        elif (j==6):
+                            continue
+                        
+                        # extra boolean to process lonely 2 category
+                        elif j==7:
+                            if val in sorted_list[j]:
+                                broken_ray = True
+                                break
+                        
+                        # checks split values already
+                        elif val in sorted_list[j].values():
+                            broken_ray = True
+                            break
+
+            if broken_ray:
+                print("Broken sort found: ray",ray,ion)
+                problem_ray_count[ion]+=1
+                problem_ray_list.append((ion,ray))
+        
+        problem_ray_count[ion] /= nrays
+    
+    for problem in problem_ray_list:
+        del compare_dict[problem[0]][problem[1]]
+
+    return problem_ray_count
+
 
 # reading in arguments
 parser = argparse.ArgumentParser(description = "Select cutoff and UVB for analysis")
@@ -410,8 +546,28 @@ dic_args = vars(args)
 uvb_names = [args.uvb_name1, args.uvb_name2]
 uvb_paths = [args.uvb1,args.uvb2]
 
+
+# For debugging
+# uvb_names = ["FG_2009", "FG_2020"]
+# uvb_paths = ["/mnt/scratch/tairaeli/uvb_dat/fg2009_ss_hr.h5",
+#              "/mnt/scratch/tairaeli/trident_inputs/fg_test.h5"]
+
+# uvb_names = ["HM_2012", "PCW_2019"]
+# uvb_paths = ["/mnt/scratch/tairaeli/uvb_dat/hm2012_ss_hr.h5",
+#              "/mnt/scratch/tairaeli/trident_inputs/pcw_test.h5"]
+
+# uvb_names = ['FG_2009', 'HM_2012']
+# uvb_paths = ["/mnt/scratch/tairaeli/uvb_dat/fg2009_ss_hr.h5",
+#              "/mnt/scratch/tairaeli/uvb_dat/hm2012_ss_hr.h5"]
+
+# uvb_names = ["FG_2020", "PCW_2019"]
+# uvb_paths = ["/mnt/scratch/tairaeli/uvb_dat/hm2012_ss_hr.h5",
+#              "/mnt/scratch/tairaeli/trident_inputs/fg_test.h5"]
+
+print(uvb_names)
+
 sal_args = configparser.ConfigParser()
-sal_args.read("./sal_params.par")
+sal_args.read("/mnt/home/tairaeli/trident_uncertainty/mods/backgrounds/uv_sal/pipeline/sal_params.par")
 
 # set desired halo pattern
 halo = sal_args["galaxy_settings"]["gal_pattern"]
@@ -451,32 +607,49 @@ compare_dict, col_dens_1, col_dens_2 = pairwise_compare(sal_dat, nrays)
 
 print("Starting condensing", flush=True)
 
+problem_ray_perc = problem_ray_removal(compare_dict, nrays)
+
 ion_list = sal_args["galaxy_settings"]["ions"].split(" ")
 
 uvb_dens_1 = {}
 uvb_dens_2 = {}
 dens_comp_dict = {}
+still_bad_rays = []
 for ion in ion_list:
-    
     nion = ion.replace("_"," ")
-
     uvb_dens_1[nion] = {}
     uvb_dens_2[nion] = {}
     dens_comp_dict[nion] = {}
-    for ray in range(nrays):
-        
-        uvb_dens_1[nion][ray], uvb_dens_2[nion][ray], dens_comp_dict[nion][ray] = condense_pairwise_data(compare_dict[nion][ray], 
+    for ray in compare_dict[nion].keys():
+
+        print("ray: "+str(ray),ion)
+        uvb_dens_1[nion][ray], uvb_dens_2[nion][ray], dens_comp_dict[nion][ray], still_bad = condense_pairwise_data(compare_dict[nion][ray], 
                                                                                                          sal_dat[nion], 
                                                                                                          ray, 
                                                                                                          nrays)
+        if still_bad:
+            print(f"bad ray found again: {ray}")
+            still_bad_rays.append((nion,ray))
+            problem_ray_perc[nion] += 1/nrays
 
-out_dict = {uvb_names[0]:uvb_dens_1, uvb_names[1]:uvb_dens_2}
+for bad_ray in still_bad_rays:
+    del uvb_dens_1[bad_ray[0]][bad_ray[1]]
+    del uvb_dens_2[bad_ray[0]][bad_ray[1]]
+    del dens_comp_dict[bad_ray[0]][bad_ray[1]]
+    del compare_dict[bad_ray[0]][bad_ray[1]]
 
-out_file = open(f'{rs_path}/uvb_clump_labels_{uvb_names[0]}_{uvb_names[1]}.pickle',"wb") ##saves the dictonaries so that they can be accesssed later
+out_dict = {uvb_names[0]:uvb_dens_1, uvb_names[1]:uvb_dens_2,
+            "bad_ray_perc": problem_ray_perc}
+
+out_file = open(f'{rs_path}/uvb_clump_labels_{uvb_names[0]}_{uvb_names[1]}.pickle',"wb") 
 pickle.dump(compare_dict, out_file, protocol=3)	
 out_file.close()
 
-out_file = open(f'{rs_path}/uvb_compare_{uvb_names[0]}_{uvb_names[1]}.pickle',"wb") ##saves the dictonaries so that they can be accesssed later
+out_file = open(f'{rs_path}/uvb_problem_ray_frac_{uvb_names[0]}_{uvb_names[1]}.pickle',"wb") 
+pickle.dump(problem_ray_perc, out_file, protocol=3)	
+out_file.close()
+
+out_file = open(f'{rs_path}/uvb_compare_{uvb_names[0]}_{uvb_names[1]}.pickle',"wb") 
 pickle.dump(out_dict, out_file, protocol=3)	
 out_file.close()
 

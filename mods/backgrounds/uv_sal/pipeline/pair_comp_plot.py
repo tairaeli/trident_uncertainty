@@ -33,8 +33,6 @@ def lonely_hunter(uvb1,uvb2):
     """
 
     uvb1_mask = np.where(np.array(uvb1["col_dens"])==0)
-    uvb1_omask = np.where(np.array(uvb1["col_dens"])!=0)
-
     # preparing data containers
     red_uvb1 = {}
     lone1 = {}
@@ -43,30 +41,33 @@ def lonely_hunter(uvb1,uvb2):
 
     # removing lonely clumps from each key in dict
     for key in uvb1.keys():
-        red_uvb1[key] = np.array(uvb1[key])
-        red_uvb1[key] = red_uvb1[key][uvb1_omask]
-        lone1[key] = np.array(uvb1[key])
-        lone1[key] = lone1[key][uvb1_mask]
+        # removing 0 vals in uvb1
+        red_uvb1[key] = np.delete(np.array(uvb1[key]),uvb1_mask)
 
-        red_uvb2[key] = np.array(uvb2[key])
-        red_uvb2[key] = red_uvb2[key][uvb1_omask]
+        # isolating lonely clumps in uvb2
+        lone2[key] = np.array(uvb2[key])[uvb1_mask]
 
-    assert len(uvb1["col_dens"]) >= len(red_uvb1["col_dens"]), "first masking failed"
+        # removing lonely clumps from uvb2
+        red_uvb2[key] = np.delete(np.array(uvb2[key]), uvb1_mask)
+
+    assert len(uvb1["col_dens"]) >= len(red_uvb1["col_dens"]), "first masking failed (uvb1)"
+    assert len(uvb2["col_dens"]) >= len(red_uvb2["col_dens"]), "first masking failed (uvb2)"
 
     # making second mask with previously masked data
     uvb2_mask = np.where(np.array(red_uvb2["col_dens"])==0)
-    uvb2_omask = np.where(np.array(red_uvb2["col_dens"])!=0)
 
     # removing lonely clumps from each key in dict
     for key in uvb1.keys():
-        red_uvb1[key] = red_uvb1[key][uvb2_omask]
+        # removing 0 vals in uvb2
+        red_uvb2[key] = np.delete(red_uvb2[key], uvb2_mask)
 
-        lone2[key] = np.array(red_uvb2[key])
-        lone2[key] = lone2[key][uvb2_mask]
+        # isolating lonely clumps in uvb1
+        lone1[key] = red_uvb1[key][uvb2_mask]
 
-        red_uvb2[key] = red_uvb2[key][uvb2_omask]
+        # removing lonely clumps from uvb1
+        red_uvb1[key] = np.delete(red_uvb1[key], uvb2_mask)
 
-    assert len(red_uvb1["col_dens"]) >= len(red_uvb1["col_dens"]), "second masking failed"
+    assert len(red_uvb1["col_dens"]) == len(red_uvb2["col_dens"]), "second masking failed"
 
     return lone1, lone2, red_uvb1, red_uvb2
 
@@ -130,7 +131,7 @@ for ion in sal_dat.keys():
         ax[i,j].set_xlabel(r"log10(Column Density) $cm^{-2}$")
         ax[i,j].set_ylabel(r"Density")
         ax[i,j].set_title(name)
-
+        
         if (i>0):
             j+=1
             i=0
@@ -141,6 +142,36 @@ for ion in sal_dat.keys():
     plt.savefig(uvb_dist_path+f"/dist_plot_{ion}.pdf")
 
 plt.clf()
+
+# making kde for density across entire ray
+for ion in ion_list:    
+    tot_ray_dens = {}
+    n = len(str(nrays))
+    for i in range(len(uvb_names)):
+        tot_ray_dens[uvb_names[i]] = np.zeros(nrays)
+
+    for ray in range(nrays):
+        # loading in ray data
+        n = len(str(nrays))
+        ray_dat = yt.load(rs_path+f"/rays/ray{ray:0{n}d}.h5")
+        ray_len = np.max(ray_dat.r[("gas","dl")].to("cm"))
+
+        for i in range(len(uvb_names)):
+            with open(rs_path +f'/{uvb_names[i]}/ray_dat/{ion}/ray_{ray:0{n}d}_dens.pickle', "rb") as dens_dat:
+                    num_dens = pickle.load(dens_dat)
+            tot_ray_dens[uvb_names[i]][ray] = np.sum(num_dens*ray_len)
+
+    for i in range(len(uvb_names)):
+        sns.kdeplot(tot_ray_dens[uvb_names[i]], 
+                    label=f"{uvb_names[i]}",
+                    warn_singular=False)
+    plt.xlabel(r"log10(Column Density) ($cm^{-2}$)", fontsize=12)
+    plt.ylabel("Density", fontsize=12)
+    plt.title(f"{ion} KDE of Total Column Density of {nrays} Rays", fontsize=15)
+    plt.legend()
+    plt.grid()
+    plt.savefig(uvb_dist_path+f"/{ion}_tot_col_dens_hist.pdf")
+    plt.clf()
 
 print("Sorting Data")
 
@@ -173,12 +204,13 @@ for ion in ion_list:
             lonely1_tot = 0
             lonely2_tot = 0
 
-            for ray in range(nrays):
+            for ray in comp_dict[uvb_names[i]][nion].keys():
+
                 # removing lonely clumps from comparison
                 lonely1, lonely2, reduced_uvb1, reduced_uvb2 = lonely_hunter(comp_dict[uvb_names[i]][nion][ray],
                                                                              comp_dict[uvb_names[j]][nion][ray])
-                lonely1_tot += len(lonely1)
-                lonely2_tot += len(lonely2)
+                lonely1_tot += len(lonely1["col_dens"])
+                lonely2_tot += len(lonely2["col_dens"])
 
                 dens_diff =  reduced_uvb1["col_dens"] - reduced_uvb2["col_dens"]
 
@@ -190,9 +222,9 @@ for ion in ion_list:
                         warn_singular=False)
     
     # creating dictionaries to store our data if they don't already exist
-    # ion_path = uvb_dist_path+"/"+ion
-    # if os.path.exists(ion_path) == False:
-    #     os.mkdir(ion_path)
+    ion_path = uvb_dist_path+"/"+ion
+    if os.path.exists(ion_path) == False:
+        os.mkdir(ion_path)
 
     # Line2D()
     plt.xlabel(r"log10(Column Density Difference) ($cm^{-2}$)", fontsize=12)
@@ -258,51 +290,64 @@ for ion in ion_list:
         color_arr = []
         # old_lone = []
         # new_lone = []
-        for ray in range(nrays):
+        for ray in clump_categories[nion].keys():
             old_lone = []
             new_lone = []
-
+            
             # creating colorbar for clump categories
-            match, shorter, longer, split_new, split_old, lonely_old, lonely_new, overlap = clump_categories[nion][ray]
+            match, shorter, longer, overlap, split, merge, lonely_old, lonely_new = clump_categories[nion][ray]
+            print(ray, clump_categories[nion][ray], old_gen[i], new_gen[i], len(comp_dict[old_gen[i]][nion][ray]["col_dens"]))
             
-            # color_map = plt.cm.Set1(np.arange(0,7))
-            clumps_containted = 0
-            for j in range(len(comp_dict[old_gen[i]][nion][ray]["col_dens"])):
-                if (j+clumps_containted) in match:
-                    color_arr.append(0.0)
-                elif (j+clumps_containted) in split_old:
-                    color_arr.append(0.5)
-                    clumps_containted += split_old[j]
-                elif (j+clumps_containted) in lonely_old:
+            clumps_containted_1 = 0
+            clumps_containted_2 = 0
+            # some weird edge case causing me to ad a +2
+            for j in range(len(comp_dict[old_gen[i]][nion][ray]["col_dens"])+2):
+                if (j) in split:
+                    clumps_containted_2 += split[j]
+                
+            for j in range(len(comp_dict[new_gen[i]][nion][ray]["col_dens"])+2): 
+                if (j) in merge:
+                    clumps_containted_1 += merge[j]
+
+            for j in range(len(comp_dict[old_gen[i]][nion][ray]["col_dens"])+clumps_containted_1):
+                if (j) in match:
+                    color_arr.append("match")
+
+                elif (j) in split:
+                    color_arr.append("split")
+
+                elif (j) in lonely_old:
                     old_lone.append(j)
-            
-            clumps_containted = 0
-            for j in range(len(comp_dict[new_gen[i]][nion][ray]["col_dens"])): 
-                if (j+clumps_containted) in split_new:
-                    color_arr.append(1)
-                    clumps_containted += split_new[j]
-                elif (j+clumps_containted) in match:
-                    continue
-                elif (j+clumps_containted) in longer:
-                    color_arr.append(0.7)
-                elif (j+clumps_containted) in shorter:
-                    color_arr.append(0.2)
-                elif (j+clumps_containted) in overlap:
-                    color_arr.append(0.9)
-                elif (j+clumps_containted) in lonely_new:
+                
+                elif (j) in longer:
+                    color_arr.append("longer")
+                
+                elif (j) in shorter:
+                    color_arr.append("shorter")
+
+                elif (j) in overlap:
+                    color_arr.append("overlap")
+                
+                else:
+                    print("Error: Old",ray,j)
+
+            for j in range(len(comp_dict[new_gen[i]][nion][ray]["col_dens"])+clumps_containted_2): 
+                if (j) in lonely_new:
                     new_lone.append(j)
+                elif (j) in merge:
+                    color_arr.append("merge")
+                elif (j) in match:
+                    continue
+                else:
+                    print("Error: New", ray,j)
 
             # removing lonely clumps from comparison
-            # lonely_new, lonely_old, reduced_uvb_new, reduced_uvb_old = lonely_hunter(comp_dict[new_gen[i]][nion][ray],
-            #                                                                          comp_dict[old_gen[i]][nion][ray])
-            reduced_uvb_new = {}
-            reduced_uvb_old = {}
-            for key in comp_dict[old_gen[i]][nion][ray].keys():
-                reduced_uvb_old[key] = np.delete(np.array(comp_dict[old_gen[i]][nion][ray][key]), old_lone)
-                reduced_uvb_new[key] = np.delete(np.array(comp_dict[new_gen[i]][nion][ray][key]), new_lone)
-
-            # print(new_lone, old_lone)
-            assert len(reduced_uvb_old["col_dens"]) == len(reduced_uvb_new["col_dens"]), f"Arrays are different sizes. \n old = {len(reduced_uvb_old)} \n new = {len(reduced_uvb_new)}"
+            lonely_new, lonely_old, reduced_uvb_new, reduced_uvb_old = lonely_hunter(comp_dict[new_gen[i]][nion][ray],
+                                                                                     comp_dict[old_gen[i]][nion][ray])
+            
+            assert len(lonely_new["col_dens"]) == len(new_lone), "NEW FAIL "+str(len(lonely_new))+":"+str(len(new_lone))
+            assert len(lonely_old["col_dens"]) == len(old_lone), "OLD FAIL "+str(len(lonely_old))+":"+str(len(old_lone))
+            assert len(reduced_uvb_old["col_dens"]) == len(reduced_uvb_new["col_dens"]), "Arrays are different sizes. \n old = "+str(len(reduced_uvb_old["col_dens"]))+ "\n new = "+str(len(reduced_uvb_new["col_dens"]))
 
             # keeping track of total number of lonely clumps
             lonely_new_tot += len(new_lone)
@@ -316,6 +361,8 @@ for ion in ion_list:
             old_gen_dat = np.concatenate((old_gen_dat, reduced_uvb_old["col_dens"]))
             new_gen_dat = np.concatenate((new_gen_dat, reduced_uvb_new["col_dens"]))
 
+            assert len(uvb_dens_diff) == len(color_arr), "Arrays diff sizes at ray "+str(ray)+". uvb_dens_diff:"+str(len(uvb_dens_diff))+" color_arr:"+str(len(color_arr))+" "+old_gen[i]+" "+new_gen[i]
+            
             # temporary: adding color to each ray
             # ray_color = np.zeros_like(dens_diff) + c
             # color_arr = np.concatenate((color_arr,ray_color))
@@ -348,7 +395,8 @@ for ion in ion_list:
 
         # direct column density comparison
         sns.scatterplot(x=old_gen_dat, y=new_gen_dat,
-                        label=f"{old_gen[i]}:{lonely1_tot}\n {new_gen[i]}:{lonely2_tot}")
+                        label=f"{old_gen[i]}:{lonely_old_tot}\n {new_gen[i]}:{lonely_new_tot}",
+                        hue = color_arr)
         match_line = np.linspace(min(np.min(new_gen_dat),np.min(old_gen_dat)),max(np.max(new_gen_dat),np.max(old_gen_dat)))
         sns.lineplot(x=match_line, y=match_line, color = "black", linestyle = '--')
         plt.xlabel(fr"{old_gen[i]} log10(Column Density) ($cm^{-2}$)", fontsize=12)
@@ -361,18 +409,19 @@ for ion in ion_list:
         # old col dens vs col dens diff
         palt = sns.color_palette("viridis", as_cmap=True)
         sns.scatterplot(x=old_gen_dat, y=uvb_dens_diff,
-                        label=f"{old_gen[i]}:{lonely1_tot}\n {new_gen[i]}:{lonely2_tot}")
+                        label=f"{old_gen[i]}:{lonely_old_tot}\n {new_gen[i]}:{lonely_new_tot}",
+                        hue = color_arr)
         plt.xlabel(fr"{old_gen[i]} log10(Column Density) ($cm^{-2}$)", fontsize=12)
         plt.ylabel("log10(Column Density Difference)", fontsize=12)
         plt.title(f"{ion} Clump By Clump Density Differences of {old_gen[i]} for {nrays} Rays", fontsize=15)
         plt.grid()
         plt.savefig(ion_path+f"/dens_diff_{old_gen[i]}_{ion}.pdf")
         plt.clf()
-
+        print(len(uvb_dens_diff),len(color_arr))
         # gas density vs col dens diff
         sns.scatterplot(y=uvb_dens_diff, x=np.log10(phys_quant["avg_ray_dens"]["mean"]), 
-                        label=f"{old_gen[i]}:{lonely1_tot}\n {new_gen[i]}:{lonely2_tot}",
-                        c = color_arr)
+                        label=f"{old_gen[i]}:{lonely_old_tot}\n {new_gen[i]}:{lonely_new_tot}",
+                        hue = color_arr)
         plt.hlines(y=uvb_dens_diff,xmin=np.log10(phys_quant["avg_ray_dens"]["lower"]), 
                    xmax=np.log10(phys_quant["avg_ray_dens"]["upper"]))
         plt.ylabel("log Column Density Difference ($cm^{-2}$)", fontsize=12)
@@ -384,8 +433,8 @@ for ion in ion_list:
 
         # temp vs col dens diff
         sns.scatterplot(y=uvb_dens_diff, x=np.log10(phys_quant["avg_ray_temp"]["mean"]), 
-                        label=f"{old_gen[i]}:{lonely1_tot}\n {new_gen[i]}:{lonely2_tot}",
-                        hue_norm = color_arr, palette=palt)
+                        label=f"{old_gen[i]}:{lonely_old_tot}\n {new_gen[i]}:{lonely_new_tot}",
+                        hue = color_arr, palette="tab10")
         plt.hlines(y=uvb_dens_diff,xmin=np.log10(phys_quant["avg_ray_temp"]["lower"]), 
                    xmax=np.log10(phys_quant["avg_ray_temp"]["upper"]))
         plt.ylabel("log Column Density Difference ($cm^{-2}$)", fontsize=12)
@@ -397,8 +446,8 @@ for ion in ion_list:
 
         # metallically vs col dens diff
         sns.scatterplot(y=uvb_dens_diff, x=np.log10(phys_quant["avg_ray_met"]["mean"]), 
-                        label=f"{old_gen[i]}:{lonely1_tot}\n {new_gen[i]}:{lonely2_tot}",
-                        hue_norm = color_arr, palette=palt)
+                        label=f"{old_gen[i]}:{lonely_old_tot}\n {new_gen[i]}:{lonely_new_tot}",
+                        hue = color_arr, palette="tab10")
         plt.hlines(y=uvb_dens_diff,xmin=np.log10(phys_quant["avg_ray_met"]["lower"]), 
                    xmax=np.log10(phys_quant["avg_ray_met"]["upper"]))
         plt.ylabel("log10(Column Density Difference) ($cm^{-2}$)", fontsize=12)
@@ -464,11 +513,12 @@ for ion in ion_list:
             # plt.ylim(10**(-15),10**(-6.5))
             # plt.xlim(500,900)
             plt.xlabel("Position Along Ray (kpc)", fontsize = 25)
-            plt.ylabel(r"Density ($cm^{-3}$)", fontsize = 25)
+            plt.ylabel(r"log10(Density) ($cm^{-3}$)", fontsize = 25)
             # plt.ylim(1e-12, 2e-6)
             plt.title(f"UVB Number Density Comparison "+ion, fontsize = 30)
             plt.savefig(plot_path+f"/UVB_dens_compare_ray_{ray:0{n}d}.pdf")
             plt.clf()
+
 
 # fig 8: making comparisons between species
 # C_lis = ["C_II","C_III","C_IV"]
