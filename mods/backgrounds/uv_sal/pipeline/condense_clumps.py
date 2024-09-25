@@ -27,14 +27,16 @@ def condense_pairwise_data(sorted_list, ion_dat, ray, nrays):
     """
     
     # unpacking data
+    
+
     match = sorted_list[0]
-    shorter = sorted_list[1]
-    longer = sorted_list[2]
-    split = sorted_list[3]
-    merge = sorted_list[4]
-    lonely_1 = sorted_list[5]
-    lonely_2 = sorted_list[6]
-    overlap = sorted_list[7]
+    overlap  = sorted_list[3]
+    split = sorted_list[4]
+    merge = sorted_list[5]
+    lonely_1 = sorted_list[6]
+    lonely_2 = sorted_list[7]
+
+    bad = False
 
     # 
     nsplit = {}
@@ -77,31 +79,51 @@ def condense_pairwise_data(sorted_list, ion_dat, ray, nrays):
     uvb2_out["temperature"] = []
     uvb2_out["metallicity"] = []
 
-    # uvb1_col_dens = []
-    # uvb2_col_dens = []
+    len1 = len(uvb1["col_dens"])
+    len2 = len(uvb2["col_dens"])
 
-    while (id1 < len(uvb1["col_dens"])) and (id2 < len(uvb2["col_dens"])):
+    while (id1 < len1) or (id2 < len2):
+        # handling lonely cases
+
+        if id1 in lonely_1:
+            # print(id1, "ID1")
+            for key in uvb1_out.keys():
+                uvb1_out[key].append(uvb1[key][id1])
+                uvb2_out[key].append(0)
+
+            id1+=1
+
+    
+        elif id2 in lonely_2:
+            # print(id2, "ID2")
+            for key in uvb1_out.keys():
+                uvb2_out[key].append(uvb2[key][id2])
+                uvb1_out[key].append(0)
+            id2+=1
         
+        # elif ((id1 in match) or (id1 in split)) and (id1 in overlap):
+
+
         # checking for instances where uvb2 has split clumps relative to uvb1
-        if id1 in split:
+        elif id1 in split:
             
             for key in uvb1_out.keys():
                 uvb1_out[key].append(uvb1[key][id1])
 
-            # uvb1_col_dens.append(uvb1["col_dens"][id1])
-            
             clump_piece_ids = split[id1]
             
             nsplit[id1] = len(clump_piece_ids)
 
             for key in uvb2_out.keys():
-                uvb2_col_dens_avg = np.mean(uvb2[key].iloc[clump_piece_ids])
-                uvb2_out[key].append(uvb2_col_dens_avg)
+                if key == "col_dens":
+                    uvb2_quant = np.log10(np.sum(10**np.array(uvb2[key].iloc[clump_piece_ids])))
+                else:
+                    uvb2_quant = np.average(np.array(uvb2[key].iloc[clump_piece_ids]), 
+                                            weights = 10**np.array(uvb2[key].iloc[clump_piece_ids]))
+                uvb2_out[key].append(uvb2_quant)
             
-            # uvb2_col_dens_avg = np.mean(uvb2["col_dens"].iloc[clump_piece_ids])
-            # uvb2_col_dens.append(uvb2_col_dens_avg)
-            
-            id2 += (len(clump_piece_ids) - 1)
+            id1+=1
+            id2 += len(clump_piece_ids)
         
         # checking for instances where uvb2 has merged clumps relative to uvb1
         elif id2 in merge:
@@ -109,60 +131,52 @@ def condense_pairwise_data(sorted_list, ion_dat, ray, nrays):
             for key in uvb2_out.keys():
                 uvb2_out[key].append(uvb2[key][id2])
 
-            # uvb2_col_dens.append(uvb2["col_dens"][id2])
-            
             clump_piece_ids = merge[id2]
             
             nmerge[id2] = len(clump_piece_ids)
 
             for key in uvb1_out.keys():
-                uvb1_col_dens_avg = np.mean(uvb1[key].iloc[clump_piece_ids])
-                uvb1_out[key].append(uvb1_col_dens_avg)
-
-            # uvb1_col_dens_avg = np.mean(uvb1["col_dens"].iloc[clump_piece_ids])
-            # uvb1_col_dens.append(uvb1_col_dens_avg)
+                if key == "col_dens":
+                    uvb1_quant = np.log10(np.sum(10**np.array(uvb1[key].iloc[clump_piece_ids])))
+                else:
+                    uvb1_quant = np.average(np.array(uvb1[key].iloc[clump_piece_ids]), 
+                                            weights = 10**np.array(uvb1[key].iloc[clump_piece_ids]))
+                uvb1_out[key].append(uvb1_quant)
             
-            id1 += (len(clump_piece_ids) - 1)
-        
-        # handling lonely cases
-        elif id1 in lonely_1:
-            
-            for key in uvb1_out.keys():
-                uvb1_out[key].append(uvb1[key][id1])
-                uvb2_out[key].append(0)
-
-            # uvb1_col_dens.append(uvb1["col_dens"][id1])
-            # uvb2_col_dens.append(0)
-    
-        elif id2 in lonely_2:
-            
-            for key in uvb1_out.keys():
-                uvb2_out[key].append(uvb2[key][id2])
-                uvb1_out[key].append(0)
-            
-            # uvb2_col_dens.append(uvb2["col_dens"][id2])
-            # uvb1_col_dens.append(0)
+            id1 += len(clump_piece_ids)
+            id2+=1
         
         # if none of the above cases pass, then the clump indices line up
         else:
-
-            for key in uvb1_out.keys():
-                uvb1_out[key].append(uvb1[key][id1])
-                uvb2_out[key].append(uvb2[key][id2])
+            if id1 >= len1:
+                for key in uvb1_out.keys():
+                    uvb2_out[key].append(uvb2[key][id2])
             
-            # uvb1_col_dens.append(uvb1["col_dens"][id1])
-            # uvb2_col_dens.append(uvb2["col_dens"][id2])
-             
-        id1+=1
-        id2+=1
+            elif id2 >= len2:
+                for key in uvb1_out.keys():
+                    uvb1_out[key].append(uvb1[key][id1])
+            else:
+                for key in uvb1_out.keys():
+                    uvb1_out[key].append(uvb1[key][id1])
+                    uvb2_out[key].append(uvb2[key][id2])
+
+            id1+=1
+            id2+=1
     
     # If everything worked correctly, the two output arrays should be the same length
     for key in uvb1_out.keys():
-        assert len(uvb1_out[key]) == len(uvb2_out[key]), f"{key} arrays are different sizes. \n uvb1 = {len(uvb1_out[key])} \n uvb2 = {len(uvb2_out[key])}"
-    
-    out_sort_list = sorted_list
-    out_sort_list[3] = nsplit
-    out_sort_list[4] = nmerge
+        # one last pass to see if anything did not work correctly 
+        if len(uvb1_out[key]) != len(uvb2_out[key]):
+            bad = True
+        
+        msk1 = np.where(np.array(uvb1_out[key]) == 0)
+        msk2 = np.where(np.array(uvb2_out[key]) == 0)
 
-    return uvb1_out, uvb2_out, out_sort_list
+        assert (len(msk1[0])+len(msk2[0])) == (len(lonely_1)+len(lonely_2)), str((len(msk1[0])+len(msk2[0])))+":"+str((len(lonely_1)+len(lonely_2)))
+
+    out_sort_list = sorted_list
+    out_sort_list[4] = nsplit
+    out_sort_list[5] = nmerge
+
+    return uvb1_out, uvb2_out, out_sort_list, bad
     
