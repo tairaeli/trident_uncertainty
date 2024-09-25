@@ -12,6 +12,7 @@ from scipy import stats
 import trident
 import configparser
 import argparse
+from check_HI import spoof_ray_HI
 
 comm = MPI.COMM_WORLD
 
@@ -47,11 +48,6 @@ def get_true_rs(val): ##define how to get actual rshift numbers
 
 halo_names_dict = sal_args["halo_names"]
 
-def get_halo_names(num):
-    if str(num) in halo_names_dict.keys():
-        halo_name = halo_names_dict[str(num)]
-    return halo_name
-
 def generate_names(length, add=''):
         
 	"""
@@ -72,21 +68,6 @@ def generate_names(length, add=''):
 		saved_filename_list.append(f'data_AbundanceRow{k}{add}')
 		
 	return saved_filename_list
-
-# defining analysis parameters
-# Note: these dictionaries are temporary and should most likely be included in the arguments at some point
-
-def weighted_av(values, weights): ##define functions necessary in making statistics
-    weighted_sum = []
-    for value, weight in zip(values, weights):
-        weighted_sum.append(value * weight)
-
-    return sum(weighted_sum) / sum(weights)
-
-def make_full_list(list_in, list_out):
-    for element in list_in:
-        list_out.append(element)
-    return list_out
 
 # indicate location of Foggie directory
 foggie_dir = sal_args["base_settings"]["foggie_dir"]
@@ -168,26 +149,18 @@ if os.path.exists(uvb_path) == False:
 if os.path.exists(uvb_path+"/ray_dat") == False:
     os.mkdir(uvb_path+"/ray_dat")
 
+foggie_halo_dir = f'{sal_args["base_settings"]["halo_directory"]}/halo_00{halo}/nref11c_nref9f/RD00{rs}/RD00{rs}'
+
 # load halo data
-ds = yt.load(f'{sal_args["base_settings"]["halo_directory"]}/halo_00{halo}/nref11c_nref9f/RD00{rs}/RD00{rs}')
+ds = yt.load(foggie_halo_dir)
 
 # define desired ions analyzed
 ion_list = sal_args["galaxy_settings"]["ions"].split(" ")
-
-# loading in list of different ionization tables for different UVBs
-# uvb_list = sal_args["uvb_analysis"]["uvb_files"].split(" ")
-
-# define desired uvbs analyzed
-# uvb_names = sal_args["uvb_analysis"]["uvb_names"].split(" ")
 
 # defining analysis parameters
 # Note: these dictionaries are temporary and should most likely be included in the arguments at some point
 center = ds.arr(center_dat[halo][rs]['pos'], 'kpc')
 gal_vel = ds.arr(center_dat[halo][rs]['vel'], 'km/s')
-
-# other_fields=['density', 'temperature', 'metallicity', ('index', 'radius')]
-# max_impact=15 #kpc
-# units = dict(density='g/cm**3', metallicity='Zsun')
 
 # loading in data on other fields 
 field_items = sal_args["galaxy_settings"]["field_items"].split(" ")
@@ -213,8 +186,6 @@ for i, item in enumerate(field_items):
     else:
         field_units[f"{item}"] = units[i]
 
-print(other_fields)
-
 # defining some other parameters to include into SALSA
 max_impact = int(sal_args["galaxy_settings"]["max_impact"])
 nrays = int(sal_args["galaxy_settings"]["nrays"])
@@ -226,7 +197,8 @@ np.random.seed(13)
 #get those rays babyyyy
 # CK: Check that rays already exist, and that the have the additional fields contained
 # in the third argument (empty for now; might become a user parameter)
-check = check_rays(ray_path, nrays, [])
+# multiplying ray num by 2 for HI rays
+check = check_rays(ray_path, nrays*2, [])
 if not check:
     print("WARNING: rays not found. Generating new ones.")
     salsa.generate_lrays(ds, 
@@ -247,6 +219,7 @@ for i in range(nrays):
         ray_list.append(f'{ray_path}/ray{i:0{n}d}.h5')
     else:
         ray_list.append(f'{ray_path}/ray{i}.h5')
+
 
 # CK: Taking a hint from SALSA on how to divvy up the ray list across procs
 ray_arr = np.array(ray_list)
@@ -272,7 +245,7 @@ nrows = len(abun)
 row_num = 0
 
 salsa_out_dict = {}
-    
+
 # impliments the ionization table for each different UVB model
 trident.ion_balance.add_ion_fields(ds, ions = alt_ion_list, ionization_table = in_uvb_path)
 
@@ -310,9 +283,13 @@ for ion in alt_ion_list:
     
     atom, istate = ion.split(" ")
     field_name = f"{atom}_p{trident.from_roman(istate)-1}_number_density"
+    
     # extracting data from ray analysis
     for i,ray_path in enumerate(ray_arr):
         
+        if ray_path[-8:] == "tabHI.h5":
+            continue
+
         if os.path.exists(uvb_path+"/ray_dat/"+ion.replace(" ", "_")) == False:
             os.mkdir(uvb_path+"/ray_dat/"+ion.replace(" ", "_"))
 
@@ -330,7 +307,9 @@ for ion in alt_ion_list:
         save_dens = open(uvb_path+"/ray_dat/"+ion.replace(" ", "_")+"/"+f"ray_{i:0{n}d}_dens.pickle","wb")
         pickle.dump(gas_dens, save_dens, protocol=3)
         save_dens.close()
-            
+
 pickling_match = open(f'{dat_path}/salsa_out_dict.pickle',"wb") ##saves the dictonaries so that they can be accesssed later
 pickle.dump(salsa_out_dict, pickling_match, protocol=3)	
 pickling_match.close()
+
+print("DATA SAVED")
