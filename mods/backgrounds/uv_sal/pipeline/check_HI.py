@@ -9,6 +9,8 @@ from os import path
 from trident.ion_balance import IonBalanceTable
 from yt.utilities.linear_interpolators import \
     TrilinearFieldInterpolator
+from yt.frontends.ytdata.utilities import \
+    save_as_dataset
 
 # Define field functions needed for interpolation
 def _log_nH(field, data):
@@ -26,7 +28,7 @@ def _redshift(field, data):
         np.ones(data["gas", "density"].shape, 
                 dtype=data["gas", "density"].dtype)
 
-def spoof_ray_HI(saved_ray_filename, ion_table):
+def spoof_ray_HI(saved_ray_filename, ion_table, out_path, n):
 
     # Load ion balance table
     tab = IonBalanceTable(filename=ion_table, atom="H")
@@ -37,7 +39,7 @@ def spoof_ray_HI(saved_ray_filename, ion_table):
     if ("gas", "log_nH") not in ds.derived_field_list:
         ds.add_field(("gas", "log_nH"), function=_log_nH, units="",
                     sampling_type="cell")
-
+        
     if ("gas", "redshift") not in ds.derived_field_list:
         ds.add_field(("gas", "redshift"), function=_redshift, units="",
                     sampling_type="cell")
@@ -69,14 +71,16 @@ def spoof_ray_HI(saved_ray_filename, ion_table):
 
     field_types = dict([(field, "grid") for field in data.keys()])
 
-    ray_basename = saved_ray_filename.split('.')[:2]
-    ray_basename[0] = ray_basename[0]+'.'
-    ray_basename = ''.join(ray_basename)
-    print(ray_basename+"_tabHI.h5")
+    # doing some weird path-name stuff
+
+    ray_basename = saved_ray_filename[-(6+n):]
+    ray_num = ray_basename[3:3+n]
+
     yt.save_as_dataset(ds,
-                       filename=ray_basename+"_tabHI.h5",
+                       filename=out_path+"/ray"+ray_num+".h5",
                        data=data,
-                       field_types=field_types)
+                       field_types=field_types,
+                       extra_attrs={"data_type":"yt_light_ray"})
     
 # if __name__ == "__main__":
 

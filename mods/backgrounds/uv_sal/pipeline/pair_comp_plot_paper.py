@@ -147,54 +147,54 @@ plt.savefig(uvb_dist_path+f"/dist_plot_paper.pdf")
 plt.clf()
 
 # making kde for density across entire ray
-# fig, ax = plt.subplots((num_ion//2)+(num_ion%2),2, figsize=(10,10))
-# colors = sns.color_palette("rocket",3)
-# w_size = 10
-# j=0
-# k=0
-# for ion in ion_list:    
-#     tot_ray_dens = {}
-#     n = len(str(nrays))
-#     for i in range(len(uvb_names)):
-#         tot_ray_dens[uvb_names[i]] = np.zeros(nrays)
+fig, ax = plt.subplots((num_ion//2)+(num_ion%2),2, figsize=(10,10))
+colors = sns.color_palette("rocket",3)
+w_size = 10
+j=0
+k=0
+for ion in ion_list:    
+    tot_ray_dens = {}
+    n = len(str(nrays))
+    for i in range(len(uvb_names)):
+        tot_ray_dens[uvb_names[i]] = np.zeros(nrays)
 
-#     for ray in range(nrays):
-#         # loading in ray data
-#         n = len(str(nrays))
-#         ray_dat = yt.load(rs_path+f"/rays/ray{ray:0{n}d}.h5")
-#         ray_len = np.max(ray_dat.r[("gas","dl")].to("cm"))
+    for ray in range(nrays):
+        # loading in ray data
+        n = len(str(nrays))
+        ray_dat = yt.load(rs_path+f"/rays/ray{ray:0{n}d}.h5")
+        ray_len = np.max(ray_dat.r[("gas","dl")].to("cm"))
 
-#         for i in range(len(uvb_names)):
-#             with open(rs_path +f'/{uvb_names[i]}/ray_dat/{ion}/ray_{ray:0{n}d}_dens.pickle', "rb") as dens_dat:
-#                 num_dens = pickle.load(dens_dat)
-#             tot_ray_dens[uvb_names[i]][ray] = np.sum(num_dens*ray_len)
+        for i in range(len(uvb_names)):
+            with open(rs_path +f'/{uvb_names[i]}/ray_dat/{ion}/ray_{ray:0{n}d}_dens.pickle', "rb") as dens_dat:
+                num_dens = pickle.load(dens_dat)
+            tot_ray_dens[uvb_names[i]][ray] = np.sum(num_dens*ray_len)
 
-#     for i in range(len(old_gen)):
-#         avg_dens = np.log10((tot_ray_dens[old_gen[i]] + tot_ray_dens[new_gen[i]])/2)
-#         dens_diff = np.log10(tot_ray_dens[new_gen[i]]) - np.log10(tot_ray_dens[old_gen[i]])
+    for i in range(len(old_gen)):
+        avg_dens = np.log10((tot_ray_dens[old_gen[i]] + tot_ray_dens[new_gen[i]])/2)
+        dens_diff = np.log10(tot_ray_dens[new_gen[i]]) - np.log10(tot_ray_dens[old_gen[i]])
         
-#         moving_avg = np.convolve(dens_diff, np.ones(w_size) / w_size, mode='valid')
-#         x_vals = avg_dens[w_size-1:]
+        moving_avg = np.convolve(dens_diff, np.ones(w_size) / w_size, mode='valid')
+        x_vals = avg_dens[w_size-1:]
 
-#         sns.scatterplot(x = avg_dens, y = dens_diff, 
-#                         label=f"{old_gen[i]}/{new_gen[i]}", 
-#                         ax=ax[j,k], color = colors[i])
-#         sns.lineplot(x = x_vals, y = moving_avg, ax=ax[j,k], color = colors[i])
-#     ax[j,k].set_xlabel(r"log10(Avg Total Column Density)", fontsize=12)
-#     ax[j,k].set_ylabel(r"log10($\frac{\sigma_{old}}{\sigma_{new}}$) ($cm^{-2}$)", fontsize=12)
-#     ax[j,k].set_title(f"{ion} Total Column Density of {nrays} Rays", fontsize=15)
-#     ax[j,k].grid()
+        sns.scatterplot(x = avg_dens, y = dens_diff, 
+                        label=f"{old_gen[i]}/{new_gen[i]}", 
+                        ax=ax[j,k], color = colors[i])
+        sns.lineplot(x = x_vals, y = moving_avg, ax=ax[j,k], color = colors[i])
+    ax[j,k].set_xlabel(r"log10(Avg Total Column Density)", fontsize=12)
+    ax[j,k].set_ylabel(r"log10($\frac{\sigma_{old}}{\sigma_{new}}$) ($cm^{-2}$)", fontsize=12)
+    ax[j,k].set_title(f"{ion} Total Column Density of {nrays} Rays", fontsize=15)
+    ax[j,k].grid()
 
-#     if (k>0):
-#         ax[j,k].legend()
-#         j+=1
-#         k=0
-#     else:
-#         k+=1
+    if (k>0):
+        ax[j,k].legend()
+        j+=1
+        k=0
+    else:
+        k+=1
 
-# plt.tight_layout()
-# plt.savefig(uvb_dist_path+f"/tot_col_dens_comp.pdf", bbox_inches="tight")
-# plt.clf()
+plt.tight_layout()
+plt.savefig(uvb_dist_path+f"/tot_col_dens_comp.pdf", bbox_inches="tight")
+plt.clf()
 
 # print("Sorting Data")
 

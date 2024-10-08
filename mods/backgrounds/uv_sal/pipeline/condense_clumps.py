@@ -82,6 +82,10 @@ def condense_pairwise_data(sorted_list, ion_dat, ray, nrays):
     len1 = len(uvb1["col_dens"])
     len2 = len(uvb2["col_dens"])
 
+    # for key in uvb1_out.keys():
+    #     if len(uvb1[key]) + len(uvb2[key]) == 0:
+    #         return uvb1_out, uvb2_out, 0, True
+
     while (id1 < len1) or (id2 < len2):
         # handling lonely cases
 

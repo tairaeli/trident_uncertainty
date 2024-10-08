@@ -125,13 +125,13 @@ comp_paths = {}
 
 # setting labels for clump categories
 clump_cat_labels = ["match","diff_size","overlap","merge"]
-prop_list = ["density","temperature","metallicity"]
-plot_titles = ["n","T","z"]
-prop_unit = ["($cm^{-3}$)","(K)",""]
+prop_list = ["density","temperature"]
+plot_titles = ["n","T"]
+prop_unit = ["($cm^{-3}$)","(K)"]
 palt = plt.cm.tab10(np.linspace(0,1,4))
 
 # making the super grid
-category_list = ["col_dens","dens","t","z"]
+category_list = ["col_dens","dens","t"]
 wrats = [1]*len(category_list)
 wrats.append(0.5)
 fig = plt.figure(figsize=(20,16))
@@ -183,6 +183,8 @@ for i in range(len(old_gen)):
 
         lonely_new_tot = 0
         lonely_old_tot = 0
+        total_new = 0
+        total_old = 0
 
         # this doesn't feel like a good way to store our data
         phys_quant = {}
@@ -192,9 +194,9 @@ for i in range(len(old_gen)):
         phys_quant["avg_ray_temp"] = {"mean":np.array([]),
                                       "upper":np.array([]),
                                       "lower":np.array([])}
-        phys_quant["avg_ray_met"] = {"mean":np.array([]),
-                                      "upper":np.array([]),
-                                      "lower":np.array([])}
+        # phys_quant["avg_ray_met"] = {"mean":np.array([]),
+        #                               "upper":np.array([]),
+        #                               "lower":np.array([])}
         # temporary: adding color array
         # color_arr = np.array([])
         c = 0
@@ -258,8 +260,14 @@ for i in range(len(old_gen)):
             lonely_new, lonely_old, reduced_uvb_new, reduced_uvb_old = lonely_hunter(comp_dict[new_gen[i]][nion][ray],
                                                                                      comp_dict[old_gen[i]][nion][ray])
             # calculating fractions of old and new uvb lonely absorbers
-            frac_lone_old = len(lonely_old["col_dens"])/(len(reduced_uvb_old["col_dens"])+len(lonely_old["col_dens"]))
-            frac_lone_new = len(lonely_new["col_dens"])/(len(reduced_uvb_new["col_dens"])+len(lonely_new["col_dens"]))
+            
+            # if len(reduced_uvb_old["col_dens"])+len(lonely_old["col_dens"]) != 0:
+                
+            #     frac_lone_old = len(lonely_old["col_dens"])/(len(reduced_uvb_old["col_dens"])+len(lonely_old["col_dens"]))
+            #     frac_lone_new = len(lonely_new["col_dens"])/(len(reduced_uvb_new["col_dens"])+len(lonely_new["col_dens"]))
+            # else:
+            #     frac_lone_old = "INVALID"
+            #     frac_lone_new = "INVALID"
             
             assert len(lonely_new["col_dens"]) == len(new_lone), "NEW FAIL "+str(len(lonely_new))+":"+str(len(new_lone))
             assert len(lonely_old["col_dens"]) == len(old_lone), "OLD FAIL "+str(len(lonely_old))+":"+str(len(old_lone))
@@ -268,6 +276,10 @@ for i in range(len(old_gen)):
             # keeping track of total number of lonely clumps
             lonely_new_tot += len(new_lone)
             lonely_old_tot += len(old_lone)
+
+            # keeping track of total clump number
+            total_new += len(comp_dict[new_gen[i]][nion][ray]["col_dens"])
+            total_old += len(comp_dict[old_gen[i]][nion][ray]["col_dens"])
 
             dens_diff =  reduced_uvb_new["col_dens"] - reduced_uvb_old["col_dens"]
 
@@ -311,7 +323,9 @@ for i in range(len(old_gen)):
         color_arr = np.array(color_arr)
         # 1:1 comp
         # setting legend
-        legend_labs = [Line2D([0], [0], color='w', lw=4, label=f"{old_gen[i]}:{frac_lone_old}\n {new_gen[i]}:{frac_lone_new}")]
+        new_lone_frac = lonely_new_tot/total_new
+        old_lone_frac = lonely_old_tot/total_old
+        legend_labs = [Line2D([0], [0], color='w', lw=4, label=f"{old_gen[i]}:{np.round(old_lone_frac,2)}\n {new_gen[i]}:{np.round(new_lone_frac,2)}")]
         
         # line where both UVB quantities match
         match_line = np.linspace(min(np.min(new_gen_dat),np.min(old_gen_dat)),max(np.max(new_gen_dat),np.max(old_gen_dat)))

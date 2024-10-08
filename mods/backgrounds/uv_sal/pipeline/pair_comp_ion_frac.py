@@ -1,12 +1,10 @@
 import numpy as np
+from matplotlib.colors import Normalize
 import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
-from matplotlib.gridspec import GridSpec
-import pickle
+import matplotlib.cm as cm
 import configparser
 import os
 import h5py
-import pandas as pd
 import roman
 
 def get_true_rs(val): ##define how to get actual rshift numbers
@@ -63,11 +61,13 @@ ub_cutoff = -0.00001
 # Temperature = column 4
 comp_paths = {}
 for i in range(len(old_gen)):
-    print(f"Comparing {new_gen[i]} and {old_gen[i]}") 
+    print(f"Comparing Ion Fractions {new_gen[i]} and {old_gen[i]}") 
     for ion in ion_list:
         print("Ion: "+ion)
         fig, ax = plt.subplots(2,2, figsize=(10,10))
-        # colors = sns.color_palette("rocket",3)
+        cmap = cm.get_cmap('viridis')
+        normalizer = Normalize(lb_cutoff, ub_cutoff)
+        im = cm.ScalarMappable(norm=normalizer)
         w_size = 10
 
         atom, istate = ion.split("_")
@@ -102,27 +102,31 @@ for i in range(len(old_gen)):
             new_f_filter = new_f_filter[0:old_f_filter.shape[0]]
             new_col_dens = new_col_dens[0:len(old_col_dens)]
 
-        f1 = ax[0,0].pcolormesh(old_col_dens, old_temp, old_f_filter.T)
+        f1 = ax[0,0].pcolormesh(old_col_dens, old_temp, old_f_filter.T, 
+                                cmap = cmap, norm = normalizer)
         ax[0,0].set_ylabel("$log_{10}$ Temperature (K)", fontsize=ax_lab_size)
         ax[0,0].set_xlabel(r"$log_{10}$(n) ($cm^{-3}$)", fontsize=ax_lab_size)
         ax[0,0].set_title(f"{ion} Fraction {old_gen[i]}", fontsize=title_size)
-        fig.colorbar(f1,ax = ax[0,0])
+        # fig.colorbar(f1,ax = ax[0,0])
 
-        f2 = ax[1,1].pcolormesh(new_col_dens, new_temp, new_f_filter.T)
-        ax[1,1].set_ylabel("$log_{10}$ Temperature (K)", fontsize=ax_lab_size)
-        ax[1,1].set_xlabel(r"$log_{10}$(n) ($cm^{-3}$)", fontsize=ax_lab_size)
-        ax[1,1].set_title(f"{ion} Fraction {new_gen[i]}", fontsize=title_size)
-        fig.colorbar(f2,ax = ax[1,1])
+        f2 = ax[0,1].pcolormesh(new_col_dens, new_temp, new_f_filter.T, 
+                                cmap = cmap, norm = normalizer)
+        ax[0,1].set_ylabel("$log_{10}$ Temperature (K)", fontsize=ax_lab_size)
+        ax[0,1].set_xlabel(r"$log_{10}$(n) ($cm^{-3}$)", fontsize=ax_lab_size)
+        ax[0,1].set_title(f"{ion} Fraction {new_gen[i]}", fontsize=title_size)
+        fig.colorbar(im,ax = ax[0,1])
 
         f3 = ax[1,0].pcolormesh(old_col_dens, old_temp, (new_f_filter - old_f_filter).T)
+                                #cmap = cmap, norm = normalizer)
         ax[1,0].set_ylabel("$log_{10}$ Temperature (K)", fontsize=ax_lab_size)
         ax[1,0].set_xlabel(r"$log_{10}$(n) ($cm^{-3}$)", fontsize=ax_lab_size)
         ax[1,0].set_title(f"{ion} Fraction {new_gen[i]}/{old_gen[i]}", fontsize=title_size)
-        fig.colorbar(f3,ax = ax[1,0])
+        
+        fig.colorbar(f3,ax = ax[1,0] )
         
         ax[0,1].axis("off")
 
-        plt.tight_layout()
+        # plt.tight_layout()
         plt.savefig(rs_path+f"/{old_gen[i]}_{new_gen[i]}_comp/{ion}/ion_frac_{old_gen[i]}_{new_gen[i]}_{ion}.pdf")
         plt.clf()
 

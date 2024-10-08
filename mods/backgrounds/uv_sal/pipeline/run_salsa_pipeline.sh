@@ -28,10 +28,17 @@ path4=/mnt/scratch/tairaeli/trident_inputs/pcw_test.h5
 name4=PCW_2019
 
 # running salsa
-# python sal_the_super_uvb.py -uvb_path $path1 -uvb_name $name1
-# python sal_the_super_uvb.py -uvb_path $path2 -uvb_name $name2
-# python sal_the_super_uvb.py -uvb_path $path3 -uvb_name $name3
-# python sal_the_super_uvb.py -uvb_path $path4 -uvb_name $name4
+python sal_the_super_uvb.py -uvb_path $path1 -uvb_name $name1
+python sal_the_super_uvb_H_I.py -uvb_path $path1 -uvb_name $name1
+
+python sal_the_super_uvb.py -uvb_path $path2 -uvb_name $name2
+python sal_the_super_uvb_H_I.py -uvb_path $path2 -uvb_name $name2
+
+python sal_the_super_uvb.py -uvb_path $path3 -uvb_name $name3
+python sal_the_super_uvb_H_I.py -uvb_path $path3 -uvb_name $name3
+
+python sal_the_super_uvb.py -uvb_path $path4 -uvb_name $name4
+python sal_the_super_uvb_H_I.py -uvb_path $path4 -uvb_name $name4
 
 # perfoming analysis
 python uvb_abun_pairwise_compare.py -uvb_path1 $path1 -uvb_name1 $name1 -uvb_path2 $path2 -uvb_name2 $name2
@@ -41,3 +48,5 @@ python uvb_abun_pairwise_compare.py -uvb_path1 $path3 -uvb_name1 $name3 -uvb_pat
 
 # generating plots 
 python pair_comp_plot_paper.py
+python pair_comp_superplot.py
+python pair_comp_ion_frac.py
