@@ -9,9 +9,6 @@ from sklearn.linear_model import LinearRegression
 import unyt as u
 import pandas as pd
 
-# dict containing redshift values
-get_true_rs = {20:'2.0',18:'2.5'}
-
 def lonely_hunter(uvb1,uvb2):
     """
     Isolates instances where there exist lonely clumps of gas
@@ -77,6 +74,9 @@ sal_args.read("/mnt/home/tairaeli/trident_uncertainty/mods/backgrounds/uv_sal/pi
 halo = sal_args["galaxy_settings"]["gal_pattern"]
 rs = sal_args["galaxy_settings"]["redshift"]
 nrays = int(sal_args["galaxy_settings"]["nrays"])
+
+# dict containing redshift values
+get_true_rs = {20:'2.0',18:'2.5'}
 
 # gets the true rs needed
 true_rs = get_true_rs(int(rs))
