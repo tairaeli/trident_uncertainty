@@ -9,7 +9,7 @@ import configparser
 import argparse
 import os
 
-from uvb_abun_pairwise_compare import condense_pairwise_data
+from condense_clumps import condense_pairwise_data
 
 def find_max_length(uvb_list):
     """
@@ -181,7 +181,7 @@ def actually_lonely(id_comp, id_ques, uvb_comp, uvb_ques, clump_error):
     else:
         return True
 
-def pairwise_compare(salsa_out, nrays, max_iter = 100):
+def pairwise_compare(salsa_out, nrays, clump_error, max_iter = 100):
     '''
     Compares two different SALSA abudnance tables to one another created from two
     different Ultraviolet Backgrounds
@@ -204,11 +204,8 @@ def pairwise_compare(salsa_out, nrays, max_iter = 100):
     col_dens_1 = {}
     col_dens_2 = {}
     
-    # should turn into argument
-    clump_error = 10
-    
     for ion in salsa_out.keys():
-        # ion = "S II"
+        # ion = "H I"
         ion_dat = salsa_out[ion]
         
         compare_dict[ion] = {}
@@ -399,9 +396,18 @@ def pairwise_compare(salsa_out, nrays, max_iter = 100):
             if niter >= max_iter:
                 raise Exception("Max number of iterations reached")
 
+            # for debugging a weird issue with boolean logic failure
+            for key in split.keys():
+                assert type(split[key]) == list, f"FAILED: type(split[key]):{type(split[key])}. Should be a list"
+
+            for key in merge.keys():
+                assert type(merge[key]) == list, f"FAILED: type(merge[key]):{type(merge[key])}. Should be a list"
+
+
             # creating list of sorted catagories         
             sorted_list = [match, shorter, longer, overlap, split, merge, lonely_1, lonely_2]
             
+            # tallying total number of absorbers
             clump_sum = 0
             for cat in sorted_list:
                 clump_sum += len(cat)
@@ -451,9 +457,10 @@ def problem_ray_removal(compare_dict, nrays):
         problem_ray_count[ion] = 0
         for ray in compare_dict[ion].keys():
             sorted_list = compare_dict[ion][ray]
-            
+
             broken_ray = False
 
+            # iterating through all categories
             for i, cat in enumerate(sorted_list[0:6]):
                 
                 # handling uvb1 clumps
@@ -564,8 +571,7 @@ uvb_paths = [args.uvb1,args.uvb2]
 # uvb_paths = ["/mnt/scratch/tairaeli/uvb_dat/hm2012_ss_hr.h5",
 #              "/mnt/scratch/tairaeli/trident_inputs/fg_test.h5"]
 
-print(uvb_names)
-
+# reading in data from the config file
 sal_args = configparser.ConfigParser()
 sal_args.read("/mnt/home/tairaeli/trident_uncertainty/mods/backgrounds/uv_sal/pipeline/sal_params.par")
 
@@ -585,8 +591,12 @@ rs_path = halo_path + '/redshift'+f'{true_rs}'
 
 sal_dat = None
 
-nuvb = 2
+# defining sorting error
+sorting_err = int(sal_args["uvb_analysis"]["sorting_err"])
+
+nuvb = len(uvb_names)
 for i in range(nuvb):
+    # defining paths
     dat_path = rs_path +f'/{uvb_names[i]}/data'
     stat_path = rs_path +f'/{uvb_names[i]}/stats'
 
@@ -603,35 +613,69 @@ for i in range(nuvb):
 
 
 print("Starting comparison", flush=True)
-compare_dict, col_dens_1, col_dens_2 = pairwise_compare(sal_dat, nrays)
+compare_dict, col_dens_1, col_dens_2 = pairwise_compare(sal_dat, nrays, sorting_err)
 
 print("Starting condensing", flush=True)
 
-problem_ray_perc = problem_ray_removal(compare_dict, nrays)
-
 ion_list = sal_args["galaxy_settings"]["ions"].split(" ")
+
+problem_ray_perc = problem_ray_removal(compare_dict, nrays)
 
 uvb_dens_1 = {}
 uvb_dens_2 = {}
 dens_comp_dict = {}
 still_bad_rays = []
+
+# going on a second pass through the data to remove problem data
 for ion in ion_list:
+
     nion = ion.replace("_"," ")
     uvb_dens_1[nion] = {}
     uvb_dens_2[nion] = {}
     dens_comp_dict[nion] = {}
-    for ray in compare_dict[nion].keys():
 
+    for ray in compare_dict[nion].keys():
+        still_bad = False
         print("ray: "+str(ray),ion)
-        uvb_dens_1[nion][ray], uvb_dens_2[nion][ray], dens_comp_dict[nion][ray], still_bad = condense_pairwise_data(compare_dict[nion][ray], 
+
+        split = compare_dict[nion][ray][4]
+        merge = compare_dict[nion][ray][5]
+
+        # if a key is also in the value, there is a problem
+        for key in split.keys():
+            if type(split[key]) != list:
+                still_bad = True
+                print(f"bad split found again: {ray} for {ion}")
+
+        for key in merge.keys():
+            if type(merge[key]) != list:
+                still_bad = True
+                print(f"bad merge found again: {ray} for {ion}")
+        
+        # if the ray is good, then we're good to condense pairwise data
+        if not still_bad:
+            uvb_dens_1[nion][ray], uvb_dens_2[nion][ray], dens_comp_dict[nion][ray], still_bad = condense_pairwise_data(compare_dict[nion][ray], 
                                                                                                          sal_dat[nion], 
                                                                                                          ray, 
                                                                                                          nrays)
+        else:
+            dens_comp_dict[nion][ray] = 0
+            uvb_dens_1[nion][ray] = 0
+            uvb_dens_2[nion][ray] = 0
+        
+        # if the ray is bad, record it
         if still_bad:
-            print(f"bad ray found again: {ray}")
+            print(f"bad ray found again: {ray} for {ion}")
+            still_bad_rays.append((nion,ray))
+            problem_ray_perc[nion] += 1/nrays
+        
+        # if the ray is empty, record it as a bad ray
+        elif (len(uvb_dens_1[nion][ray]["col_dens"])+len(uvb_dens_2[nion][ray]["col_dens"]) == 0):
+            print(f"empty ray: {ray} for {ion}")
             still_bad_rays.append((nion,ray))
             problem_ray_perc[nion] += 1/nrays
 
+# delete bad rays
 for bad_ray in still_bad_rays:
     del uvb_dens_1[bad_ray[0]][bad_ray[1]]
     del uvb_dens_2[bad_ray[0]][bad_ray[1]]
@@ -641,6 +685,7 @@ for bad_ray in still_bad_rays:
 out_dict = {uvb_names[0]:uvb_dens_1, uvb_names[1]:uvb_dens_2,
             "bad_ray_perc": problem_ray_perc}
 
+# save data
 out_file = open(f'{rs_path}/uvb_clump_labels_{uvb_names[0]}_{uvb_names[1]}.pickle',"wb") 
 pickle.dump(compare_dict, out_file, protocol=3)	
 out_file.close()
