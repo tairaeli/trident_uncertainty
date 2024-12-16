@@ -27,8 +27,6 @@ def condense_pairwise_data(sorted_list, ion_dat, ray, nrays):
     """
     
     # unpacking data
-    
-
     match = sorted_list[0]
     overlap  = sorted_list[3]
     split = sorted_list[4]
@@ -37,8 +35,8 @@ def condense_pairwise_data(sorted_list, ion_dat, ray, nrays):
     lonely_2 = sorted_list[7]
 
     bad = False
-
-    # 
+    
+    # creating new data bins
     nsplit = {}
     nmerge = {}
 
@@ -66,7 +64,6 @@ def condense_pairwise_data(sorted_list, ion_dat, ray, nrays):
     id2 = 0    
     
     # initializing output data storage bins
-
     uvb1_out = {}
     uvb1_out["col_dens"] = []
     uvb1_out["density"] = []
@@ -82,31 +79,21 @@ def condense_pairwise_data(sorted_list, ion_dat, ray, nrays):
     len1 = len(uvb1["col_dens"])
     len2 = len(uvb2["col_dens"])
 
-    # for key in uvb1_out.keys():
-    #     if len(uvb1[key]) + len(uvb2[key]) == 0:
-    #         return uvb1_out, uvb2_out, 0, True
-
     while (id1 < len1) or (id2 < len2):
+        
         # handling lonely cases
-
         if id1 in lonely_1:
-            # print(id1, "ID1")
             for key in uvb1_out.keys():
                 uvb1_out[key].append(uvb1[key][id1])
                 uvb2_out[key].append(0)
 
             id1+=1
 
-    
         elif id2 in lonely_2:
-            # print(id2, "ID2")
             for key in uvb1_out.keys():
                 uvb2_out[key].append(uvb2[key][id2])
                 uvb1_out[key].append(0)
             id2+=1
-        
-        # elif ((id1 in match) or (id1 in split)) and (id1 in overlap):
-
 
         # checking for instances where uvb2 has split clumps relative to uvb1
         elif id1 in split:
