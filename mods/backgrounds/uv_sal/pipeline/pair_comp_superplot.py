@@ -6,13 +6,11 @@ import pickle
 import configparser
 import os
 from sklearn.linear_model import LinearRegression
+import unyt as u
+import pandas as pd
 
-def get_true_rs(val): ##define how to get actual rshift numbers
-    if val == 20:
-        true_rs = '2.0'
-    elif val == 18:
-        true_rs = '2.5'
-    return true_rs
+# dict containing redshift values
+get_true_rs = {20:'2.0',18:'2.5'}
 
 def lonely_hunter(uvb1,uvb2):
     """
@@ -94,10 +92,15 @@ uvb_names = sal_args["uvb_analysis"]["uvb_names"].split(" ")
 
 sal_dat = None
 
-old_gen = [uvb_names[0], uvb_names[2], uvb_names[1]]
-new_gen = [uvb_names[1], uvb_names[3], uvb_names[3]]
+# list of uvb data for comparison
+old_gen = [uvb_names[0], uvb_names[2], uvb_names[3]]
+new_gen = [uvb_names[1], uvb_names[3], uvb_names[1]]
 
+# contains shortened UVB names
+short_uvb_names = {"FG_2009":"FG09", "FG_2020":"FG20",
+                   "HM_2012":"HM12", "PCW_2019":"PW19"}
 
+# creating a comparison dictionary, then assigning UVB data to dictionary
 for i,name in enumerate(uvb_names):
     dat_path = rs_path +f'/{name}/data'
 
@@ -113,9 +116,14 @@ for i,name in enumerate(uvb_names):
         
                 sal_dat[ion][name] = uvb_dict[ion][name]
 
-ion_list = sal_args["galaxy_settings"]["ions"].split(" ")
+# ion_list = sal_args["galaxy_settings"]["ions"].split(" ")
 
-# # creating dictionaries to store our data if they don't already exist
+# loading in ion data
+ion_dat = pd.read_csv("./ion_dat.txt", delimiter = "  ", index_col = "ion")
+ion_dat = ion_dat.sort_values(by=["ionization energy (eV)"])
+ion_list = ion_dat.index
+
+# creating dictionaries to store our data if they don't already exist
 uvb_dist_path = rs_path+"/uvb_dists"
 if os.path.exists(uvb_dist_path) == False:
     os.mkdir(uvb_dist_path)
@@ -126,21 +134,23 @@ comp_paths = {}
 # setting labels for clump categories
 clump_cat_labels = ["match","diff_size","overlap","merge"]
 prop_list = ["density","temperature"]
-plot_titles = ["n","T"]
-prop_unit = ["($cm^{-3}$)","(K)"]
+plot_titles = ["N","T"]
+prop_unit = ["[$cm^{-3}$]","[K]"]
 palt = plt.cm.tab10(np.linspace(0,1,4))
 
-# making the super grid
+# defining the super grid parameters
 category_list = ["col_dens","dens","t"]
 wrats = [1]*len(category_list)
 wrats.append(0.5)
-fig = plt.figure(figsize=(20,16))
-gs = GridSpec(len(ion_list),len(category_list)+1, width_ratios=wrats)
 ax_lab_size = 15
 title_size = 15
 ion_txt_size=30
 
 for i in range(len(old_gen)):
+    # setting up grid
+    fig = plt.figure(figsize=(25,25))
+    gs = GridSpec(len(ion_list),len(category_list)+1, width_ratios=wrats)
+    
     # making the super plot
     for m,ion in enumerate(ion_list):
         nion = ion.replace("_"," ")
@@ -167,6 +177,7 @@ for i in range(len(old_gen)):
         
         print(f"Comparing {new_gen[i]} and {old_gen[i]}") 
         print("fraction of missing rays:"+str(comp_dict["bad_ray_perc"]))
+
         # creating dictionaries to store our data if they don't already exist
         comp_paths[f"{old_gen[i]}_{new_gen[i]}"] = rs_path+f"/{old_gen[i]}_{new_gen[i]}_comp"
         if os.path.exists(comp_paths[f"{old_gen[i]}_{new_gen[i]}"]) == False:
@@ -194,28 +205,22 @@ for i in range(len(old_gen)):
         phys_quant["avg_ray_temp"] = {"mean":np.array([]),
                                       "upper":np.array([]),
                                       "lower":np.array([])}
-        # phys_quant["avg_ray_met"] = {"mean":np.array([]),
-        #                               "upper":np.array([]),
-        #                               "lower":np.array([])}
-        # temporary: adding color array
-        # color_arr = np.array([])
-        c = 0
+
+        # c = 0
         
         color_arr = []
-        # old_lone = []
-        # new_lone = []
+
         for ray in comp_dict[old_gen[i]][nion].keys():
             old_lone = []
             new_lone = []
             
             # creating colorbar for clump categories
             match, shorter, longer, overlap, split, merge, lonely_old, lonely_new = clump_categories[nion][ray]
-            # print(ray, clump_categories[nion][ray], old_gen[i], new_gen[i], len(comp_dict[old_gen[i]][nion][ray]["col_dens"]))
             
             clumps_containted_1 = 0
             clumps_containted_2 = 0
+
             # some weird edge case causing me to ad a +2
-            # print(comp_dict.keys())
             for j in range(len(comp_dict[old_gen[i]][nion][ray]["col_dens"])+2):
                 if (j) in split:
                     clumps_containted_2 += split[j]
@@ -242,9 +247,6 @@ for i in range(len(old_gen)):
 
                 elif (j) in overlap:
                     color_arr.append("overlap")
-                
-                # else:
-                #     print("Error: Old",ray,j)
 
             for j in range(len(comp_dict[new_gen[i]][nion][ray]["col_dens"])+clumps_containted_2): 
                 if (j) in lonely_new:
@@ -259,16 +261,7 @@ for i in range(len(old_gen)):
             # removing lonely clumps from comparison
             lonely_new, lonely_old, reduced_uvb_new, reduced_uvb_old = lonely_hunter(comp_dict[new_gen[i]][nion][ray],
                                                                                      comp_dict[old_gen[i]][nion][ray])
-            # calculating fractions of old and new uvb lonely absorbers
-            
-            # if len(reduced_uvb_old["col_dens"])+len(lonely_old["col_dens"]) != 0:
-                
-            #     frac_lone_old = len(lonely_old["col_dens"])/(len(reduced_uvb_old["col_dens"])+len(lonely_old["col_dens"]))
-            #     frac_lone_new = len(lonely_new["col_dens"])/(len(reduced_uvb_new["col_dens"])+len(lonely_new["col_dens"]))
-            # else:
-            #     frac_lone_old = "INVALID"
-            #     frac_lone_new = "INVALID"
-            
+            # calculating fractions of old and new uvb lonely absorbers          
             assert len(lonely_new["col_dens"]) == len(new_lone), "NEW FAIL "+str(len(lonely_new))+":"+str(len(new_lone))
             assert len(lonely_old["col_dens"]) == len(old_lone), "OLD FAIL "+str(len(lonely_old))+":"+str(len(old_lone))
             assert len(reduced_uvb_old["col_dens"]) == len(reduced_uvb_new["col_dens"]), "Arrays are different sizes. \n old = "+str(len(reduced_uvb_old["col_dens"]))+ "\n new = "+str(len(reduced_uvb_new["col_dens"]))
@@ -281,8 +274,8 @@ for i in range(len(old_gen)):
             total_new += len(comp_dict[new_gen[i]][nion][ray]["col_dens"])
             total_old += len(comp_dict[old_gen[i]][nion][ray]["col_dens"])
 
+            # calculating density difference and concatenating it to list
             dens_diff =  reduced_uvb_new["col_dens"] - reduced_uvb_old["col_dens"]
-
             uvb_dens_diff = np.concatenate((uvb_dens_diff,dens_diff))
 
             # storing old/new generation
@@ -296,7 +289,7 @@ for i in range(len(old_gen)):
                                          reduced_uvb_new["col_dens"]])
 
             for k, prop in enumerate(prop_list):
-                
+                # finding upper and lower bounds of data
                 ub = np.zeros_like(reduced_uvb_old["col_dens"])
                 lb = np.zeros_like(reduced_uvb_old["col_dens"])
                 
@@ -304,16 +297,21 @@ for i in range(len(old_gen)):
                 new = reduced_uvb_new[prop]
                 key = list(phys_quant.keys())[k]
 
+                # creating data masks for 
                 ub_mask = np.where(old>new)
                 lb_mask = np.where(old<new)
 
+                # all indices where the phys quantity is larger goes in ub
                 ub[ub_mask] = old[ub_mask]
                 ub[lb_mask] = new[lb_mask]
-
+                
+                # all indices where the phys quantity is smaller goes in lb
                 lb[lb_mask] = old[lb_mask]
                 lb[ub_mask] = new[ub_mask]
 
                 old_new_arr = np.array([new,old])
+
+                # assigning data to dictionary
                 phys_quant[key]["mean"] = np.concatenate((phys_quant[key]["mean"],
                                                           np.average(old_new_arr, axis = 0,
                                                                      weights = new_old_col_dens)))
@@ -321,54 +319,88 @@ for i in range(len(old_gen)):
                 phys_quant[key]["upper"] = np.concatenate((phys_quant[key]["upper"], ub))
         
         color_arr = np.array(color_arr)
-        # 1:1 comp
-        # setting legend
+        ion_mass_g = ion_dat["mass (amu)"][ion]*1.6605E-24
+
         new_lone_frac = lonely_new_tot/total_new
         old_lone_frac = lonely_old_tot/total_old
-        legend_labs = [Line2D([0], [0], color='w', lw=4, label=f"{old_gen[i]}:{np.round(old_lone_frac,2)}\n {new_gen[i]}:{np.round(new_lone_frac,2)}")]
+        
+        print("fraction of new lonely absorbers:"+str(new_lone_frac))
+        print("fraction of old lonely absorbers:"+str(old_lone_frac))
+
+        # 1:1 comp
+        # setting legend
+        legend_labs = []
         
         # line where both UVB quantities match
         match_line = np.linspace(min(np.min(new_gen_dat),np.min(old_gen_dat)),max(np.max(new_gen_dat),np.max(old_gen_dat)))
         
         # creating subplot object
         plot = fig.add_subplot(gs[m,0])
-        plot.plot(match_line, match_line, color = "black", linestyle = '--')
+        plot.axhline(0, color = "black", linestyle = '--')
         
         # adding ion label
-        plot.text(np.min(old_gen_dat)+np.ptp(old_gen_dat)*0.7, np.min(old_gen_dat)+np.ptp(old_gen_dat)*0.2, 
-                  s=nion, fontsize=ion_txt_size)
+        plot.text(0.07, 0.7, 
+                  s=nion, fontsize=ion_txt_size,
+                  transform=plot.transAxes)
         
         # plotting data
         for k,cat in enumerate(clump_cat_labels):
             cat_mask = np.where(color_arr == cat)
-            plot.plot(old_gen_dat[cat_mask], new_gen_dat[cat_mask],
+            plot.plot(old_gen_dat[cat_mask], uvb_dens_diff[cat_mask],
                       linestyle = "None", marker = ".", color = palt[k], label = cat)
             legend_labs.append(Line2D([0], [0], color=palt[k], lw=4, label=cat))
         
         # making a linear fit to the data
         lr = LinearRegression()
-        lr.fit(old_gen_dat.reshape(-1,1), new_gen_dat)
+        lr.fit(old_gen_dat.reshape(-1,1), uvb_dens_diff)
 
         # plotting fit line
         plot.plot(match_line, lr.predict(match_line.reshape(-1,1)), 
                   color = "green", linestyle = ":", linewidth=4)
-        legend_labs.append(Line2D([0], [0], color="green", lw=4, 
-                                  label=f"Fit line", linestyle = ":"))
 
         # calculating RMSE
         d = np.abs(old_gen_dat*lr.coef_[0] - new_gen_dat + lr.intercept_)/np.sqrt(lr.coef_[0]**2+1)
         rmse = np.sqrt(np.mean(d))
-        legend_labs.append(Line2D([0], [0], color="w", lw=4, label=f"Fit RMSE:{np.round(rmse,3)}"))
 
         # other plot settings
-        plot.set_xlabel(f"{old_gen[i]} $log_{10}$($\sigma$) ($cm^{-2}$)", fontsize=ax_lab_size)
-        plot.set_ylabel(f"{new_gen[i]} $log_{10}$($\sigma$) ($cm^{-2}$)", fontsize=ax_lab_size)
-        plot.set_title(f"{ion} Absorber $\sigma$ Compare", fontsize=title_size)
+        if m == len(ion_list)-1:
+            plot.set_xlabel(f"{short_uvb_names[old_gen[i]]}"+" $log_{10}$(n) [$cm^{-2}$]", fontsize=ax_lab_size)
+        
+        # hardcoding some lines in because latex and variable strings do not play well together
+        if i==0:
+            plot.set_ylabel(r"$log_{10}$($\sigma_{FG20}}$/$\sigma_{FG09}$) [$cm^{-2}$]", fontsize=ax_lab_size)
+        elif i==1:
+            plot.set_ylabel(r"$log_{10}$($\sigma_{PW19}$/$\sigma_{HM12}$) [$cm^{-2}$]", fontsize=ax_lab_size)
+        elif i==2:
+            plot.set_ylabel(r"$log_{10}$($\sigma_{FG20}$/$\sigma_{PW19}$) [$cm^{-2}$]", fontsize=ax_lab_size)
+        
         plot.grid()
-        plot.legend(handles=legend_labs)
+        if m == 0:
+            plot.legend(handles=legend_labs, loc='upper right')
 
-        # comparing other phys quantities
+        # converting gas density to number density
+        phys_quant["avg_ray_dens"]["mean"] = phys_quant["avg_ray_dens"]["mean"]/ion_mass_g
+        phys_quant["avg_ray_dens"]["lower"] = phys_quant["avg_ray_dens"]["lower"]/ion_mass_g
+        phys_quant["avg_ray_dens"]["upper"] = phys_quant["avg_ray_dens"]["upper"]/ion_mass_g
+
+        # creating comparison plots
         for j, quant in enumerate(phys_quant.keys()):
+            
+            # creating a linear fit to calculate variance of data
+            lr = LinearRegression()
+            phys_quant_mean = phys_quant[quant]["mean"][~np.isnan(phys_quant[quant]["mean"])]
+            uvb_dens_diff_rmna = uvb_dens_diff[~np.isnan(phys_quant[quant]["mean"])]
+            
+            lr.fit(phys_quant_mean.reshape(-1,1), uvb_dens_diff_rmna)
+
+            match_line = np.linspace(np.min(phys_quant_mean),
+                                     np.max(phys_quant_mean),
+                                     100)
+            rss = np.sum((uvb_dens_diff - lr.intercept_ - lr.coef_*phys_quant[quant]["mean"])**2)
+            var = rss/(len(uvb_dens_diff)-2)
+            print("Variance of",quant+":", var)
+
+            # plotting data
             plot = fig.add_subplot(gs[m,1+j])
             for k,cat in enumerate(clump_cat_labels):
                 cat_mask = np.where(color_arr == cat)
@@ -378,22 +410,15 @@ for i in range(len(old_gen)):
                     xmax=np.log10(phys_quant[quant]["upper"][cat_mask]),
                     color = palt[k])
             
-            plot.set_xlabel("$log_{10}$ Mean "+plot_titles[j]+f" {prop_unit[j]}", fontsize=ax_lab_size)
-            plot.set_title(f"{ion} Mean "+plot_titles[j]+f" {old_gen[i]} v {new_gen[i]}", fontsize=title_size)
+            if m == (len(ion_list)-1):
+                if j==0:
+                    plot.set_xlabel("$log_{10}$"+r"$\overline{n}$"+f" {prop_unit[j]}", fontsize=ax_lab_size)
+                else:
+                    plot.set_xlabel("$log_{10}$"+r"$\overline{T}$"+f" {prop_unit[j]}", fontsize=ax_lab_size)
             plot.grid()
-            
-            # hardcoding some lines in because latex and variable strings do not play well together
-            if (i==0) and (j==0):
-                plot.set_ylabel(r"$log_{10}$($\frac{\sigma_{FG20}}{\sigma_{FG09}})$) ($cm^{-2}$)", fontsize=ax_lab_size)
-            elif (i==1) and (j==0):
-                plot.set_ylabel(r"$log_{10}$($\frac{\sigma_{PCW19}}{\sigma_{HM12}})$) ($cm^{-2}$)", fontsize=ax_lab_size)
-            elif (i==2) and (j==0):
-                plot.set_ylabel(r"$log_{10}$($\frac{\sigma_{PCW19}}{\sigma_{FG20}})$) ($cm^{-2}$)", fontsize=ax_lab_size)
 
+        # creating a histogram of column density differences 
         hist = fig.add_subplot(gs[m,len(prop_list)+1])
-        # might use these
-        # weights = 10**uvb_dens_diff / sum(10**uvb_dens_diff)
-
         for k,cat in enumerate(clump_cat_labels):
             cat_mask = np.where(color_arr == cat)
             hist.hist(uvb_dens_diff[cat_mask], orientation="horizontal", 
@@ -406,3 +431,141 @@ for i in range(len(old_gen)):
     plt.savefig(comp_paths[f"{old_gen[i]}_{new_gen[i]}"]+f"/super_plot_{old_gen[i]}_{new_gen[i]}.pdf")
     plt.show()
     plt.clf()
+
+# creating 1:1 column density comparison figures
+fig, ax = plt.subplots(len(ion_list), 3, figsize=(15,20))
+
+# puts each 1:1 comparison in above figure
+for i in range(len(old_gen)):
+    for m,ion in enumerate(ion_list):
+        nion = ion.replace("_"," ")
+        print(f"Creating {nion}")
+
+        # making sure that the right comp file is read in
+        try:
+            with open(rs_path+f"/uvb_clump_labels_{old_gen[i]}_{new_gen[i]}.pickle","rb") as file:
+                    clump_categories = pickle.load(file)
+
+            with open(rs_path+f"/uvb_compare_{old_gen[i]}_{new_gen[i]}.pickle","rb") as file:
+                comp_dict = pickle.load(file)
+        except:
+            try:
+                with open(rs_path+f"/uvb_compare_{new_gen[i]}_{old_gen[i]}.pickle","rb") as file:
+                    comp_dict = pickle.load(file)
+                
+                with open(rs_path+f"/uvb_compare_{new_gen[i]}_{old_gen[i]}.pickle","rb") as file:
+                    comp_dict = pickle.load(file)
+
+            except:
+                print(f"Comparison between {new_gen[i]} and {old_gen[i]} Does not exist")
+                continue
+        
+        print(f"Comparing {new_gen[i]} and {old_gen[i]}") 
+        print("fraction of missing rays:"+str(comp_dict["bad_ray_perc"]))
+
+        # setting up data bins to store data in
+        uvb_dens_diff = np.array([])
+        old_gen_dat = np.array([])
+        new_gen_dat = np.array([])
+        color_arr = []
+
+
+        for ray in comp_dict[old_gen[i]][nion].keys():
+            old_lone = []
+            new_lone = []
+            
+            # creating colorbar for clump categories
+            match, shorter, longer, overlap, split, merge, lonely_old, lonely_new = clump_categories[nion][ray]
+            
+            clumps_containted_1 = 0
+            clumps_containted_2 = 0
+
+            # adding data to colorbar categories
+            # some weird edge case causing me to ad a +2
+            for j in range(len(comp_dict[old_gen[i]][nion][ray]["col_dens"])+2):
+                if (j) in split:
+                    clumps_containted_2 += split[j]
+                
+            for j in range(len(comp_dict[new_gen[i]][nion][ray]["col_dens"])+2): 
+                if (j) in merge:
+                    clumps_containted_1 += merge[j]
+
+            for j in range(len(comp_dict[old_gen[i]][nion][ray]["col_dens"])+clumps_containted_1):
+                if (j) in match:
+                    color_arr.append("match")
+
+                elif (j) in split:
+                    color_arr.append("merge")
+
+                elif (j) in lonely_old:
+                    old_lone.append(j)
+                
+                elif (j) in longer:
+                    color_arr.append("diff_size")
+                
+                elif (j) in shorter:
+                    color_arr.append("diff_size")
+
+                elif (j) in overlap:
+                    color_arr.append("overlap")
+
+            for j in range(len(comp_dict[new_gen[i]][nion][ray]["col_dens"])+clumps_containted_2): 
+                if (j) in lonely_new:
+                    new_lone.append(j)
+                elif (j) in merge:
+                    color_arr.append("merge")
+                elif (j) in match:
+                    continue
+
+            # removing lonely clumps from comparison
+            lonely_new, lonely_old, reduced_uvb_new, reduced_uvb_old = lonely_hunter(comp_dict[new_gen[i]][nion][ray],
+                                                                                     comp_dict[old_gen[i]][nion][ray])
+            
+            # checking the data 
+            assert len(lonely_new["col_dens"]) == len(new_lone), "NEW FAIL "+str(len(lonely_new))+":"+str(len(new_lone))
+            assert len(lonely_old["col_dens"]) == len(old_lone), "OLD FAIL "+str(len(lonely_old))+":"+str(len(old_lone))
+            assert len(reduced_uvb_old["col_dens"]) == len(reduced_uvb_new["col_dens"]), "Arrays are different sizes. \n old = "+str(len(reduced_uvb_old["col_dens"]))+ "\n new = "+str(len(reduced_uvb_new["col_dens"]))
+
+            dens_diff =  reduced_uvb_new["col_dens"] - reduced_uvb_old["col_dens"]
+
+            uvb_dens_diff = np.concatenate((uvb_dens_diff,dens_diff))
+
+            # storing old/new generation
+            old_gen_dat = np.concatenate((old_gen_dat, reduced_uvb_old["col_dens"]))
+            new_gen_dat = np.concatenate((new_gen_dat, reduced_uvb_new["col_dens"]))
+
+            assert len(uvb_dens_diff) == len(color_arr), "Arrays diff sizes at ray "+str(ray)+". uvb_dens_diff:"+str(len(uvb_dens_diff))+" color_arr:"+str(len(color_arr))+" "+old_gen[i]+" "+new_gen[i]
+
+        color_arr = np.array(color_arr)
+
+        # creating data for a line of equivalency between the data
+        match_line = np.linspace(min(np.min(new_gen_dat),np.min(old_gen_dat)),max(np.max(new_gen_dat),np.max(old_gen_dat)))
+        
+        # creating subplot object
+        ax[m,i].plot(match_line, match_line, color = "black", linestyle = '--')
+        
+        # adding ion label
+        if i == 0:
+            ax[m,i].text(np.min(old_gen_dat)+np.ptp(old_gen_dat)*0.7, np.min(old_gen_dat)+np.ptp(old_gen_dat)*0.2, 
+                    s=nion, fontsize=ion_txt_size)
+        
+        legend_labs = []
+
+        # plotting data
+        for k,cat in enumerate(clump_cat_labels):
+            cat_mask = np.where(color_arr == cat)
+            ax[m,i].plot(old_gen_dat[cat_mask], new_gen_dat[cat_mask],
+                      linestyle = "None", marker = ".", color = palt[k], label = cat)
+            legend_labs.append(Line2D([0], [0], color=palt[k], lw=4, label=cat))
+        
+        ax[m,i].set_ylabel(new_gen[i])
+        ax[m,i].grid()
+        if m == len(ion_list)-1:
+            ax[m,i].set_xlabel(old_gen[i])
+        
+# plotting figure
+ax[0,0].legend()
+plt.tight_layout()
+plt.savefig(comp_paths[f"{old_gen[i]}_{new_gen[i]}"]+f"/super_one_to_one_{old_gen[i]}_{new_gen[i]}.pdf")
+plt.show()
+plt.clf()
