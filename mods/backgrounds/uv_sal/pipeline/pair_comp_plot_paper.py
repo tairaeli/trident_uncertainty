@@ -1,3 +1,7 @@
+"""
+Makes plot of total column densities of selected ions for 
+different ultraviolet backgrounds
+"""
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
