@@ -1,0 +1,20 @@
+ion  ionization energy (eV)
+C_II  24.38
+C_III  47.88
+C_IV  64.49
+H_I  13.59
+Mg_II  15.03
+O_III  54.93
+O_VI  138.12
+Si_II  16.34
+Si_III  33.49
+Si_IV  45.14
+S_II  23.33
+S_III  34.79
+S_IV  47.22
+N_II  29.6
+N_V  97.89
+Al_III  28.44
+Ne_VII  207.28
+Ne_VIII  239.10
+Mg_X  367.50
