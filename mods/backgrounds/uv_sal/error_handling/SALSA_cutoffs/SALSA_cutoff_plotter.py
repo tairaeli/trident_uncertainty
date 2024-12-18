@@ -125,7 +125,7 @@ res = 100
 hist_dat = []
 max_val = -np.inf
 for i,cut in enumerate(np.arange(iter_vals[0],iter_vals[1],iter_vals[2])):
-    temp_hist = np.histogram(plot_df[ion][cut])
+    temp_hist = np.histogram(plot_df[ion][cut], bins=20)
     hist_dat.append(temp_hist)
 
     if np.max(temp_hist[0]) > max_val:
@@ -133,15 +133,16 @@ for i,cut in enumerate(np.arange(iter_vals[0],iter_vals[1],iter_vals[2])):
 
 for i,cut in enumerate(np.arange(iter_vals[0],iter_vals[1],iter_vals[2])):
     hist = hist_dat[i]
-
-    hist[0] = np.concatenate((hist[0][0], np.array(hist[0])))
-    sn.lineplot(x=hist[1][1:], y=hist[0]/max_val, drawstyle='steps-pre',color=colors[i])
+    len(hist[0])
+    bheight = np.hstack((hist[0][0], np.array(hist[0])))
+    len(bheight)
+    sn.lineplot(x=hist[1], y=bheight/max_val, drawstyle='steps-pre', color=colors[i])
     col_list.append(mlines.Line2D([], [], color=colors[i],
                     markersize=10, label=args.var_arg+" = "+str(np.round(cut,2))))
 
 plt.legend(handles=col_list)
 plt.grid()
-plt.xlabel(r"Column Density ($cm^{-2}$)", fontsize = 15)
+plt.xlabel(r"$\sigma_{FG09}$ ($cm^{-2}$)", fontsize = 15)
 plt.title(f"UVB Number Density Comparison "+nion, fontsize = 20)
 plt.savefig(plot_path+"UVB_dens_compare_"+args.var_arg+"_test.pdf")
 plt.show()

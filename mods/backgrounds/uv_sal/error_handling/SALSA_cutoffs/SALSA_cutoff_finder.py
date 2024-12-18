@@ -1,4 +1,7 @@
-# importing necessary libraries
+"""
+Finds column densities of SALSA absorbers at specified cutoff 
+fractions and minimum total column density thresholds
+"""
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -128,7 +131,8 @@ gal_vel = halo_data.arr(center_dat['vel'], 'km/s')
 
 # defining characteristics of ray behavior
 nrays = args.nrays
-max_impact = 15
+max_impact = 21.25
+min_impact = 2.125
 
 # defining random seed to allow for repitition
 np.random.seed(13)
@@ -143,10 +147,10 @@ if not check:
     salsa.generate_lrays(halo_data, 
                      center.to('code_length'), 
                      nrays, 
-                     max_impact, 
+                     max_impact,
+                     min_impact, 
                      length=600, 
-                     field_parameters={'bulk_velocity':gal_vel}, 
-                     # ion_list=['H I'], 
+                     field_parameters={'bulk_velocity':gal_vel},
                      fields=other_fields, 
                      out_dir=args.out_dir+"/rays")
 
