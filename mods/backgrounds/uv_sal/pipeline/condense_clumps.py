@@ -1,3 +1,7 @@
+"""
+Takes pairwise data from absorber comparison and reduces data such
+that the two arrays are matching one another
+"""
 import numpy as np
 import pandas as pd
 
