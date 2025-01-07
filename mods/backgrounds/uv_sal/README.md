@@ -15,13 +15,6 @@ Where the magic happens. Contains all of the scripts necessary for running the a
 - **plot_pair_comp.py**: Plots pairwise comparisons of column densities along with gas densities and temperatures
 - **run_salsa_pipeline.sh**: bash script containing the order by which each script os run, along with the arguments included
 
-### notebooks
-
-Contains the notebooks where the majority of the testing of the pipeline is done
-- **sal_module_testing.ipynb**: evaluates individual parts on the pipeline to ensure that they are functioning correctly (kind of a mess of at the moment)
-- **uvb_col_density_compare.ipynb**: used for creating visualizations of the output from the pipeline data
-- **salsa_issues**: directory where I attempt to highlight the issues I've been running into with SALSA
-
 ### Current Plan
 1. Fix this weird issue with SALSA, need to reach out to Devin about it
 2. Afterwards I should reall reach out to the Trident Slack channel about being able to change the UVB model within the code to make my life easier
