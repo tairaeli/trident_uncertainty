@@ -15,15 +15,8 @@ Where the magic happens. Contains all of the scripts necessary for running the a
 - **plot_pair_comp.py**: Plots pairwise comparisons of column densities along with gas densities and temperatures
 - **run_salsa_pipeline.sh**: bash script containing the order by which each script os run, along with the arguments included
 
-### notebooks
-
-Contains the notebooks where the majority of the testing of the pipeline is done
-- **sal_module_testing.ipynb**: evaluates individual parts on the pipeline to ensure that they are functioning correctly (kind of a mess of at the moment)
-- **uvb_col_density_compare.ipynb**: used for creating visualizations of the output from the pipeline data
-- **salsa_issues**: directory where I attempt to highlight the issues I've been running into with SALSA
-
-### Current Plan
-1. Fix this weird issue with SALSA, need to reach out to Devin about it
-2. Afterwards I should reall reach out to the Trident Slack channel about being able to change the UVB model within the code to make my life easier
-3. Then comes the plan of expanding this to ALL of the UVB models that are currently avaliable, I will probably need to streamline my process for running my code such that this process can be made easier
-4. At some point, I would also like to be able to integrate Alexis' code (abundance table comparisons) into my own and allow us to see how UVB models and abudance table differences interact with one another May involve the scraping of a lot of my own code in favor of using Alexis' (as mine is not designed to handle so many diffferent UVB models)
+### SALSA Cutoffs
+Set of scripts for finding an optimal set of absorber cutoff fraction and minimum density settings for use in the pairwise comparison. For a more thorough explanation of what these two quantities represent: https://salsa.readthedocs.io/en/latest/absorber_extraction.html#detailed-spice-method
+- **SALSA_cutoff_finder.py**: Tests a range of settings in either absorber cutoff fraction or minimum density for a selected number of rays for a given UVB, then saves the resulting absorbers from each setting
+- **SALSA_cutoff_plotter.py**: Creates histograms for settings tested in *SALSA_cutoff_finder.py*, both absorber cutoff fraction and minimum density
+- **cutoff_check.sh**: bash script for running SALSA parameter analysis
