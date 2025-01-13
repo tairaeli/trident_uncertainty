@@ -16,7 +16,7 @@ Where the magic happens. Contains all of the scripts necessary for running the a
 - **run_salsa_pipeline.sh**: bash script containing the order by which each script os run, along with the arguments included
 
 ### SALSA Cutoffs
-Set of scripts for finding an optimal set of absorber cutoff fraction and minimum density settings for use in the pairwise comparison. For a more thorough explanation of what these two quantities represent: https://salsa.readthedocs.io/en/latest/absorber_extraction.html#detailed-spice-method
+Set of scripts for finding an optimal set of absorber cutoff fraction and minimum density settings for use in the absorber extraction methods. For a more thorough explanation of what these two quantities represent: https://salsa.readthedocs.io/en/latest/absorber_extraction.html#detailed-spice-method
 - **SALSA_cutoff_finder.py**: Tests a range of settings in either absorber cutoff fraction or minimum density for a selected number of rays for a given UVB, then saves the resulting absorbers from each setting
 - **SALSA_cutoff_plotter.py**: Creates histograms for settings tested in *SALSA_cutoff_finder.py*, both absorber cutoff fraction and minimum density
 - **cutoff_check.sh**: bash script for running SALSA parameter analysis
