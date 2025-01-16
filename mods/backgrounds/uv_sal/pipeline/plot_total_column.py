@@ -144,10 +144,12 @@ ion_name_dict = {"H_I":r"H $\mathrm{\i}$",
                  "O_VI":r"O $\mathrm{v\i}$"}
 
 # setting up total column density figure
-fig, ax = plt.subplots(2, (num_ion//2)+(num_ion%2), figsize=(20,10))
+fig, ax = plt.subplots(2, (num_ion//2)+(num_ion%2), figsize=(25,10),
+                       constrained_layout = True)
+                       
 colors = sns.color_palette("rocket",len(old_gen))
-w_size = 20
-ion_txt_size = 30
+w_size = 30
+ion_txt_size = 40
 j=0
 k=0
 
@@ -186,21 +188,29 @@ for ion in ion_list:
         
         moving_avg = np.convolve(dens_diff, np.ones(w_size) / w_size, mode='valid')
         x_vals = avg_dens[w_size-1:]
+        
+        x_vals = np.sort(x_vals)
+        moving_avg = moving_avg[x_vals.argsort()]
+        
         # adding ion label
         if i == 0: 
-
-            element,istate = ion.split("_")
-            ax[j,k].text(0.07, 0.7, 
-                  s=ion_name_dict[ion], fontsize=ion_txt_size,
-                  transform=ax[j,k].transAxes)
             
-        plt.scatter(x = avg_dens, y = dens_diff, 
+            element,istate = ion.split("_")
+            
+            if (ion =="N_V") or (ion=="O_VI"):
+                ax[j,k].text(0.2, 0.2, 
+                      s=ion_name_dict[ion], fontsize=ion_txt_size,
+                      transform=ax[j,k].transAxes)
+            else:
+                ax[j,k].text(0.7, 0.2, 
+                      s=ion_name_dict[ion], fontsize=ion_txt_size,
+                      transform=ax[j,k].transAxes)
+            
+        ax[j,k].scatter(x = avg_dens, y = dens_diff, 
                         label=f"{short_uvb_names[new_gen[i]]}/{short_uvb_names[old_gen[i]]}",
                         color = colors[i])
-        plt.plot(x_vals, moving_avg, ax=ax[j,k], color = colors[i])
-
-    ax[j,k].set_xlabel(r"log($\overline{N}$) [$cm^{-2}$]", fontsize=12)
-    ax[j,k].set_ylabel(r"log($n_{old}/n_{new}$) [$cm^{-2}$]", fontsize=12)
+        ax[j,k].plot(x_vals, moving_avg, color = colors[i])
+        
     ax[j,k].grid()
 
     if (k>=(num_ion//2)+(num_ion%2)-1):
@@ -209,7 +219,9 @@ for ion in ion_list:
     else:
         k+=1
 
-ax[0,0].legend()
-plt.tight_layout()
-plt.savefig(uvb_dist_path+f"/tot_col_dens_comp.pdf", bbox_inches="tight")
+ax[0,0].legend(loc='lower left', prop={'size': 15})
+fig.supxlabel(r"log($\overline{N}$) [$cm^{-2}$]", fontsize=27)
+fig.supylabel(r"log($n_{old}/n_{new}$) [$cm^{-2}$]", fontsize=27)
+plt.savefig(uvb_dist_path+f"/tot_col_dens_comp.png",
+                dpi=400,bbox_inches='tight')
 plt.clf()

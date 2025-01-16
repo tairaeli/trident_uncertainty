@@ -83,7 +83,7 @@ nrays = int(sal_args["galaxy_settings"]["nrays"])
 get_true_rs = {20:'2.0',18:'2.5'}
 
 # gets the true rs needed
-true_rs = get_true_rs(int(rs))
+true_rs = get_true_rs[int(rs)]
 
 # identifying the path argument as a variable
 out_file = sal_args["base_settings"]["output_file"]
@@ -120,12 +120,11 @@ for i,name in enumerate(uvb_names):
         
                 sal_dat[ion][name] = uvb_dict[ion][name]
 
-# ion_list = sal_args["galaxy_settings"]["ions"].split(" ")
+ion_list = sal_args["galaxy_settings"]["ions"].split(" ")
 
 # loading in ion data
 ion_dat = pd.read_csv("./ion_dat.txt", delimiter = "  ", index_col = "ion")
 ion_dat = ion_dat.sort_values(by=["ionization energy (eV)"])
-ion_list = ion_dat.index
 
 # creating dictionaries to store our data if they don't already exist
 uvb_dist_path = rs_path+"/uvb_dists"
@@ -146,14 +145,25 @@ palt = plt.cm.tab10(np.linspace(0,1,4))
 category_list = ["col_dens","dens","t"]
 wrats = [1]*len(category_list)
 wrats.append(0.5)
-ax_lab_size = 15
+ax_lab_size = 25
 title_size = 15
-ion_txt_size=30
+ion_txt_size=40
+
+plot_axis = {"FG_2020:FG_2009":{"col_dens":[(11.9,16.5),(-7.5,7)],
+                                "avg_ray_dens":[(-6,1)],
+                                "avg_ray_temp":[(2.5,6)]},
+             "PCW_2019:HM_2012":{"col_dens":[(11.4,22),(-5,6)],
+                                "avg_ray_dens":[(-6,1)],
+                                "avg_ray_temp":[(2.5,6)]},
+             "FG_2020:PCW_2019":{"col_dens":[(11.4,22),(-6.1,4.5)],
+                                "avg_ray_dens":[(-6,1)],
+                                "avg_ray_temp":[(2.5,6)]}}
 
 for i in range(len(old_gen)):
     # setting up grid
-    fig = plt.figure(figsize=(25,25))
-    gs = GridSpec(len(ion_list),len(category_list)+1, width_ratios=wrats)
+    fig = plt.figure(figsize=(20,25))
+    gs = GridSpec(len(ion_list),len(category_list)+1, width_ratios=wrats,
+                  wspace=0.15)
     
     # making the super plot
     for m,ion in enumerate(ion_list):
@@ -210,8 +220,6 @@ for i in range(len(old_gen)):
                                       "upper":np.array([]),
                                       "lower":np.array([])}
 
-        # c = 0
-        
         color_arr = []
 
         for ray in comp_dict[old_gen[i]][nion].keys():
@@ -342,8 +350,11 @@ for i in range(len(old_gen)):
         plot = fig.add_subplot(gs[m,0])
         plot.axhline(0, color = "black", linestyle = '--')
         
+        plot.set_xlim(plot_axis[f"{new_gen[i]}:{old_gen[i]}"]["col_dens"][0])
+        plot.set_ylim(plot_axis[f"{new_gen[i]}:{old_gen[i]}"]["col_dens"][1])
+
         # adding ion label
-        plot.text(0.07, 0.7, 
+        plot.text(0.68, 0.15, 
                   s=nion, fontsize=ion_txt_size,
                   transform=plot.transAxes)
         
@@ -368,15 +379,14 @@ for i in range(len(old_gen)):
 
         # other plot settings
         if m == len(ion_list)-1:
-            plot.set_xlabel(f"{short_uvb_names[old_gen[i]]}"+" $log_{10}$(n) [$cm^{-2}$]", fontsize=ax_lab_size)
-        
-        # hardcoding some lines in because latex and variable strings do not play well together
-        if i==0:
-            plot.set_ylabel(r"$log_{10}$($\sigma_{FG20}}$/$\sigma_{FG09}$) [$cm^{-2}$]", fontsize=ax_lab_size)
-        elif i==1:
-            plot.set_ylabel(r"$log_{10}$($\sigma_{PW19}$/$\sigma_{HM12}$) [$cm^{-2}$]", fontsize=ax_lab_size)
-        elif i==2:
-            plot.set_ylabel(r"$log_{10}$($\sigma_{FG20}$/$\sigma_{PW19}$) [$cm^{-2}$]", fontsize=ax_lab_size)
+            if i==0:
+                 plot.set_xlabel(r"$log(\sigma_{FG09}$) [$cm^{-2}$]", fontsize=ax_lab_size)
+            elif i==1:
+                plot.set_xlabel(r"$log(\sigma_{HM12}$) [$cm^{-2}$]", fontsize=ax_lab_size)
+            elif i==2:
+                plot.set_xlabel(r"$log(\sigma_{PW19}$) [$cm^{-2}$]", fontsize=ax_lab_size)
+
+            # plot.set_xlabel(rf"$log(\sigma_{short_uvb_names[old_gen[i]]}$) [$cm^{-2}$]", fontsize=ax_lab_size)
         
         plot.grid()
         if m == 0:
@@ -406,6 +416,9 @@ for i in range(len(old_gen)):
 
             # plotting data
             plot = fig.add_subplot(gs[m,1+j])
+            plot.set_xlim(plot_axis[f"{new_gen[i]}:{old_gen[i]}"][quant][0])
+            plot.set_ylim(plot_axis[f"{new_gen[i]}:{old_gen[i]}"]["col_dens"][1])
+
             for k,cat in enumerate(clump_cat_labels):
                 cat_mask = np.where(color_arr == cat)
                 plot.plot(np.log10(phys_quant[quant]["mean"][cat_mask]), uvb_dens_diff[cat_mask],
@@ -414,12 +427,32 @@ for i in range(len(old_gen)):
                     xmax=np.log10(phys_quant[quant]["upper"][cat_mask]),
                     color = palt[k])
             
+            ylab_xpos = 0.08
             if m == (len(ion_list)-1):
+                # plot.set_xlabel(names_one_to_one[old_gen[i]], fontsize=35)
+                # hardcoding some lines in because latex and variable strings do not play well together
+                if i==0:
+                    # plot.set_ylabel(r"$log_{10}$($\sigma_{FG20}}$/$\sigma_{FG09}$) [$cm^{-2}$]", fontsize=ax_lab_size)
+                    fig.text(ylab_xpos, 0.5, r"$log$($\sigma_{FG20}}$/$\sigma_{FG09}$) [$cm^{-2}$]", 
+                             ha='center', va='center', rotation='vertical', fontsize=35)
+                elif i==1:
+                    # plot.set_ylabel(r"$log_{10}$($\sigma_{PW19}$/$\sigma_{HM12}$) [$cm^{-2}$]", fontsize=ax_lab_size)
+                    fig.text(ylab_xpos, 0.5, r"$log$($\sigma_{PW19}$/$\sigma_{HM12}$) [$cm^{-2}$]", 
+                             ha='center', va='center', rotation='vertical', fontsize=35)
+                elif i==2:
+                    # plot.set_ylabel(r"$log_{10}$($\sigma_{FG20}$/$\sigma_{PW19}$) [$cm^{-2}$]", fontsize=ax_lab_size)
+                    fig.text(ylab_xpos, 0.5, r"$log$($\sigma_{FG20}$/$\sigma_{PW19}$) [$cm^{-2}$]", 
+                             ha='center', va='center', rotation='vertical', fontsize=35)
+                # fig.text(0.083+0.285, 0.5, names_one_to_one[new_gen[i]], ha='center', va='center', 
+                # rotation='vertical', fontsize=35)
+
                 if j==0:
-                    plot.set_xlabel("$log_{10}$"+r"$\overline{n}$"+f" {prop_unit[j]}", fontsize=ax_lab_size)
+                    plot.set_xlabel("$log$"+r"$(\overline{n})$"+f" {prop_unit[j]}", fontsize=ax_lab_size)
                 else:
-                    plot.set_xlabel("$log_{10}$"+r"$\overline{T}$"+f" {prop_unit[j]}", fontsize=ax_lab_size)
-            plot.grid()
+                    plot.set_xlabel("$log$"+r"$(\overline{T})$"+f" {prop_unit[j]}", fontsize=ax_lab_size)
+            
+            # plot.set_yticks([])
+            plot.grid(True)
 
         # creating a histogram of column density differences 
         hist = fig.add_subplot(gs[m,len(prop_list)+1])
@@ -428,16 +461,27 @@ for i in range(len(old_gen)):
             hist.hist(uvb_dens_diff[cat_mask], orientation="horizontal", 
                       color = palt[k], density=True, bins=20, alpha = 0.7,
                       ec = palt[k], lw=1)
-        hist.grid()
+        # hist.set_yticks([])
+        hist.grid(True)
     
     # figure settings
     plt.tight_layout()
-    plt.savefig(comp_paths[f"{old_gen[i]}_{new_gen[i]}"]+f"/super_plot_{old_gen[i]}_{new_gen[i]}.pdf")
+    plt.savefig(comp_paths[f"{old_gen[i]}_{new_gen[i]}"]+f"/super_plot_{old_gen[i]}_{new_gen[i]}.png",
+                dpi=400,bbox_inches='tight')
     plt.show()
     plt.clf()
 
 # creating 1:1 column density comparison figures
-fig, ax = plt.subplots(len(ion_list), 3, figsize=(15,20))
+wrats = [1,1,1]
+fig = plt.figure(figsize=(20,25))
+gs = GridSpec(len(ion_list),len(old_gen), width_ratios=wrats,
+              wspace=0.4)
+
+map_i = {0:0, 1:2, 2:4}
+
+# contains shortened UVB names
+names_one_to_one = {"FG_2009":r"$\sigma_{FG09}$", "FG_2020":r"$\sigma_{FG20}$",
+                   "HM_2012":r"$\sigma_{HM12}$", "PCW_2019":r"$\sigma_{PW19}$"}
 
 # puts each 1:1 comparison in above figure
 for i in range(len(old_gen)):
@@ -466,7 +510,7 @@ for i in range(len(old_gen)):
         
         print(f"Comparing {new_gen[i]} and {old_gen[i]}") 
         print("fraction of missing rays:"+str(comp_dict["bad_ray_perc"]))
-
+        
         # setting up data bins to store data in
         uvb_dens_diff = np.array([])
         old_gen_dat = np.array([])
@@ -543,14 +587,21 @@ for i in range(len(old_gen)):
         color_arr = np.array(color_arr)
 
         # creating data for a line of equivalency between the data
-        match_line = np.linspace(min(np.min(new_gen_dat),np.min(old_gen_dat)),max(np.max(new_gen_dat),np.max(old_gen_dat)))
+        # match_line = np.linspace(min(np.min(new_gen_dat),np.min(old_gen_dat)),max(np.max(new_gen_dat),np.max(old_gen_dat)))
+        match_line = np.linspace(11,20,100)
         
         # creating subplot object
-        ax[m,i].plot(match_line, match_line, color = "black", linestyle = '--')
+        # plot_i = map_i[i]
+        splot = fig.add_subplot(gs[m,i])
+        splot.set_xlim(11,20)
+        splot.set_ylim(11,20)
+        splot.plot(match_line, match_line, color = "black", linestyle = '--')
         
         # adding ion label
         if i == 0:
-            ax[m,i].text(np.min(old_gen_dat)+np.ptp(old_gen_dat)*0.7, np.min(old_gen_dat)+np.ptp(old_gen_dat)*0.2, 
+            # splot.text(np.min(old_gen_dat)+np.ptp(old_gen_dat)*0.7, np.min(old_gen_dat)+np.ptp(old_gen_dat)*0.2, 
+            #         s=nion, fontsize=ion_txt_size)
+            splot.text(17, 13, 
                     s=nion, fontsize=ion_txt_size)
         
         legend_labs = []
@@ -558,18 +609,24 @@ for i in range(len(old_gen)):
         # plotting data
         for k,cat in enumerate(clump_cat_labels):
             cat_mask = np.where(color_arr == cat)
-            ax[m,i].plot(old_gen_dat[cat_mask], new_gen_dat[cat_mask],
+            splot.plot(old_gen_dat[cat_mask], new_gen_dat[cat_mask],
                       linestyle = "None", marker = ".", color = palt[k], label = cat)
             legend_labs.append(Line2D([0], [0], color=palt[k], lw=4, label=cat))
         
-        ax[m,i].set_ylabel(new_gen[i])
-        ax[m,i].grid()
+        # ax[m,i].set_ylabel(new_gen[i])
+        splot.grid()
         if m == len(ion_list)-1:
-            ax[m,i].set_xlabel(old_gen[i])
+            splot.set_xlabel(names_one_to_one[old_gen[i]], fontsize=35)
+            fig.text(0.083+0.285*i, 0.5, names_one_to_one[new_gen[i]], ha='center', va='center', 
+                    rotation='vertical', fontsize=35)
         
+        if (m==0) and (i==0):
+            splot.legend(loc='upper left', fontsize=13)
+
 # plotting figure
-ax[0,0].legend()
+# fig.supylabel("FG20",fontsize = 25)
 plt.tight_layout()
-plt.savefig(comp_paths[f"{old_gen[i]}_{new_gen[i]}"]+f"/super_one_to_one_{old_gen[i]}_{new_gen[i]}.pdf")
+plt.savefig(rs_path+"/uvb_dists"+f"/super_one_to_one.png",
+                dpi=400,bbox_inches='tight')
 plt.show()
 plt.clf()

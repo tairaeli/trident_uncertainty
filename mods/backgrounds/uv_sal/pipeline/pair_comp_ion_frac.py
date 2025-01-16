@@ -104,33 +104,32 @@ for i in range(len(old_gen)):
 
         f1 = ax[0,0].pcolormesh(old_col_dens, old_temp, old_f_filter.T, 
                                 cmap = cmap, norm = normalizer)
-        ax[0,0].set_ylabel("$log_{10}$ Temperature (K)", fontsize=ax_lab_size)
-        ax[0,0].set_xlabel(r"$log_{10}$(n) ($cm^{-3}$)", fontsize=ax_lab_size)
+        ax[0,0].set_ylabel("$log(T)$ [K]", fontsize=ax_lab_size)
+        ax[0,0].set_xlabel(r"$log$(n) ($cm^{-3}$)", fontsize=ax_lab_size)
         ax[0,0].set_title(f"{ion} Fraction {old_gen[i]}", fontsize=title_size)
         # fig.colorbar(f1,ax = ax[0,0])
 
         f2 = ax[0,1].pcolormesh(new_col_dens, new_temp, new_f_filter.T, 
                                 cmap = cmap, norm = normalizer)
-        ax[0,1].set_ylabel("$log_{10}$ Temperature (K)", fontsize=ax_lab_size)
-        ax[0,1].set_xlabel(r"$log_{10}$(n) ($cm^{-3}$)", fontsize=ax_lab_size)
+        ax[0,1].set_ylabel("$log(T)$ [K]", fontsize=ax_lab_size)
+        ax[0,1].set_xlabel(r"$log$(n) ($cm^{-3}$)", fontsize=ax_lab_size)
         ax[0,1].set_title(f"{ion} Fraction {new_gen[i]}", fontsize=title_size)
         fig.colorbar(im,ax = ax[0,1])
 
         f3 = ax[1,0].pcolormesh(old_col_dens, old_temp, (new_f_filter - old_f_filter).T)
                                 #cmap = cmap, norm = normalizer)
-        ax[1,0].set_ylabel("$log_{10}$ Temperature (K)", fontsize=ax_lab_size)
-        ax[1,0].set_xlabel(r"$log_{10}$(n) ($cm^{-3}$)", fontsize=ax_lab_size)
+        ax[1,0].set_ylabel("$log(T)$ [K]", fontsize=ax_lab_size)
+        ax[1,0].set_xlabel(r"$log$(n) ($cm^{-3}$)", fontsize=ax_lab_size)
         ax[1,0].set_title(f"{ion} Fraction {new_gen[i]}/{old_gen[i]}", fontsize=title_size)
         
         fig.colorbar(f3,ax = ax[1,0] )
         
-        ax[0,1].axis("off")
+        ax[1,1].axis("off")
 
-        # plt.tight_layout()
+        plt.tight_layout()
         plt.savefig(rs_path+f"/{old_gen[i]}_{new_gen[i]}_comp/{ion}/ion_frac_{old_gen[i]}_{new_gen[i]}_{ion}.pdf")
         plt.clf()
 
 
-
-plt.savefig(ion_path+f"/phys_quantities_{old_gen[i]}_{new_gen[i]}_{ion}.pdf")
+# plt.savefig(ion_path+f"/phys_quantities_{old_gen[i]}_{new_gen[i]}_{ion}.pdf")
 
