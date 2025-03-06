@@ -31,7 +31,7 @@ stepsize_2=0.5
 
 iter_vals_2=($start_2,$end_2,$stepsize_2)
 
-path=/mnt/scratch/tairaeli/trident_inputs/fg2009_ss_hr.h5
+path=/mnt/research/galaxies-REU/tairaeli/uvb_dat/fg2009_ss_hr.h5
 name=FG_2009
 
 out_dir=/mnt/scratch/tairaeli/cutoff_bin_fg2009

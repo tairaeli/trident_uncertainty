@@ -136,10 +136,9 @@ for ray in range(args.nrays):
 print("Data loaded, generating plots...")
 
 n_iter_cf = len(iter_vals_cf)
-colors_cf = plt.cm.Set1(np.linspace(0,1,int(n_iter_cf)+1))
-
+colors_cf = plt.cm.Set2(np.linspace(0,1,int(n_iter_cf)+1))
 n_iter_md = len(iter_vals_md)
-colors_md = plt.cm.Set1(np.linspace(0,1,int(n_iter_md)+1))
+colors_md = plt.cm.Set2(np.linspace(0,1,int(n_iter_md)+1))
 
 # for ion in ion_list:
 ion = 'H_I'
@@ -178,9 +177,7 @@ fig, ax = plt.subplots(1,2, figsize=(15,8), sharex=True, sharey=True,
 col_list = []
 for i,cut in enumerate(iter_vals_cf):
     hist = hist_dat_cf[i]
-    len(hist[0])
     bheight = np.hstack((hist[0][0], np.array(hist[0])))
-    len(bheight)
     sn.lineplot(x=hist[1], y=bheight/max_val_cf, drawstyle='steps-pre', color=colors_cf[i],
                 linewidth=3, ax = ax[0])
     col_list.append(mlines.Line2D([], [], color=colors_cf[i],
@@ -193,9 +190,7 @@ ax[0].grid()
 col_list = []
 for i,cut in enumerate(iter_vals_md):
     hist = hist_dat_md[i]
-    len(hist[0])
     bheight = np.hstack((hist[0][0], np.array(hist[0])))
-    len(bheight)
     sn.lineplot(x=hist[1], y=bheight/max_val_md, drawstyle='steps-pre', color=colors_md[i],
                 linewidth=3, ax = ax[1])
     col_list.append(mlines.Line2D([], [], color=colors_md[i],
