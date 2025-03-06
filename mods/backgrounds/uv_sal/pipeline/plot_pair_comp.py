@@ -159,6 +159,16 @@ plot_axis = {"FG_2020:FG_2009":{"col_dens":[(11.9,16.5),(-7.5,7)],
                                 "avg_ray_dens":[(-6,1)],
                                 "avg_ray_temp":[(2.5,6)]}}
 
+# reformatting ion labels
+ion_name_dict = {"H_I":r"H $\mathrm{\i}$",
+                 "Si_II":r"Si $\mathrm{\i\i}$",
+                 "Si_III":r"Si $\mathrm{\i\i\i}$",
+                 "C_III":r"C $\mathrm{\i\i\i}$",
+                 "Si_IV":r"Si $\mathrm{\i v}$",
+                 "C_IV":r"C $\mathrm{\i v}$",
+                 "N_V":r"N $\mathrm{v}$",
+                 "O_VI":r"O $\mathrm{v\i}$"}
+
 for i in range(len(old_gen)):
     # setting up grid
     fig = plt.figure(figsize=(20,25))
@@ -267,8 +277,6 @@ for i in range(len(old_gen)):
                     color_arr.append("merge")
                 elif (j) in match:
                     continue
-                # else:
-                    # print("Error: New", ray,j)
 
             # removing lonely clumps from comparison
             lonely_new, lonely_old, reduced_uvb_new, reduced_uvb_old = lonely_hunter(comp_dict[new_gen[i]][nion][ray],
@@ -349,14 +357,24 @@ for i in range(len(old_gen)):
         # creating subplot object
         plot = fig.add_subplot(gs[m,0])
         plot.axhline(0, color = "black", linestyle = '--')
-        
-        plot.set_xlim(plot_axis[f"{new_gen[i]}:{old_gen[i]}"]["col_dens"][0])
-        plot.set_ylim(plot_axis[f"{new_gen[i]}:{old_gen[i]}"]["col_dens"][1])
 
         # adding ion label
-        plot.text(0.68, 0.15, 
-                  s=nion, fontsize=ion_txt_size,
-                  transform=plot.transAxes)
+        if ((nion == 'Si II') or (nion == 'N V')) and (i!=1):
+            plot.text(0.7, 0.4, 
+                    s=ion_name_dict[ion], fontsize=ion_txt_size,
+                    transform=plot.transAxes)
+        elif (i==2) and ((nion == 'O VI') or (nion == 'C IV')):
+            plot.text(0.68, 0.65, 
+                    s=ion_name_dict[ion], fontsize=ion_txt_size,
+                    transform=plot.transAxes)
+        elif (i==1) and (nion == 'Si IV'):
+            plot.text(0.68, 0.65, 
+                    s=ion_name_dict[ion], fontsize=ion_txt_size,
+                    transform=plot.transAxes)
+        else:
+            plot.text(0.68, 0.15, 
+                    s=ion_name_dict[ion], fontsize=ion_txt_size,
+                    transform=plot.transAxes)
         
         # plotting data
         for k,cat in enumerate(clump_cat_labels):
@@ -380,14 +398,13 @@ for i in range(len(old_gen)):
         # other plot settings
         if m == len(ion_list)-1:
             if i==0:
-                 plot.set_xlabel(r"$log(\sigma_{FG09}$) [$cm^{-2}$]", fontsize=ax_lab_size)
+                 plot.set_xlabel(r"$log(N_{FG09}$) [$cm^{-2}$]", fontsize=ax_lab_size)
             elif i==1:
-                plot.set_xlabel(r"$log(\sigma_{HM12}$) [$cm^{-2}$]", fontsize=ax_lab_size)
+                plot.set_xlabel(r"$log(N_{HM12}$) [$cm^{-2}$]", fontsize=ax_lab_size)
             elif i==2:
-                plot.set_xlabel(r"$log(\sigma_{PW19}$) [$cm^{-2}$]", fontsize=ax_lab_size)
+                plot.set_xlabel(r"$log(N_{PW19}$) [$cm^{-2}$]", fontsize=ax_lab_size)
 
-            # plot.set_xlabel(rf"$log(\sigma_{short_uvb_names[old_gen[i]]}$) [$cm^{-2}$]", fontsize=ax_lab_size)
-        
+ 
         plot.grid()
         if m == 0:
             plot.legend(handles=legend_labs, loc='upper right')
@@ -417,7 +434,8 @@ for i in range(len(old_gen)):
             # plotting data
             plot = fig.add_subplot(gs[m,1+j])
             plot.set_xlim(plot_axis[f"{new_gen[i]}:{old_gen[i]}"][quant][0])
-            plot.set_ylim(plot_axis[f"{new_gen[i]}:{old_gen[i]}"]["col_dens"][1])
+            plot.axhline(0, color = "black", linestyle = '--')
+            # plot.set_ylim(plot_axis[f"{new_gen[i]}:{old_gen[i]}"]["col_dens"][1]) 
 
             for k,cat in enumerate(clump_cat_labels):
                 cat_mask = np.where(color_arr == cat)
@@ -428,20 +446,25 @@ for i in range(len(old_gen)):
                     color = palt[k])
             
             ylab_xpos = 0.08
+            
+            # removing y labels
+            labels = [" "]*len(plot.get_yticklabels())
+            plot.set_yticklabels(labels)
+
             if m == (len(ion_list)-1):
                 # plot.set_xlabel(names_one_to_one[old_gen[i]], fontsize=35)
                 # hardcoding some lines in because latex and variable strings do not play well together
                 if i==0:
-                    # plot.set_ylabel(r"$log_{10}$($\sigma_{FG20}}$/$\sigma_{FG09}$) [$cm^{-2}$]", fontsize=ax_lab_size)
-                    fig.text(ylab_xpos, 0.5, r"$log$($\sigma_{FG20}}$/$\sigma_{FG09}$) [$cm^{-2}$]", 
+                    # plot.set_ylabel(r"$log_{10}$($\N_{FG20}}$/$\N_{FG09}$) [$cm^{-2}$]", fontsize=ax_lab_size)
+                    fig.text(ylab_xpos, 0.5, r"$log$($N_{FG20}}$/$N_{FG09}$)", 
                              ha='center', va='center', rotation='vertical', fontsize=35)
                 elif i==1:
-                    # plot.set_ylabel(r"$log_{10}$($\sigma_{PW19}$/$\sigma_{HM12}$) [$cm^{-2}$]", fontsize=ax_lab_size)
-                    fig.text(ylab_xpos, 0.5, r"$log$($\sigma_{PW19}$/$\sigma_{HM12}$) [$cm^{-2}$]", 
+                    # plot.set_ylabel(r"$log_{10}$($\N_{PW19}$/$\N_{HM12}$) [$cm^{-2}$]", fontsize=ax_lab_size)
+                    fig.text(ylab_xpos, 0.5, r"$log$($N_{PW19}$/$N_{HM12}$)", 
                              ha='center', va='center', rotation='vertical', fontsize=35)
                 elif i==2:
-                    # plot.set_ylabel(r"$log_{10}$($\sigma_{FG20}$/$\sigma_{PW19}$) [$cm^{-2}$]", fontsize=ax_lab_size)
-                    fig.text(ylab_xpos, 0.5, r"$log$($\sigma_{FG20}$/$\sigma_{PW19}$) [$cm^{-2}$]", 
+                    # plot.set_ylabel(r"$log_{10}$($\N_{FG20}$/$\N_{PW19}$) [$cm^{-2}$]", fontsize=ax_lab_size)
+                    fig.text(ylab_xpos, 0.5, r"$log$($N_{FG20}$/$N_{PW19}$)", 
                              ha='center', va='center', rotation='vertical', fontsize=35)
                 # fig.text(0.083+0.285, 0.5, names_one_to_one[new_gen[i]], ha='center', va='center', 
                 # rotation='vertical', fontsize=35)
@@ -450,18 +473,45 @@ for i in range(len(old_gen)):
                     plot.set_xlabel("$log$"+r"$(\overline{n})$"+f" {prop_unit[j]}", fontsize=ax_lab_size)
                 else:
                     plot.set_xlabel("$log$"+r"$(\overline{T})$"+f" {prop_unit[j]}", fontsize=ax_lab_size)
-            
-            # plot.set_yticks([])
+            else:
+                labels = [" "]*len(plot.get_xticklabels())
+                plot.set_xticklabels(labels)
+
             plot.grid(True)
 
         # creating a histogram of column density differences 
-        hist = fig.add_subplot(gs[m,len(prop_list)+1])
-        for k,cat in enumerate(clump_cat_labels):
-            cat_mask = np.where(color_arr == cat)
-            hist.hist(uvb_dens_diff[cat_mask], orientation="horizontal", 
-                      color = palt[k], density=True, bins=20, alpha = 0.7,
-                      ec = palt[k], lw=1)
-        # hist.set_yticks([])
+        hist = fig.add_subplot(gs[m,len(prop_list)+1]) 
+        # if m==6:
+            # hist.set_ylim((-0.15,0.05))
+
+        if ion == "N_V":
+            for k,cat in enumerate(clump_cat_labels):
+                cat_mask = np.where(color_arr == cat)
+                hist.hist(uvb_dens_diff[cat_mask], 
+                          bins=10,
+                          orientation="horizontal", 
+                        color = palt[k], density=False, alpha = 0.7,
+                        ec = palt[k], lw=1)
+            hist.set_yticks([0,-0.2,-0.4,-0.6,-0.8])
+            hist.set_ylim([-0.85,0.03])
+        
+        else:
+            for k,cat in enumerate(clump_cat_labels):
+                cat_mask = np.where(color_arr == cat)
+                hist.hist(uvb_dens_diff[cat_mask], orientation="horizontal", 
+                        color = palt[k], density=False, bins=20, alpha = 0.7,
+                        ec = palt[k], lw=1)
+       
+        hist.axhline(0, color = "black", linestyle = '--')
+        labels = [" "]*len(hist.get_yticklabels())
+        hist.set_yticklabels(labels)
+        # if ion=="N_V":
+        #     hist.set_yticks([0,-0.2,-0.4,-0.6,-0.8])
+
+
+        
+        # hist.set_xticklabels(hist.get_xticklabels())
+
         hist.grid(True)
     
     # figure settings
@@ -480,8 +530,8 @@ gs = GridSpec(len(ion_list),len(old_gen), width_ratios=wrats,
 map_i = {0:0, 1:2, 2:4}
 
 # contains shortened UVB names
-names_one_to_one = {"FG_2009":r"$\sigma_{FG09}$", "FG_2020":r"$\sigma_{FG20}$",
-                   "HM_2012":r"$\sigma_{HM12}$", "PCW_2019":r"$\sigma_{PW19}$"}
+names_one_to_one = {"FG_2009":r"$N_{FG09}$", "FG_2020":r"$N_{FG20}$",
+                   "HM_2012":r"$N_{HM12}$", "PCW_2019":r"$N_{PW19}$"}
 
 # puts each 1:1 comparison in above figure
 for i in range(len(old_gen)):
@@ -516,7 +566,6 @@ for i in range(len(old_gen)):
         old_gen_dat = np.array([])
         new_gen_dat = np.array([])
         color_arr = []
-
 
         for ray in comp_dict[old_gen[i]][nion].keys():
             old_lone = []

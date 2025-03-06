@@ -15,16 +15,16 @@ module load Conda/3
 
 conda activate astro_env
 
-path1=/mnt/scratch/tairaeli/trident_inputs/fg2009_ss_hr.h5
+path1=/mnt/research/galaxies-REU/tairaeli/uvb_dat/fg2009_ss_hr.h5
 name1=FG_2009
 
-path2=/mnt/scratch/tairaeli/trident_inputs/fg_test.h5
+path2=/mnt/research/galaxies-REU/tairaeli/uvb_dat/fg_test_13.h5
 name2=FG_2020
 
-path3=/mnt/scratch/tairaeli/trident_inputs/hm2012_ss_hr.h5
+path3=/mnt/research/galaxies-REU/tairaeli/uvb_dat/hm2012_ss_hr.h5
 name3=HM_2012
 
-path4=/mnt/scratch/tairaeli/trident_inputs/pcw_test.h5
+path4=/mnt/research/galaxies-REU/tairaeli/uvb_dat/pcw_test.h5
 name4=PCW_2019
 
 # running salsa
@@ -53,3 +53,5 @@ python uvb_abun_pairwise_compare.py -uvb_path1 $path3 -uvb_name1 $name3 -uvb_pat
 # generating plots 
 python plot_total_column.py
 python plot_pair_comp.py
+python pair_comp_ion_frac.py
+python plot_summary.py

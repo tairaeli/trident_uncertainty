@@ -125,7 +125,7 @@ for i,name in enumerate(uvb_names):
 # loading in data
 ion_list = sal_args["galaxy_settings"]["ions"].split(" ")
 
-# # creating dictionaries to store our data if they don't already exist
+# creating dictionaries to store our data if they don't already exist
 uvb_dist_path = rs_path+"/uvb_dists"
 if os.path.exists(uvb_dist_path) == False:
     os.mkdir(uvb_dist_path)
@@ -207,11 +207,20 @@ for ion in ion_list:
                       transform=ax[j,k].transAxes)
             
         ax[j,k].scatter(x = avg_dens, y = dens_diff, 
-                        label=f"{short_uvb_names[new_gen[i]]}/{short_uvb_names[old_gen[i]]}",
+                        label=f"{short_uvb_names[old_gen[i]]}/{short_uvb_names[new_gen[i]]}",
                         color = colors[i])
-        ax[j,k].plot(x_vals, moving_avg, color = colors[i])
+        # ax[j,k].plot(x_vals, moving_avg, color = colors[i])
+        if (ion == "H_I") or (ion == "Si_II"):
+            ax[j,k].set_yticks([1,0,-1,-2,-3]) 
+        elif (ion == "C_IV"):
+            ax[j,k].set_yticks([0.1,0,-0.1,-0.2,-0.3,-0.4])
+        elif (ion == "N_V"):
+            ax[j,k].set_yticks([0.2,0,-0.2,-0.4,-0.6])
+        elif (ion == "O_VI"):
+            ax[j,k].set_yticks([0.2,0,-0.2,-0.4,-0.6,-0.8,-1.0])
         
     ax[j,k].grid()
+    ax[j,k].tick_params(axis='both', labelsize=20)
 
     if (k>=(num_ion//2)+(num_ion%2)-1):
         j+=1
@@ -220,8 +229,8 @@ for ion in ion_list:
         k+=1
 
 ax[0,0].legend(loc='lower left', prop={'size': 15})
-fig.supxlabel(r"log($\overline{N}$) [$cm^{-2}$]", fontsize=27)
-fig.supylabel(r"log($n_{old}/n_{new}$) [$cm^{-2}$]", fontsize=27)
+fig.supxlabel(r"log($\overline{N_{LOS}}$) [$cm^{-2}$]", fontsize=35)
+fig.supylabel(r"log($N_{LOS,1}/N_{LOS,2}$) [$cm^{-2}$]", fontsize=35)
 plt.savefig(uvb_dist_path+f"/tot_col_dens_comp.png",
                 dpi=400,bbox_inches='tight')
 plt.clf()

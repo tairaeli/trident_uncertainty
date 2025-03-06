@@ -7,6 +7,7 @@ ionization energy)
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
+from matplotlib.gridspec import GridSpec
 import pickle
 import configparser
 import os
@@ -144,13 +145,10 @@ comp_paths = {}
 
 uvb_colors = plt.cm.tab10(np.linspace(0,1,3))
 
-# creating figure
-fig = plt.figure(figsize=(20,25))
 data_list = []
 
 for j, ion in enumerate(ion_list):
     nion = ion.replace("_"," ")
-    # data_dict[ion] = {}
 
     for i in range(len(old_gen)):
         try:
@@ -243,16 +241,68 @@ for j, ion in enumerate(ion_list):
 
         data_list.append(uvb_dens_diff)
 
+outlier_list = []
 
-pos = [4*(k//3)+k%3 for k in range(24)]
+for i,dat in enumerate(data_list):
+    
+    outlier_low, median, outlier_high = np.percentile(data_list[i], [0.5,50,99.5])
+    
+    outlier_ids = np.where((dat < outlier_low) | (dat > outlier_high))
+    # not_outliers = np.where(np.abs(dat[outlier_ids] - median) < 1 )
+    # outlier_ids = np.where(np.abs(dat[outlier_ids] - median) > 1 )
+    rest_ids = np.where((dat > outlier_low) & (dat < outlier_high))
+    # rest_ids = np.concatenate((rest_ids[0],not_outliers[0]))
+    dat_temp = dat[outlier_ids]
+    data_list[i] = dat[rest_ids] 
+    outlier_list.append(dat_temp)
 
-violin = plt.violinplot(data_list, pos,
+# creating figure
+fig = plt.figure(figsize=(20,12))
+gs = GridSpec(1,2, width_ratios=[1/len(ion_list),1],
+                  wspace=0.15)
+
+print("PLOTTING HI FIGURE")
+plot_HI = fig.add_subplot(gs[0])
+violin = plot_HI.violinplot(data_list[0:3], [0,1,2],
                         showmeans=False, showmedians=False, showextrema=False)
 
-for i in range(len(pos)):
+for i,pc in enumerate(violin['bodies']):
+    pc.set_facecolor(uvb_colors[i%3])
+    pc.set_edgecolor('black')
+    pc.set_alpha(1)
+
+for i in range(3):
     q1, medians, q3 = np.percentile(data_list[i], [25, 50, 75])
-    plt.scatter(pos[i], medians, marker='.', color='white', s=30, zorder=3)
-    plt.vlines(pos[i], q1, q3, color='k', linestyle='-', lw=5)
+    plot_HI.scatter([i], medians, marker='.', color='white', s=30, zorder=3)
+    plot_HI.vlines([i], q1, q3, color='k', linestyle='-', lw=5)
+    plot_HI.scatter([i]*len(outlier_list[i]),outlier_list[i], color = uvb_colors[i%3])
+
+plot_HI.set_ylabel(r"$log$($N_{1}}$/$N_{2})$", size = 40)
+plot_HI.set_yticks([8,6,4,2,0,-2,-4,-6,-8])
+plot_HI.set_ylim(-8,8)
+plot_HI.set_xticks([1], 
+                   labels=[ion_name_dict["H_I"]+"\n"], 
+                   size=40)
+plot_HI.text(0.25, -0.1, 
+                s=str(ion_dat["ionization energy (eV)"][0]), fontsize=20,
+                transform=plot_HI.transAxes)
+
+plot_HI.tick_params(axis='y', which='major', labelsize=30)
+plot_HI.grid(axis='y')
+
+print("PLOTTING FIGURE")
+pos = [4*(k//3)+k%3 for k in range(21)]
+# print(len(data_list[3:]), len(pos))
+plot = fig.add_subplot(gs[1])
+violin = plot.violinplot(data_list[3:], pos,
+                        showmeans=False, showmedians=False, 
+                        showextrema=False)
+
+for i in range(len(pos)):
+    q1, medians, q3 = np.percentile(data_list[3+i], [25, 50, 75])
+    plot.scatter(pos[i], medians, marker='.', color='white', s=30, zorder=3)
+    plot.vlines(pos[i], q1, q3, color='k', linestyle='-', lw=5)
+    plot.scatter([pos[i]]*len(outlier_list[3+i]),outlier_list[3+i], color = uvb_colors[i%3])
 
 for i,pc in enumerate(violin['bodies']):
     pc.set_facecolor(uvb_colors[i%3])
@@ -261,16 +311,32 @@ for i,pc in enumerate(violin['bodies']):
 
 nion_list = [" "]*len(ion_list)
 for i,ion in enumerate(ion_list):
-    nion_list[i] = ion_name_dict[ion]
+    nion_list[i] = f'{ion_name_dict[ion]} \n'
+    if i==0:
+        continue
+    else:
+        plot.text(0.055+(i-1)*0.138, -0.1, 
+                s=str(ion_dat["ionization energy (eV)"][i]), fontsize=20,
+                transform=plot.transAxes)
 
 legend_labs = []
 for i in range(len(old_gen)):
     labels = short_uvb_names[new_gen[i]]+"/"+short_uvb_names[old_gen[i]]
     legend_labs.append(Line2D([0], [0], color=uvb_colors[i], lw=4, label=labels))
 
-plt.xticks(np.arange(1, len(pos) + 8,4), labels=nion_list, size=30)
-plt.yticks(size=30)
-plt.grid()
-plt.legend(loc='upper right', fontsize=40, handles=legend_labs)
+plot.set_xticks(np.arange(1, len(pos) + 8,4), 
+                labels=nion_list[1:], 
+                size=40)
+plot.set_yticks([4,3,2,1,0,-1,-2,-3,-4])
+plot.set_ylim(-4,4)
+plot.tick_params(axis='y', which='major', labelsize=30)
+plot.grid(axis='y')
+plot.legend(loc='upper right', fontsize=30, handles=legend_labs)
+
+plot.text(0.2,-0.16,
+          s="Ionization Energy (eV)", size = 30,
+          transform=plot.transAxes)
+
 plt.savefig(rs_path+"/uvb_dists"+"/summary_plot.png",
             dpi=400,bbox_inches='tight')
+print("PLOTTING COMPLETE")
