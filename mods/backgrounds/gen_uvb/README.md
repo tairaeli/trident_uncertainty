@@ -3,13 +3,13 @@
 **gen_cloudy_input.py** - reformat the information from different UV backgrounds and combines it with estimated UV emissions from a given galaxy to match the format CLOUDY cooling tools prefers. Takes 5 arguments:
 * --ds (str): location of output file
 * --om (str): path to omega+ output data
-* --uvb (str): location of output file
+* --uvb (str): location of UVB data
 * --rs (str): set range for redshifts to iterate through (e.g. "1.2,2.7")
 * --d (list): integer list of distances (in units of kpc) from the galaxy
 
-**gen_cloudy_input_no_gal.py** - reformat the information from different UV backgrounds to match the format CLOUDY cooling tools prefers. Takes in 3 arguments:
+**gen_cloudy_input_no_gal.py** - performs the same function as *gen_cloudyInput* without including the contribution of the galactic UV emission. Takes in 3 arguments:
 * --ds (str): location of output file
-* --uvb (str): location of output file
+* --uvb (str): location of UVB data
 * --rs (str): set range for redshifts to iterate through (e.g. "1.2,2.7")
 
 **full_cloudy.py** - runs cloudy simulations in parallel. Requires 6 arguments:
@@ -28,4 +28,4 @@
 
 **combine_runfile_parts.pl** - if job scripts from 'backup_jobs' directory are run, combines output files of each job into a single run file. Note that this file is written in Perl, so it will need to be run as such.
 
-**gen_trident_input.py** - takes in final run file (either from the output of full_cloudy.py or the output of combine_runfile_parts.pl) and outputs an ionization table in h5 that can be used in the trident pipeline.
+**gen_trident_input.py** - takes in final run file (either from the output of full_cloudy.py or the output of combine_runfile_parts.pl) and outputs an ionization table in an h5 format that can be used in the trident pipeline.
