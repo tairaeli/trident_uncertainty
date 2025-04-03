@@ -28,4 +28,4 @@
 
 **combine_runfile_parts.pl** - if job scripts from 'backup_jobs' directory are run, combines output files of each job into a single run file. Note that this file is written in Perl, so it will need to be run as such.
 
-**gen_trident_input.py** - takes in final run file (either from the output of full_cloudy.py or the output of combine_runfile_parts.pl) and outputs an ionization table in an h5 format that can be used in the trident pipeline.
+**gen_trident_input.py** - takes in final run file (either from the output of full_cloudy.py or the output of combine_runfile_parts.pl) and outputs an ionization table in an h5 format that can be used in the trident.
