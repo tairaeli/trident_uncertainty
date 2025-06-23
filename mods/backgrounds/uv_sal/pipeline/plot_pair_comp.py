@@ -138,7 +138,7 @@ comp_paths = {}
 clump_cat_labels = ["match","diff_size","overlap","merge"]
 prop_list = ["density","temperature"]
 plot_titles = ["N","T"]
-prop_unit = ["[$cm^{-3}$]","[K]"]
+prop_unit = [r"[$\mathrm{cm^{-3}}$]","[K]"]
 palt = plt.cm.tab10(np.linspace(0,1,4))
 
 # defining the super grid parameters
@@ -168,6 +168,10 @@ ion_name_dict = {"H_I":r"H $\mathrm{\i}$",
                  "C_IV":r"C $\mathrm{\i v}$",
                  "N_V":r"N $\mathrm{v}$",
                  "O_VI":r"O $\mathrm{v\i}$"}
+
+xticks_phys_quants = {}
+xticks_phys_quants["avg_ray_dens"] = None
+xticks_phys_quants["avg_ray_temp"] = None
 
 for i in range(len(old_gen)):
     # setting up grid
@@ -398,16 +402,31 @@ for i in range(len(old_gen)):
         # other plot settings
         if m == len(ion_list)-1:
             if i==0:
-                 plot.set_xlabel(r"$log(N_{FG09}$) [$cm^{-2}$]", fontsize=ax_lab_size)
+                 plot.set_xlabel(r"$\mathrm{log(N_{abs,FG09}}$) [$\mathrm{cm^{-2}}$]", fontsize=ax_lab_size)
             elif i==1:
-                plot.set_xlabel(r"$log(N_{HM12}$) [$cm^{-2}$]", fontsize=ax_lab_size)
+                plot.set_xlabel(r"$\mathrm{log(N_{abs,HM12}}$) [$\mathrm{cm^{-2}}$]", fontsize=ax_lab_size)
             elif i==2:
-                plot.set_xlabel(r"$log(N_{PW19}$) [$cm^{-2}$]", fontsize=ax_lab_size)
+                plot.set_xlabel(r"$\mathrm{log(N_{abs,PW19}}$) [$\mathrm{cm^{-2}}$]", fontsize=ax_lab_size)
 
- 
+        # preserving position of plot ticks with changes in label size
+        ytick_pos = plot.get_yticks()
+        xtick_pos = plot.get_xticks()
+        plot.tick_params(axis='both', which='major', labelsize=12)
+        plot.set_yticks(ytick_pos)
+        
+        if nion == "C III":
+            plot.set_xticks(np.arange(12,18))
+        elif nion == "Si III":
+            plot.set_xticks(np.arange(11,16))
+        elif (i==0) and (nion == "O VI"):
+            plot.set_xticks(np.arange(12.5,15,0.5))
+
+        else:
+            plot.set_xticks(xtick_pos)
+
         plot.grid()
         if m == 0:
-            plot.legend(handles=legend_labs, loc='upper right')
+            plot.legend(handles=legend_labs, loc='upper right', fontsize = 8)
 
         # converting gas density to number density
         phys_quant["avg_ray_dens"]["mean"] = phys_quant["avg_ray_dens"]["mean"]/ion_mass_g
@@ -445,34 +464,41 @@ for i in range(len(old_gen)):
                     xmax=np.log10(phys_quant[quant]["upper"][cat_mask]),
                     color = palt[k])
             
+            if nion == "H I":
+                xticks_phys_quants[quant] = plot.get_xticks()
+            
+            plot.set_xticks(xticks_phys_quants[quant])
+            
             ylab_xpos = 0.08
             
             # removing y labels
+            plot.set_yticks(ytick_pos)
             labels = [" "]*len(plot.get_yticklabels())
             plot.set_yticklabels(labels)
 
+
             if m == (len(ion_list)-1):
+
+                plot.tick_params(axis='x', which='major', labelsize=15)
+
                 # plot.set_xlabel(names_one_to_one[old_gen[i]], fontsize=35)
                 # hardcoding some lines in because latex and variable strings do not play well together
                 if i==0:
-                    # plot.set_ylabel(r"$log_{10}$($\N_{FG20}}$/$\N_{FG09}$) [$cm^{-2}$]", fontsize=ax_lab_size)
-                    fig.text(ylab_xpos, 0.5, r"$log$($N_{FG20}}$/$N_{FG09}$)", 
+                    fig.text(ylab_xpos, 0.5, r"$\mathrm{log(N_{abs,FG20}\/N_{abs,FG09}}$)", 
                              ha='center', va='center', rotation='vertical', fontsize=35)
                 elif i==1:
-                    # plot.set_ylabel(r"$log_{10}$($\N_{PW19}$/$\N_{HM12}$) [$cm^{-2}$]", fontsize=ax_lab_size)
-                    fig.text(ylab_xpos, 0.5, r"$log$($N_{PW19}$/$N_{HM12}$)", 
+                    fig.text(ylab_xpos, 0.5, r"$\mathrm{log(N_{abs,PW19}\/N_{abs,HM12}}$)", 
                              ha='center', va='center', rotation='vertical', fontsize=35)
                 elif i==2:
-                    # plot.set_ylabel(r"$log_{10}$($\N_{FG20}$/$\N_{PW19}$) [$cm^{-2}$]", fontsize=ax_lab_size)
-                    fig.text(ylab_xpos, 0.5, r"$log$($N_{FG20}$/$N_{PW19}$)", 
+                    fig.text(ylab_xpos, 0.5, r"$\mathrm{log(N_{abs,FG20}\/N_{abs,PW19}}$)", 
                              ha='center', va='center', rotation='vertical', fontsize=35)
                 # fig.text(0.083+0.285, 0.5, names_one_to_one[new_gen[i]], ha='center', va='center', 
                 # rotation='vertical', fontsize=35)
 
                 if j==0:
-                    plot.set_xlabel("$log$"+r"$(\overline{n})$"+f" {prop_unit[j]}", fontsize=ax_lab_size)
+                    plot.set_xlabel("log"+r"$\mathrm{(\overline{n})}$"+f" {prop_unit[j]}", fontsize=ax_lab_size)
                 else:
-                    plot.set_xlabel("$log$"+r"$(\overline{T})$"+f" {prop_unit[j]}", fontsize=ax_lab_size)
+                    plot.set_xlabel("log"+r"$\mathrm{(\overline{T})}$"+f" {prop_unit[j]}", fontsize=ax_lab_size)
             else:
                 labels = [" "]*len(plot.get_xticklabels())
                 plot.set_xticklabels(labels)
@@ -492,8 +518,9 @@ for i in range(len(old_gen)):
                           orientation="horizontal", 
                         color = palt[k], density=False, alpha = 0.7,
                         ec = palt[k], lw=1)
-            hist.set_yticks([0,-0.2,-0.4,-0.6,-0.8])
-            hist.set_ylim([-0.85,0.03])
+
+            hist.set_ylim([ytick_pos[0],ytick_pos[-1]])
+            hist.set_yticks(ytick_pos)
         
         else:
             for k,cat in enumerate(clump_cat_labels):
@@ -501,6 +528,7 @@ for i in range(len(old_gen)):
                 hist.hist(uvb_dens_diff[cat_mask], orientation="horizontal", 
                         color = palt[k], density=False, bins=20, alpha = 0.7,
                         ec = palt[k], lw=1)
+            hist.set_yticks(ytick_pos)
        
         hist.axhline(0, color = "black", linestyle = '--')
         labels = [" "]*len(hist.get_yticklabels())
@@ -518,6 +546,8 @@ for i in range(len(old_gen)):
     plt.tight_layout()
     plt.savefig(comp_paths[f"{old_gen[i]}_{new_gen[i]}"]+f"/super_plot_{old_gen[i]}_{new_gen[i]}.png",
                 dpi=400,bbox_inches='tight')
+    # plt.savefig(f"./super_plot_{old_gen[i]}_{new_gen[i]}.png",
+    #             dpi=400,bbox_inches='tight')
     plt.show()
     plt.clf()
 
@@ -530,8 +560,8 @@ gs = GridSpec(len(ion_list),len(old_gen), width_ratios=wrats,
 map_i = {0:0, 1:2, 2:4}
 
 # contains shortened UVB names
-names_one_to_one = {"FG_2009":r"$N_{FG09}$", "FG_2020":r"$N_{FG20}$",
-                   "HM_2012":r"$N_{HM12}$", "PCW_2019":r"$N_{PW19}$"}
+names_one_to_one = {"FG_2009":r"$\mathrm{N_{abs,FG09}}$", "FG_2020":r"$\mathrm{N_{abs,FG20}}$",
+                   "HM_2012":r"$\mathrm{N_{abs,HM12}}$", "PCW_2019":r"$\mathrm{N_{abs,PW19}}$"}
 
 # puts each 1:1 comparison in above figure
 for i in range(len(old_gen)):

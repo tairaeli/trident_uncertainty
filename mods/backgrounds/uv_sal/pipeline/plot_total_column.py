@@ -212,13 +212,19 @@ for ion in ion_list:
         # ax[j,k].plot(x_vals, moving_avg, color = colors[i])
         if (ion == "H_I") or (ion == "Si_II"):
             ax[j,k].set_yticks([1,0,-1,-2,-3]) 
+        elif ion == "Si_III":
+            ax[j,k].set_xticks([14,16,18,20])
+            ax[j,k].set_xlim(13.7,20)
         elif (ion == "C_IV"):
             ax[j,k].set_yticks([0.1,0,-0.1,-0.2,-0.3,-0.4])
         elif (ion == "N_V"):
             ax[j,k].set_yticks([0.2,0,-0.2,-0.4,-0.6])
+            ax[j,k].set_xticks([14,15,16,17,18])
         elif (ion == "O_VI"):
             ax[j,k].set_yticks([0.2,0,-0.2,-0.4,-0.6,-0.8,-1.0])
-        
+    
+    # ax[j,k].set_xlim(13.7,24)
+    # ax[j,k].set_ylim(-3.2,1)
     ax[j,k].grid()
     ax[j,k].tick_params(axis='both', labelsize=20)
 
@@ -229,8 +235,8 @@ for ion in ion_list:
         k+=1
 
 ax[0,0].legend(loc='lower left', prop={'size': 15})
-fig.supxlabel(r"log($\overline{N_{LOS}}$) [$cm^{-2}$]", fontsize=35)
-fig.supylabel(r"log($N_{LOS,1}/N_{LOS,2}$) [$cm^{-2}$]", fontsize=35)
+fig.supxlabel(r"log($\mathrm{\overline{N_{LOS}}}$) [$\mathrm{cm^{-2}}$]", fontsize=35)
+fig.supylabel(r"log($\mathrm{N_{LOS,1}/N_{LOS,2}}$) [$\mathrm{cm^{-2}}$]", fontsize=35)
 plt.savefig(uvb_dist_path+f"/tot_col_dens_comp.png",
                 dpi=400,bbox_inches='tight')
 plt.clf()

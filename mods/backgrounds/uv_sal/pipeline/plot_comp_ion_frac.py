@@ -135,9 +135,9 @@ for i in range(len(old_gen)):
         # setting up contours 
         ax[0].contour(10**old_col_dens, 10**old_temp, old_f_filter.T, 
                         colors = "black")
-
-        ax[0].set_ylabel("$T$ [K]", fontsize=ax_lab_size)
-        ax[0].set_title("(a)")
+        ax[0].tick_params(axis='both', which='major', labelsize=15)
+        ax[0].set_ylabel("T [K]", fontsize=ax_lab_size)
+        ax[0].set_title("(a)", fontsize = 15)
         ax[0].set_yscale("log")
         ax[0].set_xscale("log")
 
@@ -150,8 +150,8 @@ for i in range(len(old_gen)):
         # adding contours
         ax[1].contour(10**new_col_dens, 10**new_temp, new_f_filter.T, 
                         colors = "black")
-
-        ax[1].set_title("(b)")
+        ax[1].tick_params(axis='both', which='major', labelsize=15)
+        ax[1].set_title("(b)", fontsize = 15)
         ax[1].set_yscale("log")
         ax[1].set_xscale("log")
         cb1 = fig.colorbar(f1,ax = ax[1])
@@ -165,10 +165,11 @@ for i in range(len(old_gen)):
         
         # setting up ratio comparison 2d histogram
         f3 = ax[2].pcolormesh(10**old_col_dens, 10**old_temp, (new_f_filter - old_f_filter).T)
-        ax[2].set_title("(c)")
+        ax[2].set_title("(c)", fontsize = 15)
         ax[2].set_yscale("log")
         ax[2].set_xscale("log")
-        ax[2].set_ylabel("$T$ [K]", fontsize=ax_lab_size)
+        ax[2].tick_params(axis='both', which='major', labelsize=15)
+        ax[2].set_ylabel("T [K]", fontsize=ax_lab_size)
         cb2 = fig.colorbar(f3,ax = ax[2])
 
         ax[2].text(1.28, 0.1, 
@@ -178,11 +179,13 @@ for i in range(len(old_gen)):
         ax[2].text(0.1,0.82,short_uvb_names[new_gen[i]]+"/"+short_uvb_names[old_gen[i]],
                 fontsize=ax_lab_size+4, transform=ax[2].transAxes)
 
-        fig.supxlabel(r"n [$cm^{-3}$]", fontsize=ax_lab_size)
+        fig.supxlabel(r"n [$\mathrm{cm^{-3}}$]", fontsize=ax_lab_size)
 
         plt.tight_layout()
         # saving figure
-        plt.savefig(rs_path+f"/{old_gen[i]}_{new_gen[i]}_comp/{ion}/ion_frac_{old_gen[i]}_{new_gen[i]}_{ion}.png",
+        # plt.savefig(rs_path+f"/{old_gen[i]}_{new_gen[i]}_comp/{ion}/ion_frac_{old_gen[i]}_{new_gen[i]}_{ion}.png",
+        #             dpi=400,bbox_inches='tight')
+        plt.savefig(f"./ion_frac_{old_gen[i]}_{new_gen[i]}_{ion}.png",
                     dpi=400,bbox_inches='tight')
         plt.clf()
 

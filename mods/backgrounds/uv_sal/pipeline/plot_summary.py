@@ -277,7 +277,7 @@ for i in range(3):
     plot_HI.vlines([i], q1, q3, color='k', linestyle='-', lw=5)
     plot_HI.scatter([i]*len(outlier_list[i]),outlier_list[i], color = uvb_colors[i%3])
 
-plot_HI.set_ylabel(r"$log$($N_{1}}$/$N_{2})$", size = 40)
+plot_HI.set_ylabel(r"log($\mathrm{N_{abs,1}\/N_{abs,2}}$)", size = 40)
 plot_HI.set_yticks([8,6,4,2,0,-2,-4,-6,-8])
 plot_HI.set_ylim(-8,8)
 plot_HI.set_xticks([1], 
@@ -337,6 +337,8 @@ plot.text(0.2,-0.16,
           s="Ionization Energy (eV)", size = 30,
           transform=plot.transAxes)
 
-plt.savefig(rs_path+"/uvb_dists"+"/summary_plot.png",
+# plt.savefig(rs_path+"/uvb_dists"+"/summary_plot.png",
+#             dpi=400,bbox_inches='tight')
+plt.savefig("./summary_plot.png",
             dpi=400,bbox_inches='tight')
 print("PLOTTING COMPLETE")
